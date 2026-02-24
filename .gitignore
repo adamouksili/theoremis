@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+*.local
+.DS_Store
+*.log
+coverage/
+.env
+.env.*
+.env.local
+.env.production
+*.tgz
+out/
+vscode-extension/out/
+vscode-extension/node_modules/
+.vercel/

@@ -1,0 +1,70 @@
+// ─────────────────────────────────────────────────────────────
+// Theoremis  ·  Counterexample & Random Test Renderers
+// ─────────────────────────────────────────────────────────────
+
+import { $, esc, S } from '../state';
+import type { Mutation } from '../../engine/mutator';
+
+export function renderInsights(): void {
+  const body = $('insights-body');
+  if (!S.report || S.report.results.length === 0) {
+    body.innerHTML = '<div class="empty"><div class="empty-text">No counterexample data</div></div>';
+    return;
+  }
+
+  const ces = S.report.results.filter(x => x.status === 'counterexample_found');
+  const safe = S.report.results.filter(x => x.status === 'no_counterexample');
+
+  let html = '';
+  for (const ce of ces.slice(0, 6)) {
+    const desc = friendly(ce.mutation);
+    const wit = ce.witness ? `<div class="insight-sub">${esc(ce.witness.description)}</div>` : '';
+    html += `<div class="insight"><div class="insight-dot ce"></div><div>${esc(desc)}${wit}</div></div>`;
+  }
+  for (const s of safe.slice(0, 3)) {
+    html += `<div class="insight"><div class="insight-dot safe"></div><div>${esc(friendly(s.mutation))}</div></div>`;
+  }
+  body.innerHTML = html;
+}
+
+export function renderRandomTests(): void {
+  const body = $('random-body');
+  if (!S.randomReport) {
+    body.innerHTML = '<div class="empty"><div class="empty-text">No random testing data</div></div>';
+    return;
+  }
+
+  const r = S.randomReport;
+  const pct = r.totalTests > 0 ? Math.round((r.passed / r.totalTests) * 100) : 0;
+  const color = pct === 100 ? 'var(--success)' : pct > 90 ? 'var(--warning)' : 'var(--error)';
+
+  let html = `
+    <div class="confidence-line" style="border:none;padding:8px 0">
+      <div class="confidence-label">${r.passed}/${r.totalTests} passed</div>
+      <div class="confidence-track"><div class="confidence-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="confidence-label">${pct}%</div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${r.time.toFixed(1)}ms · QuickCheck random testing</div>`;
+
+  if (r.counterexamples.length > 0) {
+    html += `<div style="font-size:11px;font-weight:600;color:var(--error);margin-bottom:4px">Counterexamples found:</div>`;
+    for (const ce of r.counterexamples.slice(0, 3)) {
+      const vals = Object.entries(ce.witness).map(([k, v]) => `${k}=${v}`).join(', ');
+      html += `<div class="insight"><div class="insight-dot random"></div><div style="font-family:var(--font-mono);font-size:11px">${esc(vals)} → ${esc(String(ce.evaluated))}</div></div>`;
+    }
+  }
+  body.innerHTML = html;
+}
+
+export function friendly(m: Mutation): string {
+  switch (m.type) {
+    case 'drop_hypothesis': return `Hypothesis "${m.droppedParam}" is necessary — removing it breaks the theorem`;
+    case 'weaken_condition': return m.description.replace(/Strengthen|Weaken/g, x => x === 'Strengthen' ? 'Tightening' : 'Loosening');
+    case 'swap_quantifier': return 'Swapping ∀ and ∃ changes the truth value';
+    case 'change_domain': return m.description.replace('Change domain', 'Extending the domain');
+    case 'negate_conclusion': return 'Negating the conclusion produces a contradiction';
+    case 'strengthen_conclusion': return 'Strict inequality fails at the boundary';
+    case 'perturb_constant': return 'Changing a constant invalidates the identity';
+    default: return m.description;
+  }
+}
