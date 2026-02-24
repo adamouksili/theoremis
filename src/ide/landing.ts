@@ -59,11 +59,11 @@ export function landingShell(): string {
   <nav class="landing-nav">
     <div class="landing-nav-brand">
       <div class="landing-nav-logo">Theoremis</div>
-      <div class="landing-nav-tag">v1.0</div>
+      <div class="landing-nav-tag">v0.1.0-alpha</div>
     </div>
     <div class="landing-nav-links">
       <button class="landing-nav-link" data-scroll="features">Features</button>
-      <a class="landing-nav-link" href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+      <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
   </nav>
@@ -90,7 +90,7 @@ export function landingShell(): string {
         </button>
         <button class="landing-btn-secondary" id="btn-download-ide">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download Theoremis IDE
+          View on GitHub
         </button>
       </div>
     </div>
@@ -308,7 +308,7 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
 
   if (btnDownload) {
     btnDownload.addEventListener('click', () => {
-      alert('Download starting…\n\nThe Theoremis IDE desktop application will be available soon. In the meantime, use the online IDE!');
+      window.open('https://github.com/adamouksili/theoremis', '_blank', 'noopener');
     });
   }
 
