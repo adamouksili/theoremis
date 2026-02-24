@@ -146,6 +146,31 @@ export function landingShell(): string {
     </div>
   </section>
 
+  <section class="landing-founder">
+    <div class="landing-founder-inner">
+      <div class="landing-founder-avatar">A</div>
+      <div class="landing-founder-body">
+        <h2 class="landing-founder-heading">A note from the builder</h2>
+        <p class="landing-founder-text">
+          Hey — I'm <strong>Adam</strong>, a Computer Science and Mathematics student at
+          <strong>Rutgers University</strong>. I built Theoremis because I kept running into the
+          same wall: beautiful proofs on paper that had no easy path to machine verification.
+          The gap between what mathematicians <em>write</em> and what proof assistants
+          <em>accept</em> felt unnecessary.
+        </p>
+        <p class="landing-founder-text">
+          This project is my attempt to close that gap — to make formal verification
+          something any mathematician or student can reach for, not just the handful of
+          people who've spent years learning Lean syntax. It's still early, and there's a
+          lot more to do, but I'm excited to keep building in the open.
+        </p>
+        <p class="landing-founder-text landing-founder-sign">
+          — Adam
+        </p>
+      </div>
+    </div>
+  </section>
+
   <footer class="landing-footer">
     <span>Built with λΠω type theory</span>
     <span>·</span>

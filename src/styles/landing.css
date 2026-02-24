@@ -544,6 +544,84 @@
   color: var(--l-text-muted);
 }
 
+/* ── Founder ───────────────────────────────────────────────── */
+
+.landing-founder {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 64px 40px 72px;
+}
+
+.landing-founder-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  max-width: 600px;
+  padding: 32px 36px;
+  border-radius: 20px;
+  border: 1px solid var(--l-border);
+  background: var(--l-bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: fadeInUp 600ms ease-out both;
+}
+
+.landing-founder-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--l-accent), var(--l-accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--l-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.landing-founder-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.landing-founder-heading {
+  font-family: var(--l-font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--l-text);
+  margin: 0;
+}
+
+.landing-founder-text {
+  font-family: var(--l-font-display);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--l-text-muted);
+  margin: 0;
+}
+
+.landing-founder-text strong {
+  color: var(--l-text);
+  font-weight: 500;
+}
+
+.landing-founder-text em {
+  font-style: italic;
+  color: var(--l-text);
+}
+
+.landing-founder-sign {
+  margin-top: 4px;
+  color: var(--l-accent);
+  font-weight: 500;
+}
+
 /* ── Footer ────────────────────────────────────────────────── */
 
 .landing-footer {
@@ -607,6 +685,10 @@
   .landing-features {
     padding: 0 32px 48px;
   }
+
+  .landing-founder {
+    padding: 48px 32px 56px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -642,5 +724,16 @@
 
   .landing-feature {
     max-width: 100%;
+  }
+
+  .landing-founder {
+    padding: 32px 20px 40px;
+  }
+
+  .landing-founder-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 28px 24px;
   }
 }
