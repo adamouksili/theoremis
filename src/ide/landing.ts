@@ -58,6 +58,7 @@ export function landingShell(): string {
 
   <nav class="landing-nav">
     <div class="landing-nav-brand">
+      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img" />
       <div class="landing-nav-logo">Theoremis</div>
       <div class="landing-nav-tag">v0.1.0-alpha</div>
     </div>
@@ -152,7 +153,7 @@ export function landingShell(): string {
       <div class="landing-founder-body">
         <h2 class="landing-founder-heading">A note from the builder</h2>
         <p class="landing-founder-text">
-          Hey — I'm <strong>Adam</strong>, a Computer Science and Mathematics student at
+          Hey — I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics student at
           <strong>Rutgers University</strong>. I built Theoremis because I kept running into the
           same wall: beautiful proofs on paper that had no easy path to machine verification.
           The gap between what mathematicians <em>write</em> and what proof assistants
@@ -165,7 +166,7 @@ export function landingShell(): string {
           lot more to do, but I'm excited to keep building in the open.
         </p>
         <p class="landing-founder-text landing-founder-sign">
-          — Adam
+          — Adam Ouksili
         </p>
       </div>
     </div>

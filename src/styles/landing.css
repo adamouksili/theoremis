@@ -108,6 +108,12 @@
   gap: 10px;
 }
 
+.landing-nav-logo-img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
 .landing-nav-logo {
   font-family: var(--l-font-display);
   font-size: 22px;
