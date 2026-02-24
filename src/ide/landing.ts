@@ -53,8 +53,6 @@ const CODE_PHASES: CodePhase[] = [
 export function landingShell(): string {
   return `
 <div class="landing">
-  <div class="landing-bg"></div>
-  <div class="landing-grid"></div>
 
   <nav class="landing-nav">
     <div class="landing-nav-brand">
@@ -63,41 +61,34 @@ export function landingShell(): string {
       <div class="landing-nav-tag">v0.1.0-alpha</div>
     </div>
     <div class="landing-nav-links">
+      <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
       <button class="landing-nav-link" data-scroll="features">Features</button>
-      <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
   </nav>
 
   <section class="landing-hero">
     <div class="landing-hero-content">
-      <div class="landing-hero-badge">
-        <span class="badge-dot"></span>
-        Formal verification for everyone
-      </div>
       <h1 class="landing-hero-title">
-        <span class="title-gradient">Theoremis</span>
+        Write proofs in LaTeX.<br/>
+        Verify them in <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
-        <strong>Formal verification, democratized.</strong><br/>
-        Natural language in. Infallible Lean&nbsp;4 logic out.
-        Transform LaTeX proofs into machine-verified code across
-        Lean&nbsp;4, Coq, and Isabelle — instantly.
+        Theoremis translates informal mathematical prose into
+        machine-checked formal proofs — Lean&nbsp;4, Coq, and
+        Isabelle/HOL from a single LaTeX source.
       </p>
       <div class="landing-hero-actions">
         <button class="landing-btn-primary" id="btn-launch-ide">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Use Theoremis Online
+          Open the Editor
         </button>
         <button class="landing-btn-secondary" id="btn-download-ide">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          View on GitHub
+          View Source on GitHub
         </button>
       </div>
     </div>
 
     <div class="landing-code-showcase">
-      <div class="landing-code-glow"></div>
       <div class="landing-code-card">
         <div class="landing-code-header">
           <div class="landing-code-dots">
@@ -116,64 +107,88 @@ export function landingShell(): string {
     </div>
   </section>
 
+  <section class="landing-pipeline">
+    <div class="landing-pipeline-title">Pipeline</div>
+    <div class="landing-pipeline-steps">
+      <div class="landing-pipeline-step">
+        <div class="landing-pipeline-step-label">Parse</div>
+        <div class="landing-pipeline-step-desc">LaTeX to Math-AST</div>
+      </div>
+      <div class="landing-pipeline-arrow">→</div>
+      <div class="landing-pipeline-step">
+        <div class="landing-pipeline-step-label">Formalize</div>
+        <div class="landing-pipeline-step-desc">λΠω type theory IR</div>
+      </div>
+      <div class="landing-pipeline-arrow">→</div>
+      <div class="landing-pipeline-step">
+        <div class="landing-pipeline-step-label">Emit</div>
+        <div class="landing-pipeline-step-desc">Lean 4 / Coq / Isabelle</div>
+      </div>
+      <div class="landing-pipeline-arrow">→</div>
+      <div class="landing-pipeline-step">
+        <div class="landing-pipeline-step-label">Verify</div>
+        <div class="landing-pipeline-step-desc">Kernel check + testing</div>
+      </div>
+    </div>
+  </section>
+
   <section class="landing-features" id="features">
+    <div class="landing-features-title">Design Principles</div>
+
     <div class="landing-feature">
-      <div class="landing-feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div class="landing-feature-title">Kernel-verified, not heuristic</div>
+      <div class="landing-feature-desc">
+        Every emitted theorem is checked by Lean 4's type-theoretic kernel.
+        The output is a proof term — not a best-effort guess.
       </div>
-      <div class="landing-feature-title">Machine-Verified</div>
-      <div class="landing-feature-desc">Every theorem is compiled to dependent type theory and verified by Lean 4's kernel — zero trust, zero gaps.</div>
     </div>
+
     <div class="landing-feature">
-      <div class="landing-feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <div class="landing-feature-title">One source, three backends</div>
+      <div class="landing-feature-desc">
+        Write once in LaTeX. Emit valid Lean 4 (Mathlib), Coq (Gallina),
+        and Isabelle/HOL from the same intermediate representation.
       </div>
-      <div class="landing-feature-title">Multi-Backend</div>
-      <div class="landing-feature-desc">Emit to Lean 4, Coq, and Isabelle from a single LaTeX source. One proof, three verification ecosystems.</div>
     </div>
+
     <div class="landing-feature">
-      <div class="landing-feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <div class="landing-feature-title">Sub-50ms pipeline</div>
+      <div class="landing-feature-desc">
+        Parse → IR → type-check → emit completes in under 50 milliseconds.
+        Counterexample search and property-based testing run in parallel.
       </div>
-      <div class="landing-feature-title">Instant Pipeline</div>
-      <div class="landing-feature-desc">Parse → IR → Type-check → Emit in under 50ms. Counterexample engine and random testing run in parallel.</div>
     </div>
+
     <div class="landing-feature">
-      <div class="landing-feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <div class="landing-feature-title">LLM-assisted gap filling</div>
+      <div class="landing-feature-desc">
+        When regex-based parsing can't resolve a hypothesis, structured
+        chain-of-thought prompting fills the gap — with explicit confidence
+        scores so you know exactly what was inferred.
       </div>
-      <div class="landing-feature-title">LLM-Assisted</div>
-      <div class="landing-feature-desc">System 2 CoT prompting fills hypothesis gaps that regex alone can't parse — with built-in confidence scoring.</div>
     </div>
   </section>
 
   <section class="landing-founder">
-    <div class="landing-founder-inner">
-      <div class="landing-founder-avatar">A</div>
-      <div class="landing-founder-body">
-        <h2 class="landing-founder-heading">A note from the builder</h2>
-        <p class="landing-founder-text">
-          Hey — I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics student at
-          <strong>Rutgers University</strong>. I built Theoremis because I kept running into the
-          same wall: beautiful proofs on paper that had no easy path to machine verification.
-          The gap between what mathematicians <em>write</em> and what proof assistants
-          <em>accept</em> felt unnecessary.
-        </p>
-        <p class="landing-founder-text">
-          This project is my attempt to close that gap — to make formal verification
-          something any mathematician or student can reach for, not just the handful of
-          people who've spent years learning Lean syntax. It's still early, and there's a
-          lot more to do, but I'm excited to keep building in the open.
-        </p>
-        <p class="landing-founder-text landing-founder-sign">
-          — Adam Ouksili
-        </p>
-      </div>
-    </div>
+    <div class="landing-founder-rule"></div>
+    <p class="landing-founder-text">
+      I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics
+      student at <strong>Rutgers University</strong>. I built Theoremis because
+      I kept running into the same wall: beautiful proofs on paper that had no
+      easy path to machine verification. The gap between what mathematicians
+      <em>write</em> and what proof assistants <em>accept</em> felt unnecessary.
+    </p>
+    <p class="landing-founder-text">
+      This project is my attempt to close that gap — to make formal verification
+      something any mathematician or student can reach for, not just the handful
+      who've spent years learning Lean syntax. It's still early, and there's a
+      lot more to do.
+    </p>
+    <p class="landing-founder-sign">— Adam Ouksili</p>
   </section>
 
   <footer class="landing-footer">
-    <span>Built with λΠω type theory</span>
+    <span>Built on λΠω type theory</span>
     <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>
