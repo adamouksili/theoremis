@@ -334,3 +334,149 @@ $1 = 1$
         }
     });
 });
+
+// ── Extended parser tests for new constructs ────────────────
+
+describe('parseExpr: math functions', () => {
+    it('parses \\sin', () => {
+        const t = parseExpr('\\sin');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('sin');
+    });
+
+    it('parses \\cos', () => {
+        const t = parseExpr('\\cos');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('cos');
+    });
+
+    it('parses \\log', () => {
+        const t = parseExpr('\\log');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('log');
+    });
+
+    it('parses \\det', () => {
+        const t = parseExpr('\\det');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('det');
+    });
+
+    it('parses \\gcd', () => {
+        const t = parseExpr('\\gcd');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('gcd');
+    });
+
+    it('parses \\max', () => {
+        const t = parseExpr('\\max');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('max');
+    });
+
+    it('parses \\min', () => {
+        const t = parseExpr('\\min');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('min');
+    });
+
+    it('parses \\exp', () => {
+        const t = parseExpr('\\exp');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('exp');
+    });
+
+    it('parses \\ln', () => {
+        const t = parseExpr('\\ln');
+        expect(t.tag).toBe('Var');
+        if (t.tag === 'Var') expect(t.name).toBe('ln');
+    });
+});
+
+describe('parseExpr: subscripts', () => {
+    it('parses a_n as indexed variable', () => {
+        const t = parseExpr('a_n');
+        expect(t.tag).toBe('App');
+    });
+
+    it('parses x_{i+1} as indexed variable with expression subscript', () => {
+        const t = parseExpr('x_{i+1}');
+        expect(t.tag).toBe('App');
+    });
+});
+
+describe('parseLatex: proof patterns', () => {
+    it('detects "by contradiction" pattern', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{theorem}[T]
+$1 = 1$
+\\end{theorem}
+\\begin{proof}
+We proceed by contradiction.
+\\end{proof}`);
+        const thm = doc.nodes.find(n => n.tag === 'ThmNode') as ThmNode;
+        expect(thm?.proof).toBeDefined();
+        expect(thm?.proof?.tactics.some(t => t.tag === 'Apply')).toBe(true);
+    });
+
+    it('detects "WLOG" pattern as LLMSuggest', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{theorem}[T]
+$1 = 1$
+\\end{theorem}
+\\begin{proof}
+Without loss of generality, assume $x > 0$.
+\\end{proof}`);
+        const thm = doc.nodes.find(n => n.tag === 'ThmNode') as ThmNode;
+        expect(thm?.proof).toBeDefined();
+        expect(thm?.proof?.tactics.some(t => t.tag === 'LLMSuggest')).toBe(true);
+    });
+
+    it('detects "hence" and "therefore" as simp', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{theorem}[T]
+$1 = 1$
+\\end{theorem}
+\\begin{proof}
+Hence the result follows.
+\\end{proof}`);
+        const thm = doc.nodes.find(n => n.tag === 'ThmNode') as ThmNode;
+        expect(thm?.proof?.tactics.some(t => t.tag === 'Simp')).toBe(true);
+    });
+
+    it('emits LLMSuggest for unrecognized proof text', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{theorem}[T]
+$1 = 1$
+\\end{theorem}
+\\begin{proof}
+Consider the Cayley-Hamilton theorem applied to the matrix A.
+\\end{proof}`);
+        const thm = doc.nodes.find(n => n.tag === 'ThmNode') as ThmNode;
+        expect(thm?.proof?.tactics.some(t => t.tag === 'LLMSuggest')).toBe(true);
+    });
+});
+
+describe('parseLatex: math environments', () => {
+    it('does not crash on align environment', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{theorem}[T]
+\\begin{align}
+x^2 + y^2 &= z^2 \\\\
+x &= 1
+\\end{align}
+\\end{theorem}`);
+        expect(doc.nodes.length).toBeGreaterThan(0);
+    });
+
+    it('handles equation* environment', () => {
+        const doc = parseLatex(`\\title{T}
+\\begin{equation*}
+E = mc^2
+\\end{equation*}
+\\begin{theorem}[T]
+$E = mc^2$
+\\end{theorem}`);
+        expect(doc.nodes.length).toBeGreaterThan(0);
+    });
+});

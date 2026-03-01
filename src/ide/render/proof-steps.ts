@@ -5,7 +5,7 @@
 import { $, esc, S } from '../state';
 import { prettyTerm, prettyTactic } from '../../core/pretty';
 import { suggestMathlibLemma } from '../../bridge/mathlib-db';
-import { queryLLMForProofStep } from '../../engine/llm';
+import { queryLLMForProofStep, detectProvider, defaultModelForProvider } from '../../engine/llm';
 import { iconSparkles, iconCheck } from '../icons';
 import type { Theorem, Lemma, Tactic } from '../../core/ir';
 
@@ -60,10 +60,14 @@ export function renderProofSteps(): void {
       const keyInput = $<HTMLInputElement>('llm-key');
       const key = keyInput.value.trim();
       if (!key) {
-        alert('Please enter an OpenAI API key in the top right input first.');
+        alert('Please enter an API key (OpenAI, Anthropic, or GitHub PAT) in the top bar.');
         keyInput.focus();
         return;
       }
+      const modelSelect = document.getElementById('llm-model') as HTMLSelectElement | null;
+      const selectedModel = modelSelect?.value;
+      const provider = detectProvider(key);
+      const model = selectedModel && selectedModel !== 'auto' ? selectedModel : defaultModelForProvider(provider);
       const prevText = btn.textContent;
       btn.textContent = 'Thinking...';
       const decl = thms.find(d => d.name === declName);
@@ -71,7 +75,7 @@ export function renderProofSteps(): void {
       const statement = prettyTerm(decl.statement);
       const previousSteps = decl.proof.map(t => prettyTactic(t));
       try {
-        const suggestion = await queryLLMForProofStep(key, declName, statement, previousSteps);
+        const suggestion = await queryLLMForProofStep(key, declName, statement, previousSteps, { provider, model });
         S.llmSuggestions[declName] = suggestion;
         renderProofSteps();
       } catch (e: unknown) {

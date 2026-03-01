@@ -2,7 +2,7 @@
   "name": "theoremis",
   "version": "0.1.0-alpha",
   "type": "module",
-  "description": "Formal Verification, Democratized — Natural language in, infallible Lean 4 logic out",
+  "description": "LaTeX to Lean 4/Coq/Isabelle proof scaffolding — parse mathematical prose into formal proof skeletons with axiom tracking and counterexample testing",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

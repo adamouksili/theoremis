@@ -37,6 +37,7 @@ export function renderRandomTests(): void {
   const r = S.randomReport;
   const pct = r.totalTests > 0 ? Math.round((r.passed / r.totalTests) * 100) : 0;
   const color = pct === 100 ? 'var(--success)' : pct > 90 ? 'var(--warning)' : 'var(--error)';
+  const classLabel = classificationLabel(r.classification);
 
   let html = `
     <div class="confidence-line" style="border:none;padding:8px 0">
@@ -44,7 +45,9 @@ export function renderRandomTests(): void {
       <div class="confidence-track"><div class="confidence-fill" style="width:${pct}%;background:${color}"></div></div>
       <div class="confidence-label">${pct}%</div>
     </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${r.time.toFixed(1)}ms · QuickCheck random testing</div>`;
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">
+      ${r.time.toFixed(1)}ms · QuickCheck random testing · ${classLabel}${r.skipped > 0 ? ` · ${r.skipped} unevaluable` : ''}
+    </div>`;
 
   if (r.counterexamples.length > 0) {
     html += `<div style="font-size:11px;font-weight:600;color:var(--error);margin-bottom:4px">Counterexamples found:</div>`;
@@ -54,6 +57,17 @@ export function renderRandomTests(): void {
     }
   }
   body.innerHTML = html;
+}
+
+function classificationLabel(cls: string): string {
+  switch (cls) {
+    case 'verified': return '<span style="color:var(--success);font-weight:600">✓ Verified</span>';
+    case 'likely_true': return '<span style="color:var(--success)">Likely true</span>';
+    case 'indeterminate': return '<span style="color:var(--warning)">Indeterminate</span>';
+    case 'likely_false': return '<span style="color:var(--error)">Likely false</span>';
+    case 'falsified': return '<span style="color:var(--error);font-weight:600">✗ Falsified</span>';
+    default: return cls;
+  }
 }
 
 export function friendly(m: Mutation): string {

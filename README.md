@@ -1,8 +1,8 @@
 # Theoremis
 
-**Formal Verification, Democratized**
+**LaTeX → Formal Proof Scaffolding**
 
-Write mathematics naturally in LaTeX. Get verified formal proofs in **Lean 4**, **Coq**, and **Isabelle/HOL**.
+Write mathematics naturally in LaTeX. Get structured proof skeletons in **Lean 4**, **Coq**, and **Isabelle/HOL** — a starting point for formal verification, not a finished proof.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -10,12 +10,22 @@ Write mathematics naturally in LaTeX. Get verified formal proofs in **Lean 4**, 
 
 ## What It Does
 
-Theoremis bridges the gap between informal mathematical writing and machine-verified formal logic:
+Theoremis bridges the gap between informal mathematical writing and formal proof assistants:
 
-1. **Parse** — Write theorems, definitions, and proofs in standard LaTeX
-2. **Formalize** — Automatic translation to a λΠω intermediate representation with axiom tracking
-3. **Emit** — Generate valid Lean 4, Coq, and Isabelle/HOL source code
-4. **Verify** — QuickCheck-style random testing and counterexample mutation search
+1. **Parse** — Write theorems, definitions, and proofs in standard LaTeX. The parser handles common environments (`theorem`, `definition`, `lemma`, `proof`) and mathematical notation including quantifiers, set operations, modular arithmetic, and more.
+2. **Formalize** — Automatic translation to a λΠω intermediate representation with axiom tracking. Each declaration records which axioms it requires (LEM, Choice, Funext, etc.).
+3. **Emit** — Generate Lean 4, Coq, and Isabelle/HOL source code. Proofs contain `sorry`/`admit` placeholders where the tool cannot fill in proof terms.
+4. **Test** — QuickCheck-style random testing and mutation-based counterexample search. This is **heuristic testing**, not formal verification — it validates that hypotheses are necessary, not that theorems are proven.
+
+## Limitations
+
+> **Honest assessment of what Theoremis does and does not do:**
+
+- **Proofs contain `sorry` placeholders.** The tool produces proof *scaffolding*, not verified proofs. You must fill in the actual proof terms in your chosen proof assistant.
+- **The parser handles a subset of LaTeX.** While coverage includes common mathematical environments and ~60+ LaTeX commands, it does not handle all valid LaTeX. Complex nested environments, custom macros, and unusual formatting may produce `Hole` (parse error) nodes.
+- **Emitted code is syntactically valid but not semantically checked.** The Lean 4/Coq/Isabelle output should parse without syntax errors, but the type-checking and proof obligations are left to the target proof assistant.
+- **QuickCheck testing is probabilistic.** Low pass rates on random testing often reflect constrained domains (e.g., Fermat's Little Theorem requires prime inputs), not theorem falsity.
+- **LLM suggestions are best-effort.** When enabled, GPT-4o suggests tactics, but these are unverified suggestions, not proofs.
 
 ## Quick Start
 

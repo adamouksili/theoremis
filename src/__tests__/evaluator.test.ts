@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
-import { evaluate, quickCheck, extractVariables } from '../engine/evaluator';
+import { evaluate, quickCheck, extractVariables, classifyResult } from '../engine/evaluator';
 import { generateMutations } from '../engine/mutator';
 import { mk, Types, BUNDLES, type Theorem } from '../core/ir';
 
@@ -202,5 +202,96 @@ describe('generateMutations', () => {
     it('generates at least one mutation of each applicable type', () => {
         const mutations = generateMutations(theorem);
         expect(mutations.length).toBeGreaterThanOrEqual(3); // At least drops + negate
+    });
+});
+
+// ── Extended evaluator tests for new builtins ───────────────
+
+describe('evaluate: trig & transcendental', () => {
+    it('evaluates sin(0)', () => {
+        const t = mk.app(mk.var('sin'), mk.nat(0));
+        expect(evaluate(t, {})).toBeCloseTo(0);
+    });
+
+    it('evaluates cos(0)', () => {
+        const t = mk.app(mk.var('cos'), mk.nat(0));
+        expect(evaluate(t, {})).toBeCloseTo(1);
+    });
+
+    it('evaluates exp(0)', () => {
+        const t = mk.app(mk.var('exp'), mk.nat(0));
+        expect(evaluate(t, {})).toBeCloseTo(1);
+    });
+
+    it('evaluates ln(1)', () => {
+        const t = mk.app(mk.var('ln'), mk.nat(1));
+        expect(evaluate(t, {})).toBeCloseTo(0);
+    });
+
+    it('returns null for ln of non-positive', () => {
+        expect(evaluate(mk.app(mk.var('ln'), mk.nat(0)), {})).toBeNull();
+    });
+
+    it('evaluates sqrt(4)', () => {
+        const t = mk.app(mk.var('sqrt'), mk.nat(4));
+        expect(evaluate(t, {})).toBeCloseTo(2);
+    });
+
+    it('returns null for sqrt of negative', () => {
+        const t = mk.app(mk.var('sqrt'), mk.int(-1));
+        expect(evaluate(t, {})).toBeNull();
+    });
+});
+
+describe('evaluate: factorial', () => {
+    it('evaluates 5!', () => {
+        const t = mk.app(mk.var('factorial'), mk.nat(5));
+        expect(evaluate(t, {})).toBe(120);
+    });
+
+    it('evaluates 0!', () => {
+        const t = mk.app(mk.var('factorial'), mk.nat(0));
+        expect(evaluate(t, {})).toBe(1);
+    });
+
+    it('returns null for factorial of negative', () => {
+        const t = mk.app(mk.var('factorial'), mk.int(-3));
+        expect(evaluate(t, {})).toBeNull();
+    });
+});
+
+describe('classifyResult', () => {
+    it('returns verified for high pass count', () => {
+        expect(classifyResult(1000, 0, 0, 1000)).toBe('verified');
+    });
+
+    it('returns likely_true for small pass count', () => {
+        expect(classifyResult(50, 0, 0, 50)).toBe('likely_true');
+    });
+
+    it('returns falsified for very low pass rate', () => {
+        expect(classifyResult(5, 95, 0, 100)).toBe('falsified');
+    });
+
+    it('returns likely_false for moderate failure rate', () => {
+        expect(classifyResult(30, 70, 0, 100)).toBe('likely_false');
+    });
+
+    it('returns indeterminate when nothing evaluable', () => {
+        expect(classifyResult(0, 0, 100, 100)).toBe('indeterminate');
+    });
+});
+
+describe('quickCheck: classification', () => {
+    it('includes classification field in report', () => {
+        const term = mk.binOp('=', mk.nat(1), mk.nat(1));
+        const report = quickCheck(term, [], 10);
+        expect(report.classification).toBeDefined();
+    });
+
+    it('includes skipped field in report', () => {
+        const term = mk.binOp('=', mk.nat(1), mk.nat(1));
+        const report = quickCheck(term, [], 10);
+        expect(typeof report.skipped).toBe('number');
     });
 });

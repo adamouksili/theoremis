@@ -23,6 +23,14 @@ export function emitLean4(module: IRModule): EmitterResult {
         lines.push('import Mathlib.Tactic.NormNum');
         lines.push('import Mathlib.Data.Nat.Prime.Basic');
     }
+    // Import number theory modules if declarations reference primes/modular arithmetic
+    const allCode = module.declarations.map(d => JSON.stringify(d)).join(' ');
+    if (allCode.includes('Prime') || allCode.includes('Coprime')) {
+        lines.push('import Mathlib.Data.Nat.Prime.Defs');
+    }
+    if (allCode.includes('Equiv') || allCode.includes('ModEq') || allCode.includes('ZMod')) {
+        lines.push('import Mathlib.Data.ZMod.Basic');
+    }
     lines.push('');
     lines.push(`open Nat`);
     lines.push('');
@@ -54,8 +62,11 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
             const params = decl.params.map(p => emitParam(p)).join(' ');
             const retType = emitTerm(decl.returnType);
             const body = emitTerm(decl.body);
+            const paramStr = params ? `${params} ` : '';
+            // If the body is just a hole or produces invalid syntax, use sorry
+            const safeBody = body === 'sorry' || !body.trim() ? 'sorry' : body;
             return {
-                code: `def ${decl.name} ${params} : ${retType} :=\n  ${body}`,
+                code: `def ${decl.name} ${paramStr}: ${retType} :=\n  ${safeBody}`,
                 warns,
             };
         }
@@ -63,7 +74,10 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
         case 'Theorem': {
             const params = decl.params.map(p => emitParam(p)).join(' ');
             const stmt = emitTerm(decl.statement);
-            const proof = decl.proof.map(t => emitTactic(t, 1)).join('\n');
+            const paramStr = params ? `${params} ` : '';
+            const proof = decl.proof.length > 0
+                ? decl.proof.map(t => emitTactic(t, 1)).join('\n')
+                : '  sorry';
 
             // Check axiom compatibility
             if (decl.axiomBundle) {
@@ -75,7 +89,7 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
             }
 
             return {
-                code: `theorem ${decl.name} ${params} :\n    ${stmt} := by\n${proof}`,
+                code: `theorem ${decl.name} ${paramStr}:\n    ${stmt} := by\n${proof}`,
                 warns,
             };
         }
@@ -83,9 +97,12 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
         case 'Lemma': {
             const params = decl.params.map(p => emitParam(p)).join(' ');
             const stmt = emitTerm(decl.statement);
-            const proof = decl.proof.map(t => emitTactic(t, 1)).join('\n');
+            const paramStr = params ? `${params} ` : '';
+            const proof = decl.proof.length > 0
+                ? decl.proof.map(t => emitTactic(t, 1)).join('\n')
+                : '  sorry';
             return {
-                code: `lemma ${decl.name} ${params} :\n    ${stmt} := by\n${proof}`,
+                code: `lemma ${decl.name} ${paramStr}:\n    ${stmt} := by\n${proof}`,
                 warns,
             };
         }
@@ -126,7 +143,8 @@ function emitTerm(term: Term): string {
             return `let ${term.name} : ${emitTerm(term.type)} := ${emitTerm(term.value)}\n  ${emitTerm(term.body)}`;
 
         case 'Sort':
-            return term.universe.tag === 'Prop' ? 'Prop' : `Type ${term.universe.level}`;
+            if (term.universe.tag === 'Prop') return 'Prop';
+            return term.universe.level === 0 ? 'Type' : `Type ${term.universe.level}`;
 
         case 'Ind':
             return `inductive ${term.name} : ${emitTerm(term.type)} where\n` +

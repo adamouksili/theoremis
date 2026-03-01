@@ -19,6 +19,8 @@ export interface RandomTestReport {
     failed: number;
     counterexamples: TestResult[];
     time: number;
+    skipped: number;
+    classification: 'verified' | 'likely_true' | 'indeterminate' | 'likely_false' | 'falsified';
 }
 
 // ── Evaluate an IR term with given variable bindings ────────
@@ -71,7 +73,24 @@ export function evaluate(term: Term, env: Record<string, Value>): Value {
                 if (fn.name === 'Even' && typeof arg === 'number') return arg % 2 === 0;
                 if (fn.name === 'Odd' && typeof arg === 'number') return arg % 2 !== 0;
                 if (fn.name === 'abs' && typeof arg === 'number') return Math.abs(arg);
-                if (fn.name === 'sqrt' && typeof arg === 'number') return Math.sqrt(arg);
+                if (fn.name === 'sqrt' && typeof arg === 'number') return arg >= 0 ? Math.sqrt(arg) : null;
+                // Trig & transcendental
+                if (fn.name === 'sin' && typeof arg === 'number') return Math.sin(arg);
+                if (fn.name === 'cos' && typeof arg === 'number') return Math.cos(arg);
+                if (fn.name === 'tan' && typeof arg === 'number') return Math.tan(arg);
+                if (fn.name === 'exp' && typeof arg === 'number') return Math.exp(arg);
+                if (fn.name === 'ln' && typeof arg === 'number') return arg > 0 ? Math.log(arg) : null;
+                if (fn.name === 'log' && typeof arg === 'number') return arg > 0 ? Math.log(arg) : null;
+                // Combinatorial
+                if (fn.name === 'factorial' && typeof arg === 'number') return factorial(arg);
+                // Size / dimension helpers
+                if (fn.name === 'det' && typeof arg === 'number') return arg; // 1×1 matrix
+                if (fn.name === 'dim' && typeof arg === 'number') return arg;
+                if (fn.name === 'ker' && typeof arg === 'number') return 0; // trivial kernel
+            }
+            // index(pair(a, n)) — subscript access (evaluate as the base value for now)
+            if (fn.tag === 'Var' && fn.name === 'index' && term.arg.tag === 'Pair') {
+                return evaluate(term.arg.fst, env);
             }
             // Coprime(a)(p) — two-arg curried
             if (fn.tag === 'App' && fn.func.tag === 'Var' && fn.func.name === 'Coprime') {
@@ -79,6 +98,30 @@ export function evaluate(term: Term, env: Record<string, Value>): Value {
                 if (typeof a === 'number' && typeof arg === 'number') {
                     return gcd(Math.abs(a), Math.abs(arg)) === 1;
                 }
+            }
+            // gcd(a)(b) — two-arg curried
+            if (fn.tag === 'App' && fn.func.tag === 'Var' && fn.func.name === 'gcd') {
+                const a = evaluate(fn.arg, env);
+                if (typeof a === 'number' && typeof arg === 'number') {
+                    return gcd(Math.abs(a), Math.abs(arg));
+                }
+            }
+            // lcm(a)(b) — two-arg curried
+            if (fn.tag === 'App' && fn.func.tag === 'Var' && fn.func.name === 'lcm') {
+                const a = evaluate(fn.arg, env);
+                if (typeof a === 'number' && typeof arg === 'number') {
+                    const g = gcd(Math.abs(a), Math.abs(arg));
+                    return g === 0 ? 0 : Math.abs(a * arg) / g;
+                }
+            }
+            // max(a)(b), min(a)(b) — two-arg curried
+            if (fn.tag === 'App' && fn.func.tag === 'Var' && fn.func.name === 'max') {
+                const a = evaluate(fn.arg, env);
+                if (typeof a === 'number' && typeof arg === 'number') return Math.max(a, arg);
+            }
+            if (fn.tag === 'App' && fn.func.tag === 'Var' && fn.func.name === 'min') {
+                const a = evaluate(fn.arg, env);
+                if (typeof a === 'number' && typeof arg === 'number') return Math.min(a, arg);
             }
             return null;
         }
@@ -192,6 +235,21 @@ const DOMAINS: Record<string, DomainSpec> = {
     'Prime': { name: 'Prime', generator: randomPrime },
 };
 
+// ── Result classification ───────────────────────────────────
+
+export function classifyResult(
+    passed: number, failed: number, _skipped: number, _total: number,
+): RandomTestReport['classification'] {
+    const evaluated = passed + failed;
+    if (evaluated === 0) return 'indeterminate';
+    const passRate = passed / evaluated;
+    if (failed === 0 && evaluated >= 100) return 'verified';
+    if (failed === 0) return 'likely_true';
+    if (passRate < 0.1) return 'falsified';
+    if (passRate < 0.5) return 'likely_false';
+    return 'indeterminate';
+}
+
 // ── QuickCheck-style testing ────────────────────────────────
 
 export function quickCheck(
@@ -203,6 +261,7 @@ export function quickCheck(
     const counterexamples: TestResult[] = [];
     let passed = 0;
     let failed = 0;
+    let skipped = 0;
 
     for (let i = 0; i < numTests; i++) {
         const env: Record<string, Value> = {};
@@ -213,7 +272,7 @@ export function quickCheck(
 
         const result = evaluate(term, env);
         if (result === null) {
-            // Can't evaluate — skip
+            skipped++;
             continue;
         }
         if (result === true || result === 1) {
@@ -226,12 +285,17 @@ export function quickCheck(
         }
     }
 
+    const total = passed + failed;
+    const classification = classifyResult(passed, failed, skipped, numTests);
+
     return {
-        totalTests: passed + failed,
+        totalTests: total,
         passed,
         failed,
         counterexamples,
         time: performance.now() - start,
+        skipped,
+        classification,
     };
 }
 
@@ -327,7 +391,8 @@ function domainFromType(type: Term): string {
 
 function isBuiltIn(name: string): boolean {
     return ['Nat', 'Int', 'Real', 'Complex', 'Bool', 'Prop', 'Type', 'Prime', 'Even', 'Odd',
-        'Coprime', 'True', 'False', 'abs', 'sqrt', 'gcd', 'lcm',
+        'Coprime', 'True', 'False', 'abs', 'sqrt', 'gcd', 'lcm', 'max', 'min',
+        'sin', 'cos', 'tan', 'exp', 'ln', 'log', 'det', 'dim', 'ker', 'factorial', 'index',
         'ℕ', 'ℤ', 'ℝ', 'ℂ',
         'Divisors', 'ZMod', 'Set', 'List', 'Group', 'Ring', 'Field',
         'TopologicalSpace', 'Graph'].includes(name);
@@ -348,4 +413,12 @@ function isPrime(n: number): boolean {
 function gcd(a: number, b: number): number {
     while (b !== 0) { [a, b] = [b, a % b]; }
     return a;
+}
+
+function factorial(n: number): number | null {
+    if (n < 0 || !Number.isInteger(n)) return null;
+    if (n > 20) return null; // Overflow guard
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
 }

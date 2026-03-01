@@ -21,10 +21,12 @@ export function renderCodeSection(): void {
       tabs.querySelectorAll('.code-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       $('code-body').innerHTML = highlightedCode();
+      bindCopyButtons();
     });
   });
 
   $('code-body').innerHTML = highlightedCode();
+  bindCopyButtons();
 }
 
 function highlightedCode(): string {
@@ -40,7 +42,24 @@ function highlightedCode(): string {
     }
   }
 
-  return highlight(src, S.tab);
+  const highlighted = highlight(src, S.tab);
+  const rawCode = src;
+
+  return `<div style="position:relative"><button class="copy-btn" data-copy="${encodeURIComponent(rawCode)}" title="Copy to clipboard">📋 Copy</button><pre style="margin:0;overflow-x:auto">${highlighted}</pre></div>`;
+}
+
+/** Install copy button handlers on code body */
+function bindCopyButtons(): void {
+  document.querySelectorAll('.copy-btn[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const raw = decodeURIComponent((btn as HTMLElement).dataset.copy || '');
+      navigator.clipboard.writeText(raw).then(() => {
+        const el = btn as HTMLElement;
+        el.textContent = '✓ Copied';
+        setTimeout(() => { el.textContent = '📋 Copy'; }, 1500);
+      }).catch(() => { /* fallback: do nothing */ });
+    });
+  });
 }
 
 export function highlight(code: string, lang: string): string {

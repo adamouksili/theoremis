@@ -59,7 +59,9 @@ function emitDeclaration(decl: Declaration): string {
             const proof = decl.proof.length > 0
                 ? decl.proof.map(t => emitTactic(t, 1)).join('\n')
                 : '  admit';
-            return `Theorem ${decl.name} : ${params.length > 0 ? `forall ${params},\n    ` : ''}${stmt}.\nProof.\n${proof}\nQed.`;
+            const hasAdmit = proof.includes('admit');
+            const closing = hasAdmit ? 'Admitted.' : 'Qed.';
+            return `Theorem ${decl.name} : ${params.length > 0 ? `forall ${params},\n    ` : ''}${stmt}.\nProof.\n${proof}\n${closing}`;
         }
 
         case 'Lemma': {
@@ -68,7 +70,9 @@ function emitDeclaration(decl: Declaration): string {
             const proof = decl.proof.length > 0
                 ? decl.proof.map(t => emitTactic(t, 1)).join('\n')
                 : '  admit';
-            return `Lemma ${decl.name} : ${params.length > 0 ? `forall ${params},\n    ` : ''}${stmt}.\nProof.\n${proof}\nQed.`;
+            const hasAdmit = proof.includes('admit');
+            const closing = hasAdmit ? 'Admitted.' : 'Qed.';
+            return `Lemma ${decl.name} : ${params.length > 0 ? `forall ${params},\n    ` : ''}${stmt}.\nProof.\n${proof}\n${closing}`;
         }
     }
 }
@@ -98,10 +102,10 @@ function emitTerm(term: Term): string {
             return `{ ${term.param} : ${emitTerm(term.paramType)} & ${emitTerm(term.body)} }`;
 
         case 'Pair':
-            return `(${emitTerm(term.fst)}, ${emitTerm(term.snd)})`;
+            return `existT _ (${emitTerm(term.fst)}) (${emitTerm(term.snd)})`;
 
         case 'Proj':
-            return term.index === 1 ? `fst (${emitTerm(term.term)})` : `snd (${emitTerm(term.term)})`;
+            return term.index === 1 ? `projT1 (${emitTerm(term.term)})` : `projT2 (${emitTerm(term.term)})`;
 
         case 'LetIn':
             return `let ${term.name} : ${emitTerm(term.type)} := ${emitTerm(term.value)} in\n  ${emitTerm(term.body)}`;
@@ -109,9 +113,10 @@ function emitTerm(term: Term): string {
         case 'Sort':
             return term.universe.tag === 'Prop' ? 'Prop' : `Type`;
 
-        case 'Ind':
-            return `Inductive ${term.name} : ${emitTerm(term.type)} :=\n` +
-                term.constructors.map(c => `  | ${c.name} : ${emitTerm(c.type)}`).join('\n') + '.';
+        case 'Ind': {
+            const ctors = term.constructors.map(c => `  | ${c.name} : ${emitTerm(c.type)}`).join('\n');
+            return `Inductive ${term.name} : ${emitTerm(term.type)} :=\n${ctors}.`;
+        }
 
         case 'Match':
             return `match ${emitTerm(term.scrutinee)} with\n` +

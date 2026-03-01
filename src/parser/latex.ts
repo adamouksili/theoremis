@@ -5,7 +5,7 @@
 
 import type { Term, Tactic, Param, Declaration, Theorem, Definition, Lemma, IRModule, AxiomBundle } from '../core/ir';
 import { mk, Types, BUNDLES } from '../core/ir';
-import type { MathDocument, MathNode, ThmNode, DefNode, LemmaNode, ProofNode, HypothesisDecl, DependencyEdge } from './ast';
+import type { MathDocument, MathNode, ThmNode, DefNode, LemmaNode, ProofNode, HypothesisDecl, DependencyEdge, ParseError } from './ast';
 
 // ── Token types ─────────────────────────────────────────────
 
@@ -65,9 +65,10 @@ function tokenize(input: string): Token[] {
         }
 
         // Identifiers (including Greek letters)
-        if (/[a-zA-Zα-ωΑ-Ω_ℕℤℝℂ]/.test(ch)) {
+        // Note: _ is NOT part of identifiers in LaTeX — it's the subscript operator
+        if (/[a-zA-Zα-ωΑ-Ωℕℤℝℂ]/.test(ch)) {
             let ident = '';
-            while (i < input.length && /[a-zA-Zα-ωΑ-Ω_ℕℤℝℂ0-9']/.test(input[i])) { ident += input[i]; i++; }
+            while (i < input.length && /[a-zA-Zα-ωΑ-Ωℕℤℝℂ0-9']/.test(input[i])) { ident += input[i]; i++; }
             tokens.push({ type: 'IDENT', value: ident, pos: i - ident.length });
             continue;
         }
@@ -402,6 +403,21 @@ class ExprParser {
             func = mk.app(func, arg);
         }
 
+        // Handle subscripts as indexed variables: a_n, x_{i+1}
+        if (this.peek().type === 'UNDERSCORE') {
+            this.advance();
+            let subscript: Term;
+            if (this.peek().type === 'LBRACE') {
+                this.advance();
+                subscript = this.parse();
+                this.expect('RBRACE');
+            } else {
+                subscript = this.parseAtom();
+            }
+            // a_n → (index a n), f_n(x) → apply (index f n) x
+            func = mk.app(mk.var('index'), mk.pair(func, subscript));
+        }
+
         return func;
     }
 
@@ -651,6 +667,75 @@ class ExprParser {
             case '\\dots':
                 return mk.var('…');
 
+            // ── Math functions ──────────────────────────────
+            case '\\det': return mk.var('det');
+            case '\\dim': return mk.var('dim');
+            case '\\ker': return mk.var('ker');
+            case '\\gcd': return mk.var('gcd');
+            case '\\lcm': return mk.var('lcm');
+            case '\\max': return mk.var('max');
+            case '\\min': return mk.var('min');
+            case '\\sup': return mk.var('sup');
+            case '\\inf': return mk.var('inf');
+            case '\\log': return mk.var('log');
+            case '\\ln': return mk.var('ln');
+            case '\\exp': return mk.var('exp');
+            case '\\sin': return mk.var('sin');
+            case '\\cos': return mk.var('cos');
+            case '\\tan': return mk.var('tan');
+            case '\\sec': return mk.var('sec');
+            case '\\csc': return mk.var('csc');
+            case '\\cot': return mk.var('cot');
+            case '\\arcsin': return mk.var('arcsin');
+            case '\\arccos': return mk.var('arccos');
+            case '\\arctan': return mk.var('arctan');
+            case '\\sinh': return mk.var('sinh');
+            case '\\cosh': return mk.var('cosh');
+            case '\\tanh': return mk.var('tanh');
+
+            // ── Set builder notation ────────────────────────
+            case '\\{': {
+                // Try to parse set builder notation: \{ x \in S \mid P(x) \}
+                // Or a simple set literal: \{ 1, 2, 3 \}
+                const saved = this.pos;
+                try {
+                    const elem = this.parseIdent();
+                    if (this.matchCommand('\\in') || this.matchUnicode('∈')) {
+                        const domain = this.parseDomainExpr();
+                        if (this.matchCommand('\\mid') || this.match('PIPE') || this.matchCommand('\\colon') || this.matchCommand('\\vert')) {
+                            const pred = this.parse();
+                            // Expect \}
+                            if (this.matchCommand('\\}')) {
+                                return {
+                                    tag: 'App',
+                                    func: {
+                                        tag: 'App',
+                                        func: mk.var('SetComprehension'),
+                                        arg: domain,
+                                    },
+                                    arg: mk.lam(elem, domain, pred),
+                                } as Term;
+                            }
+                        }
+                    }
+                    // Fall back: not set builder
+                    this.pos = saved;
+                    const inner = this.parse();
+                    this.matchCommand('\\}');
+                    return inner;
+                } catch {
+                    this.pos = saved;
+                    return mk.hole('set_parse_error');
+                }
+            }
+
+            case '\\}':
+                return mk.hole('unexpected_rbrace');
+
+            case '\\mid':
+            case '\\vert':
+                return mk.var('|');
+
             default:
                 // Unknown command: treat as variable
                 return mk.var(cmd.value.slice(1) || 'unknown');
@@ -716,6 +801,7 @@ export function parseExpr(latex: string): Term {
 export function parseLatex(source: string): MathDocument {
     const nodes: MathNode[] = [];
     const dependencies: DependencyEdge[] = [];
+    const parseErrors: ParseError[] = [];
     const lines = source.split('\n');
 
     let i = 0;
@@ -745,6 +831,23 @@ export function parseLatex(source: string): MathDocument {
         if (defMatch) {
             const { node, endLine } = parseDefinitionEnv(lines, i, defMatch[2] || '');
             nodes.push(node);
+            i = endLine + 1;
+            continue;
+        }
+
+        // Math display environments (align, equation, gather, cases)
+        const mathEnvMatch = line.match(/\\begin\{(align\*?|equation\*?|gather\*?|cases|pmatrix|bmatrix)\}/);
+        if (mathEnvMatch) {
+            const envName = mathEnvMatch[1];
+            const endRegex = new RegExp(`\\\\end\\{${envName.replace('*', '\\*')}\\}`);
+            let endLine = i + 1;
+            const contentLines: string[] = [];
+            while (endLine < lines.length && !endRegex.test(lines[endLine])) {
+                contentLines.push(lines[endLine]);
+                endLine++;
+            }
+            // Math environments are absorbed into surrounding theorem/definition context
+            // They don't produce standalone nodes but the content is preserved for parsing
             i = endLine + 1;
             continue;
         }
@@ -780,6 +883,7 @@ export function parseLatex(source: string): MathDocument {
         nodes,
         dependencies,
         rawSource: source,
+        parseErrors,
     };
 }
 
@@ -994,18 +1098,29 @@ function extractTactics(proofText: string): Tactic[] {
     const tactics: Tactic[] = [];
     const lower = proofText.toLowerCase();
 
+    // Split proof text into sentences for line-by-line mapping
+    const sentences = proofText.split(/(?<=[.;])\s+/).filter(s => s.trim().length > 0);
+
     if (lower.includes('induction') || lower.includes('inductive')) {
-        // Try to find what we're inducting on
         const inductMatch = proofText.match(/induction\s+(?:on\s+)?\$?(\w+)\$?/i);
         tactics.push({ tag: 'Induction', name: inductMatch?.[1] || 'n' });
     }
-    if (lower.includes('by contradiction') || lower.includes('suppose not')) {
+    if (lower.includes('by contradiction') || lower.includes('suppose not') || lower.includes('assume for contradiction') || lower.includes('toward a contradiction')) {
         tactics.push({ tag: 'Apply', term: mk.axiomRef('LEM') });
     }
     if (lower.includes('by cases') || lower.includes('case analysis') || lower.includes('consider the case') || lower.includes('cases on')) {
         tactics.push({ tag: 'Cases', term: mk.hole('case_scrutinee') });
     }
-    if (lower.includes('simplif') || lower.includes('reduces to') || lower.includes('it follows')) {
+    if (lower.includes('without loss of generality') || lower.includes('wlog') || lower.includes('w.l.o.g')) {
+        tactics.push({
+            tag: 'LLMSuggest',
+            context: `WLOG argument: ${proofText.slice(0, 200)}`,
+        });
+    }
+    if (lower.includes('by the definition of') || lower.includes('by definition')) {
+        tactics.push({ tag: 'Simp', lemmas: [] });
+    }
+    if (lower.includes('simplif') || lower.includes('reduces to') || lower.includes('it follows') || lower.includes('hence') || lower.includes('thus') || lower.includes('therefore')) {
         tactics.push({ tag: 'Simp', lemmas: [] });
     }
     if (lower.includes('apply') || lower.includes('using')) {
@@ -1020,8 +1135,21 @@ function extractTactics(proofText: string): Tactic[] {
     if (lower.includes('cancel')) {
         tactics.push({ tag: 'Ring' });
     }
-    if (lower.includes('arithmetic') || lower.includes('trivial') || lower.includes('obvious')) {
+    if (lower.includes('arithmetic') || lower.includes('trivial') || lower.includes('obvious') || lower.includes('clear')) {
         tactics.push({ tag: 'Omega' });
+    }
+
+    // For any proof sentence that didn't match a tactic pattern, emit LLMSuggest
+    if (tactics.length === 0) {
+        for (const sentence of sentences) {
+            const s = sentence.trim();
+            if (s.length > 5) {
+                tactics.push({
+                    tag: 'LLMSuggest',
+                    context: s.slice(0, 200),
+                });
+            }
+        }
     }
 
     if (tactics.length === 0) {

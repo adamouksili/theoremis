@@ -1127,6 +1127,101 @@ body {
   }
 }
 
+/* ── Bridge Status Indicator ────────────────────────────────── */
+
+.bridge-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  cursor: default;
+}
+
+.bridge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bridge-dot.online {
+  background: var(--success);
+  box-shadow: 0 0 4px var(--success);
+}
+
+.bridge-dot.offline {
+  background: var(--text-muted);
+}
+
+.bridge-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ── Copy Button ───────────────────────────────────────────── */
+
+.copy-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.copy-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* ── Loading Spinner ───────────────────────────────────────── */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Trust badges (landing) ────────────────────────────────── */
+
+.landing-trust {
+  text-align: center;
+  padding: 32px 0 0;
+}
+
+.landing-trust-badges {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.landing-trust-badge {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
 /* ── Responsive ────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {
@@ -1155,5 +1250,14 @@ body {
     border-right: none;
     border-bottom: 1px solid var(--border);
     min-height: 150px;
+  }
+
+  .nav-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .bridge-status {
+    display: none;
   }
 }

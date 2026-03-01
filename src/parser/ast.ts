@@ -102,6 +102,14 @@ export interface MathDocument {
     nodes: MathNode[];
     dependencies: DependencyEdge[];
     rawSource: string;
+    parseErrors?: ParseError[];
+}
+
+export interface ParseError {
+    message: string;
+    line: number;
+    column: number;
+    length?: number;
 }
 
 export interface DependencyEdge {

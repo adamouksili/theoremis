@@ -71,12 +71,13 @@ export function landingShell(): string {
     <div class="landing-hero-content">
       <h1 class="landing-hero-title">
         Write proofs in LaTeX.<br/>
-        Verify them in <em>Lean&nbsp;4</em>.
+        Get <em>Lean&nbsp;4</em> scaffolding.
       </h1>
       <p class="landing-hero-sub">
         Theoremis translates informal mathematical prose into
-        machine-checked formal proofs — Lean&nbsp;4, Coq, and
-        Isabelle/HOL from a single LaTeX source.
+        structured proof skeletons for Lean&nbsp;4, Coq, and
+        Isabelle/HOL — a starting point for formal verification,
+        not a finished proof.
       </p>
       <div class="landing-hero-actions">
         <button class="landing-btn-primary" id="btn-launch-ide">
@@ -126,8 +127,8 @@ export function landingShell(): string {
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Verify</div>
-        <div class="landing-pipeline-step-desc">Kernel check + testing</div>
+        <div class="landing-pipeline-step-label">Test</div>
+        <div class="landing-pipeline-step-desc">QuickCheck + Mutation</div>
       </div>
     </div>
   </section>
@@ -136,36 +137,48 @@ export function landingShell(): string {
     <div class="landing-features-title">Design Principles</div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Kernel-verified, not heuristic</div>
+      <div class="landing-feature-title">Axiom Budget Tracking</div>
       <div class="landing-feature-desc">
-        Every emitted theorem is checked by Lean 4's type-theoretic kernel.
-        The output is a proof term — not a best-effort guess.
+        Toggle LEM, Choice, Funext, and more. Every emitted declaration
+        tracks which axioms it needs — so you know exactly what your
+        formalization assumes.
       </div>
     </div>
 
     <div class="landing-feature">
       <div class="landing-feature-title">One source, three backends</div>
       <div class="landing-feature-desc">
-        Write once in LaTeX. Emit valid Lean 4 (Mathlib), Coq (Gallina),
-        and Isabelle/HOL from the same intermediate representation.
+        Write once in LaTeX. Generate Lean 4 (Mathlib), Coq (Gallina),
+        and Isabelle/HOL proof skeletons from the same intermediate
+        representation. Proofs contain <code>sorry</code> placeholders
+        for you to fill in.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Sub-50ms pipeline</div>
+      <div class="landing-feature-title">Counterexample Testing</div>
       <div class="landing-feature-desc">
-        Parse → IR → type-check → emit completes in under 50 milliseconds.
-        Counterexample search and property-based testing run in parallel.
+        QuickCheck-style random testing and mutation analysis validate
+        that your hypotheses are necessary — not that your theorem is
+        proven. This is heuristic testing, not formal verification.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">LLM-assisted gap filling</div>
+      <div class="landing-feature-title">LLM-Assisted Gap Filling</div>
       <div class="landing-feature-desc">
-        When regex-based parsing can't resolve a hypothesis, structured
-        chain-of-thought prompting fills the gap — with explicit confidence
-        scores so you know exactly what was inferred.
+        When the parser can't resolve a hypothesis or tactic, structured
+        LLM prompting suggests candidates — with explicit confidence
+        scores so you know exactly what was inferred vs. parsed.
       </div>
+    </div>
+  </section>
+
+  <section class="landing-trust">
+    <div class="landing-trust-badges">
+      <span class="landing-trust-badge">Built with TypeScript + Lean 4</span>
+      <span class="landing-trust-badge">MIT Licensed</span>
+      <span class="landing-trust-badge"><a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a></span>
     </div>
   </section>
 

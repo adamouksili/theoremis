@@ -47,11 +47,19 @@ function shell(): string {
 <nav class="nav">
   <div class="nav-brand">
     <div class="nav-logo"><span>θ</span>Theoremis</div>
-    <div class="nav-subtitle">Formal Verification Pipeline</div>
+    <div class="nav-subtitle">Proof Scaffolding Pipeline</div>
   </div>
   <div class="nav-actions">
-    <input type="password" id="llm-key" placeholder="OpenAI API Key" style="width:130px; font-size:11px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text)" title="API key is stored in session memory only and never persisted to disk">
+    <input type="password" id="llm-key" placeholder="API Key (OpenAI / Anthropic / GitHub)" style="width:160px; font-size:11px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text)" title="API key is stored in session memory only. Supports OpenAI (sk-...), Anthropic (sk-ant-...), and GitHub PAT (ghp_...)">
+    <select id="llm-model" style="font-size:11px; padding:4px 6px; border-radius:4px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text)" title="LLM model selection">
+      <option value="auto">Auto-detect</option>
+      <option value="gpt-4o-mini">GPT-4o Mini</option>
+      <option value="gpt-4o">GPT-4o</option>
+      <option value="claude-sonnet-4-20250514">Claude Sonnet</option>
+      <option value="claude-haiku-3-5">Claude Haiku</option>
+    </select>
     <button class="btn icon-btn" id="btn-dark" title="Toggle dark mode">${iconMoon}</button>
+    <div class="bridge-status" id="bridge-status" title="Lean 4 Bridge: checking..."><span class="bridge-dot offline"></span><span class="bridge-label">Bridge</span></div>
     <label class="btn" id="btn-upload" title="Upload .tex file"><input type="file" id="file-input" accept=".tex,.txt,.latex" style="display:none">Upload .tex</label>
     <button class="btn" id="btn-download" title="Download output">Download</button>
     <button class="btn" id="btn-export-annotated" title="Export annotated LaTeX">Export ∇</button>
@@ -155,21 +163,49 @@ function bind() {
 
   // Restore API key from session storage (never persisted to disk)
   const keyInput = $<HTMLInputElement>('llm-key');
+  const modelSelect = $<HTMLSelectElement>('llm-model');
   const storedKey = sessionStorage.getItem('sigma-llm-key');
+  const storedModel = sessionStorage.getItem('sigma-llm-model');
   if (storedKey) keyInput.value = storedKey;
+  if (storedModel) modelSelect.value = storedModel;
   keyInput.addEventListener('change', () => {
     sessionStorage.setItem('sigma-llm-key', keyInput.value.trim());
+  });
+  modelSelect.addEventListener('change', () => {
+    sessionStorage.setItem('sigma-llm-model', modelSelect.value);
   });
 
   renderAxiomBudget();
   setRunCallback(run);
   initResizeHandles();
 
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && e.key === 'Enter') {
+      e.preventDefault();
+      run();
+    }
+    if (meta && e.key === 's') {
+      e.preventDefault();
+      downloadOutput();
+    }
+  });
+
   // Check Lean bridge on startup
   checkBridgeHealth().then(({ available, version }) => {
+    const dot = document.querySelector('#bridge-status .bridge-dot') as HTMLElement;
+    const label = document.querySelector('#bridge-status .bridge-label') as HTMLElement;
     if (available) {
       $('btn-lean').style.display = '';
       $('btn-lean').title = `Lean 4 available: ${version || 'connected'}`;
+      if (dot) { dot.className = 'bridge-dot online'; }
+      if (label) { label.textContent = version ? `Lean ${version}` : 'Connected'; }
+      $('bridge-status').title = `Lean 4 Bridge: connected (${version || ''})`;
+    } else {
+      if (dot) { dot.className = 'bridge-dot offline'; }
+      if (label) { label.textContent = 'Offline'; }
+      $('bridge-status').title = 'Lean 4 Bridge: offline — run npm run bridge';
     }
   });
 }
@@ -177,27 +213,53 @@ function bind() {
 // ── Lean 4 verification ─────────────────────────────────────
 
 async function runLeanVerify() {
-  if (!S.lean4) {
+  if (!S.ir) {
     setStatus('idle', 'Run Verify first');
     return;
   }
+
+  // Emit fresh Lean 4 code if not already done
+  if (!S.lean4) {
+    const { buildAxiomBundle } = await import('./render/axioms');
+    const bundle = buildAxiomBundle();
+    S.lean4 = emitLean4({ ...S.ir, axiomBundle: bundle });
+  }
+
   setStatus('processing', 'Verifying with Lean 4…');
+  const leanBtn = $('btn-lean');
+  leanBtn.innerHTML = `${iconShieldCheck} Compiling…`;
+  leanBtn.setAttribute('disabled', 'true');
+
   try {
     const result = await verifyLeanCode(S.lean4.code);
     const summary = formatLeanDiagnostics(result);
 
     // Show in the insights panel
     const insightsBody = $('insights-body');
-    insightsBody.innerHTML += `<div style="margin-top:8px;padding:8px;border-radius:4px;background:${result.success ? 'var(--success-light)' : 'var(--error-light)'}"><pre style="margin:0;font-size:11px;white-space:pre-wrap">${esc(summary)}</pre></div>`;
+    const statusBg = result.success ? 'var(--success-light)' : 'var(--error-light)';
+    insightsBody.innerHTML = `<div style="margin-top:8px;padding:8px;border-radius:4px;background:${statusBg}"><pre style="margin:0;font-size:11px;white-space:pre-wrap">${esc(summary)}</pre></div>` + insightsBody.innerHTML;
     $('bottom-panels').style.display = '';
 
-    setStatus(result.success ? 'done' : 'idle', result.success ? 'Lean 4: Verified' : 'Lean 4: Errors found');
+    if (result.success) {
+      setStatus('done', `Lean 4: ✓ Verified (${result.elapsed.toFixed(0)}ms)`);
+      leanBtn.innerHTML = `${iconShieldCheck} ✓ Verified`;
+    } else {
+      const errCount = result.errors.length;
+      setStatus('idle', `Lean 4: ✗ ${errCount} error${errCount !== 1 ? 's' : ''}`);
+      leanBtn.innerHTML = `${iconShieldCheck} ✗ ${errCount} errors`;
+    }
   } catch {
     setStatus('idle', 'Lean bridge not running');
     const insightsBody = $('insights-body');
-    insightsBody.innerHTML += `<div style="margin-top:8px;padding:8px;border-radius:4px;background:var(--error-light);font-size:11px">Lean bridge not running. Start with: <code>npm run bridge</code></div>`;
+    insightsBody.innerHTML = `<div style="margin-top:8px;padding:8px;border-radius:4px;background:var(--error-light);font-size:11px">
+      <strong>Lean bridge not running.</strong><br/>
+      Start it with: <code>npm run bridge</code><br/>
+      The bridge starts a local server on port 9473 that compiles Lean 4 code via the <code>lean</code> binary.
+    </div>` + insightsBody.innerHTML;
     $('bottom-panels').style.display = '';
+    leanBtn.innerHTML = `${iconShieldCheck} Lean 4`;
   }
+  leanBtn.removeAttribute('disabled');
 }
 
 // ── Annotated LaTeX export ──────────────────────────────────
@@ -402,11 +464,19 @@ async function run() {
   }
 
   setStatus('processing', 'Compiling…');
+  const verifyBtn = $('btn-verify');
+  verifyBtn.innerHTML = '<span class="spinner"></span> Processing…';
+  verifyBtn.setAttribute('disabled', 'true');
 
   try {
     // Resolve \input{} / \include{} directives before parsing
     const resolved = await resolveMultiFile(S.source, new InMemoryFileProvider());
     const doc = parseLatex(resolved.source);
+
+    // Show parse errors if any
+    if (doc.parseErrors && doc.parseErrors.length > 0) {
+      console.warn(`[Parser] ${doc.parseErrors.length} parse warning(s):`, doc.parseErrors.map(e => e.message));
+    }
 
     // LLM-assisted hypothesis refinement (async, non-blocking)
     const apiKey = sessionStorage.getItem('sigma-llm-key');
@@ -455,11 +525,15 @@ async function run() {
     renderDependencyGraph();
     renderKaTeXPreview(S.source);
     renderAll();
+    verifyBtn.innerHTML = `${iconCheck} Verify`;
+    verifyBtn.removeAttribute('disabled');
   } catch (e: unknown) {
     S.ir = null; S.tc = null; S.lean4 = null; S.coq = null; S.isabelle = null;
     S.report = null; S.randomReport = null;
     renderSummary('warn', iconWarn, 'Could not parse input', 'Check your LaTeX syntax');
     setStatus('idle', 'Parse error');
+    verifyBtn.innerHTML = `${iconCheck} Verify`;
+    verifyBtn.removeAttribute('disabled');
     console.error(e);
   }
 }
