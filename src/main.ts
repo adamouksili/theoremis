@@ -78,9 +78,19 @@ function navigateToSharedProof(base64: string): void {
   requestAnimationFrame(() => loadSharedProof(base64));
 }
 
-/** Handle hash-based routing */
+/** Handle hash-based routing (also handles subdomain detection) */
 function route(): void {
   const hash = window.location.hash.replace('#', '');
+  const host = window.location.hostname;
+
+  // Subdomain detection — if Vercel serves the app before redirect fires
+  if (!hash || hash === '') {
+    if (host === 'playground.theoremis.com') { showPlayground(); return; }
+    if (host === 'api.theoremis.com') { showApiDocs(); return; }
+    if (host === 'classroom.theoremis.com') { showClassroom(); return; }
+    if (host === 'ide.theoremis.com') { navigateToIDE(); return; }
+  }
+
   if (hash.startsWith('p/')) {
     // Shared proof URL: #p/BASE64ENCODED
     const base64 = hash.slice(2);

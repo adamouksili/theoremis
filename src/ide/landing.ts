@@ -61,9 +61,9 @@ export function landingShell(): string {
       <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
-      <a class="landing-nav-link" href="#playground">Playground</a>
-      <a class="landing-nav-link" href="#api">API</a>
-      <a class="landing-nav-link" href="#classroom">Classroom</a>
+      <a class="landing-nav-link" href="https://playground.theoremis.com">Playground</a>
+      <a class="landing-nav-link" href="https://api.theoremis.com">API</a>
+      <a class="landing-nav-link" href="https://classroom.theoremis.com">Classroom</a>
       <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
       <button class="landing-nav-link" data-scroll="features">Features</button>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
@@ -364,7 +364,7 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
   const scrollBtns = document.querySelectorAll<HTMLElement>('[data-scroll]');
 
   if (btnLaunch) btnLaunch.addEventListener('click', onLaunchIDE);
-  if (btnPlayground) btnPlayground.addEventListener('click', () => { window.location.hash = 'playground'; });
+  if (btnPlayground) btnPlayground.addEventListener('click', () => { window.location.href = 'https://playground.theoremis.com'; });
   if (navLaunch) navLaunch.addEventListener('click', onLaunchIDE);
 
   if (btnDownload) {

@@ -9,5 +9,31 @@
                 { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
             ]
         }
+    ],
+    "redirects": [
+        {
+            "source": "/",
+            "has": [{ "type": "host", "value": "playground.theoremis.com" }],
+            "destination": "https://theoremis.com/#playground",
+            "permanent": false
+        },
+        {
+            "source": "/",
+            "has": [{ "type": "host", "value": "api.theoremis.com" }],
+            "destination": "https://theoremis.com/#api",
+            "permanent": false
+        },
+        {
+            "source": "/",
+            "has": [{ "type": "host", "value": "classroom.theoremis.com" }],
+            "destination": "https://theoremis.com/#classroom",
+            "permanent": false
+        },
+        {
+            "source": "/",
+            "has": [{ "type": "host", "value": "ide.theoremis.com" }],
+            "destination": "https://theoremis.com/#ide",
+            "permanent": false
+        }
     ]
 }

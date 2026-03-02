@@ -11,11 +11,11 @@ export function apiDocsShell(): string {
       <span class="landing-nav-title">Theoremis</span>
     </div>
     <div class="landing-nav-links">
-      <a href="#" class="landing-nav-link">Home</a>
-      <a href="#playground" class="landing-nav-link">Playground</a>
-      <a href="#api" class="landing-nav-link" style="color:var(--l-accent)">API</a>
-      <a href="#classroom" class="landing-nav-link">Classroom</a>
-      <a href="#ide" class="landing-nav-link">IDE</a>
+      <a href="https://theoremis.com" class="landing-nav-link">Home</a>
+      <a href="https://playground.theoremis.com" class="landing-nav-link">Playground</a>
+      <a href="https://api.theoremis.com" class="landing-nav-link" style="color:var(--l-accent)">API</a>
+      <a href="https://classroom.theoremis.com" class="landing-nav-link">Classroom</a>
+      <a href="https://ide.theoremis.com" class="landing-nav-link">IDE</a>
     </div>
   </nav>
 
