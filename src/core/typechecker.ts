@@ -399,7 +399,7 @@ export function termsEqual(a: Term, b: Term, ctx?: TypeContext): boolean {
         }
         case 'LetIn': {
             const lb = nb as typeof na;
-            return na.name === lb.name && termsEqual(na.type, lb.type) && termsEqual(na.value, lb.value) && termsEqual(na.body, lb.body);
+            return termsEqual(na.type, lb.type) && termsEqual(na.value, lb.value) && termsEqual(na.body, substitute(lb.body, lb.name, { tag: 'Var', name: na.name }));
         }
         case 'Ind': {
             const ib = nb as typeof na;

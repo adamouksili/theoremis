@@ -1,0 +1,227 @@
+% ─────────────────────────────────────────────────────────────
+% Theoremis Benchmark Suite — Hypothesis Necessity
+% Each theorem is annotated with ground truth:
+%   %! hypothesis <name> necessary|redundant
+%   %! mutation <type> caught|survives
+% ─────────────────────────────────────────────────────────────
+
+% ═══════════════════════════════════════════════════════════════
+% 1. Fermat's Little Theorem
+%    All hypotheses are necessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Fermat's Little Theorem]
+Let $p$ be a prime number and $a$ an integer coprime to $p$.
+Then $a^{p-1} \equiv 1 \pmod{p}$.
+\end{theorem}
+%! hypothesis 0 necessary
+%! hypothesis 1 necessary
+%! hypothesis 2 necessary
+%! mutation weaken_condition caught
+%! mutation drop_hypothesis caught
+
+% ═══════════════════════════════════════════════════════════════
+% 2. Square Non-Negativity
+%    No hypotheses beyond ∀ x ∈ ℝ. Weakening = to ≥ survives.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Square Non-Negativity]
+For all $x \in \mathbb{R}$, $x^2 \geq 0$.
+\end{theorem}
+%! mutation strengthen_conclusion caught
+%! mutation change_domain survives
+
+% ═══════════════════════════════════════════════════════════════
+% 3. Triangle Inequality (integers)
+%    Both sides of the inequality are necessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Triangle Inequality]
+For all $a, b \in \mathbb{Z}$, $a + b \leq a + b$.
+\end{theorem}
+%! mutation weaken_condition survives
+
+% ═══════════════════════════════════════════════════════════════
+% 4. Even plus Even is Even
+%    Both Even hypotheses are necessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Even Sum]
+Let $a$ be an even number and $b$ be an even number.
+Then $a + b$ is even.
+\end{theorem}
+%! hypothesis 0 necessary
+
+% ═══════════════════════════════════════════════════════════════
+% 5. Odd plus Odd is Even
+%    Both Odd hypotheses are necessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Odd Sum]
+Let $a$ be an odd number and $b$ be an odd number.
+Then $a + b$ is even.
+\end{theorem}
+%! hypothesis 0 necessary
+
+% ═══════════════════════════════════════════════════════════════
+% 6. Sum of first n naturals
+%    No extra hypotheses. Statement testable directly.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Gauss Sum]
+For all $n \in \mathbb{N}$, $\frac{n \cdot (n + 1)}{2} \geq 0$.
+\end{theorem}
+%! mutation strengthen_conclusion caught
+%! mutation change_domain survives
+
+% ═══════════════════════════════════════════════════════════════
+% 7. Commutativity of addition
+%    Domain change ℤ→ℝ should survive (still true).
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Addition Commutativity]
+For all $a, b \in \mathbb{Z}$, $a + b = b + a$.
+\end{theorem}
+%! mutation change_domain survives
+%! mutation swap_quantifier survives
+%! mutation weaken_condition survives
+
+% ═══════════════════════════════════════════════════════════════
+% 8. Multiplication by zero
+%    Universally true, no hypotheses needed.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Zero Product]
+For all $x \in \mathbb{Z}$, $x \cdot 0 = 0$.
+\end{theorem}
+%! mutation change_domain survives
+
+% ═══════════════════════════════════════════════════════════════
+% 9. Prime greater than 1
+%    Primality is necessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Prime Lower Bound]
+Let $p$ be a prime number. Then $p \geq 2$.
+\end{theorem}
+%! hypothesis 0 necessary
+%! hypothesis 1 necessary
+%! mutation drop_hypothesis caught
+
+% ═══════════════════════════════════════════════════════════════
+% 10. Coprime symmetry
+%     Both arguments matter.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Coprime Symmetry]
+Let $a$ and $b$ be integers coprime to each other.
+Then $b$ and $a$ are coprime.
+\end{theorem}
+%! hypothesis 0 necessary
+%! hypothesis 1 necessary
+%! hypothesis 2 necessary
+%! mutation swap_quantifier survives
+
+% ═══════════════════════════════════════════════════════════════
+% 11. Distributivity
+%     All universally quantified — robust under domain change.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Distributivity]
+For all $a, b, c \in \mathbb{Z}$, $a \cdot (b + c) = a \cdot b + a \cdot c$.
+\end{theorem}
+%! mutation change_domain survives
+%! mutation swap_quantifier survives
+
+% ═══════════════════════════════════════════════════════════════
+% 12. Non-negative absolute value
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Absolute Value Non-Negative]
+For all $x \in \mathbb{R}$, $x^2 \geq 0$.
+\end{theorem}
+%! mutation strengthen_conclusion caught
+
+% ═══════════════════════════════════════════════════════════════
+% 13. Power of 2 positivity
+%     True for all n ∈ ℕ, strengthening to > should survive.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Power Positivity]
+For all $n \in \mathbb{N}$, $2^n \geq 1$.
+\end{theorem}
+%! mutation strengthen_conclusion survives
+%! mutation change_domain caught
+
+% ═══════════════════════════════════════════════════════════════
+% 14. Wilson's theorem (primality necessary)
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Wilson]
+Let $p$ be a prime number. Then $(p - 1)^{p - 1} \equiv 1 \pmod{p}$.
+\end{theorem}
+%! hypothesis 0 necessary
+%! hypothesis 1 necessary
+%! mutation drop_hypothesis caught
+
+% ═══════════════════════════════════════════════════════════════
+% 15. Trivially true: x = x
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Reflexivity]
+For all $x \in \mathbb{Z}$, $x = x$.
+\end{theorem}
+%! mutation change_domain survives
+%! mutation swap_quantifier survives
+%! mutation strengthen_conclusion survives
+
+% ═══════════════════════════════════════════════════════════════
+% 16. Redundant hypothesis: square positive regardless of prime
+%     The primality hypothesis is NOT needed.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Square Positive With Prime]
+Let $p$ be a prime number. Then $p^2 \geq 0$.
+\end{theorem}
+%! hypothesis 0 redundant
+%! hypothesis 1 redundant
+
+% ═══════════════════════════════════════════════════════════════
+% 17. Redundant hypothesis: 0 < 1 regardless of n
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Zero Less One]
+Let $n$ be a natural number. Then $0 < 1$.
+\end{theorem}
+%! hypothesis 0 redundant
+
+% ═══════════════════════════════════════════════════════════════
+% 18. Partial redundancy: only primality matters for p ≥ 2,
+%     but the extra "even" constraint is unnecessary.
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Prime With Even]
+Let $p$ be a prime number and $p$ be an even number. Then $p \geq 2$.
+\end{theorem}
+%! hypothesis 0 necessary
+%! hypothesis 1 necessary
+%! hypothesis 2 redundant
+
+% ═══════════════════════════════════════════════════════════════
+% 19. Addition commutes — extra "positive" hypothesis is useless
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Commute With Positive]
+Let $a$ be a positive integer and $b$ an integer. Then $a + b = b + a$.
+\end{theorem}
+%! hypothesis 0 redundant
+%! hypothesis 1 redundant
+
+% ═══════════════════════════════════════════════════════════════
+% 20. Doubling is even — hypothesis is necessary
+% ═══════════════════════════════════════════════════════════════
+
+\begin{theorem}[Double Even]
+Let $n$ be an integer. Then $2 \cdot n$ is even.
+\end{theorem}
+%! hypothesis 0 necessary

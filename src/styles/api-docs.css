@@ -1,0 +1,456 @@
+/* ─────────────────────────────────────────────────────────────
+   Theoremis · API Documentation Styles
+   Developer-focused, clean reference page
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Hero ──────────────────────────────────────────────────── */
+
+.api-hero {
+    text-align: center;
+    padding: 80px 48px 48px;
+    border-bottom: 1px solid var(--l-border);
+}
+
+.api-hero-badge {
+    display: inline-block;
+    font-family: var(--l-font-mono);
+    font-size: 12px;
+    color: var(--l-accent);
+    background: var(--l-accent-dim);
+    border: 1px solid rgba(201, 168, 108, 0.25);
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 20px;
+    letter-spacing: 0.04em;
+}
+
+.api-hero-title {
+    font-family: var(--l-font-serif);
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: var(--l-text-strong);
+    margin: 0 0 16px;
+    letter-spacing: -0.02em;
+}
+
+.api-hero-sub {
+    font-family: var(--l-font-sans);
+    font-size: 1.1rem;
+    color: var(--l-text-muted);
+    max-width: 600px;
+    margin: 0 auto 28px;
+    line-height: 1.6;
+}
+
+.api-hero-base {
+    font-family: var(--l-font-mono);
+    font-size: 0.95rem;
+    color: var(--l-accent);
+    background: var(--l-bg-code);
+    border: 1px solid var(--l-border-strong);
+    border-radius: 8px;
+    padding: 10px 24px;
+    display: inline-block;
+}
+
+/* ── Section titles ────────────────────────────────────────── */
+
+.api-section-title {
+    font-family: var(--l-font-serif);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--l-text-strong);
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+}
+
+/* ── Quick start ───────────────────────────────────────────── */
+
+.api-quickstart {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 48px 40px;
+}
+
+.api-note {
+    font-family: var(--l-font-sans);
+    font-size: 0.85rem;
+    color: var(--l-text-muted);
+    margin-top: 16px;
+}
+
+.api-note code {
+    font-family: var(--l-font-mono);
+    background: var(--l-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* ── Code blocks ───────────────────────────────────────────── */
+
+.api-code-block {
+    background: var(--l-bg-code);
+    border: 1px solid var(--l-border-strong);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.api-code-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--l-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.api-code-method {
+    font-family: var(--l-font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.api-code-method.post {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.api-code-method.get {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.api-code-path {
+    font-family: var(--l-font-mono);
+    font-size: 0.85rem;
+    color: var(--l-text);
+}
+
+.api-code-body {
+    padding: 16px 20px;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.api-code-body code {
+    font-family: var(--l-font-mono);
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--l-text);
+    white-space: pre;
+}
+
+/* ── Endpoints ─────────────────────────────────────────────── */
+
+.api-endpoints {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 48px;
+}
+
+.api-endpoint {
+    background: var(--l-bg-surface);
+    border: 1px solid var(--l-border-strong);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.api-endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.api-endpoint-path {
+    font-family: var(--l-font-mono);
+    font-size: 0.9rem;
+    color: var(--l-text-strong);
+}
+
+.api-endpoint-desc {
+    font-family: var(--l-font-sans);
+    font-size: 0.9rem;
+    color: var(--l-text-muted);
+    margin: 0 0 16px;
+    line-height: 1.5;
+}
+
+/* ── Field docs ────────────────────────────────────────────── */
+
+.api-endpoint-fields {
+    margin-bottom: 16px;
+}
+
+.api-field-header {
+    font-family: var(--l-font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--l-text-muted);
+    margin-bottom: 8px;
+}
+
+.api-field {
+    display: grid;
+    grid-template-columns: 120px 80px 60px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--l-border);
+    font-size: 0.82rem;
+}
+
+.api-field:last-child {
+    border-bottom: none;
+}
+
+.api-field-name {
+    font-family: var(--l-font-mono);
+    color: var(--l-accent);
+    font-size: 0.82rem;
+}
+
+.api-field-type {
+    font-family: var(--l-font-mono);
+    color: var(--l-text-muted);
+    font-size: 0.78rem;
+}
+
+.api-field-req {
+    font-family: var(--l-font-sans);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--l-text-faint);
+}
+
+.api-field-desc {
+    font-family: var(--l-font-sans);
+    color: var(--l-text);
+    font-size: 0.82rem;
+}
+
+/* ── Collapsible examples ──────────────────────────────────── */
+
+.api-endpoint-example {
+    margin-top: 12px;
+}
+
+.api-endpoint-example summary {
+    font-family: var(--l-font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--l-text-muted);
+    cursor: pointer;
+    padding: 6px 0;
+    user-select: none;
+}
+
+.api-endpoint-example summary:hover {
+    color: var(--l-accent);
+}
+
+.api-endpoint-example .api-code-body {
+    background: var(--l-bg-code);
+    border: 1px solid var(--l-border);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+/* ── Axiom bundles ─────────────────────────────────────────── */
+
+.api-bundles {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 48px;
+}
+
+.api-bundles-desc {
+    font-family: var(--l-font-sans);
+    font-size: 0.9rem;
+    color: var(--l-text-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.api-bundles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.api-bundle-card {
+    background: var(--l-bg-surface);
+    border: 1px solid var(--l-border-strong);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.api-bundle-name {
+    font-family: var(--l-font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--l-text-strong);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.api-bundle-badge {
+    font-family: var(--l-font-sans);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--l-accent);
+    background: var(--l-accent-dim);
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+.api-bundle-desc {
+    font-family: var(--l-font-sans);
+    font-size: 0.78rem;
+    color: var(--l-text-muted);
+    line-height: 1.4;
+}
+
+/* ── Auth tiers ────────────────────────────────────────────── */
+
+.api-auth {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 48px;
+}
+
+.api-auth-tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.api-auth-tier {
+    background: var(--l-bg-surface);
+    border: 1px solid var(--l-border-strong);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+}
+
+.api-auth-tier.pro {
+    border-color: rgba(201, 168, 108, 0.3);
+}
+
+.api-auth-tier-name {
+    font-family: var(--l-font-serif);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--l-text-strong);
+    margin-bottom: 8px;
+}
+
+.api-auth-tier-desc {
+    font-family: var(--l-font-sans);
+    font-size: 0.82rem;
+    color: var(--l-text-muted);
+    margin-bottom: 12px;
+}
+
+.api-auth-tier-desc code {
+    font-family: var(--l-font-mono);
+    font-size: 0.78rem;
+    background: var(--l-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.api-auth-tier-limit {
+    font-family: var(--l-font-mono);
+    font-size: 0.85rem;
+    color: var(--l-accent);
+}
+
+/* ── Error table ───────────────────────────────────────────── */
+
+.api-errors {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 48px 80px;
+}
+
+.api-error-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--l-font-sans);
+    font-size: 0.85rem;
+}
+
+.api-error-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--l-text-muted);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--l-border-strong);
+}
+
+.api-error-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--l-border);
+    color: var(--l-text);
+}
+
+.api-error-table code {
+    font-family: var(--l-font-mono);
+    font-size: 0.82rem;
+    color: var(--l-accent);
+    background: var(--l-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .api-hero {
+        padding: 48px 24px 32px;
+    }
+
+    .api-hero-title {
+        font-size: 1.8rem;
+    }
+
+    .api-quickstart,
+    .api-endpoints,
+    .api-bundles,
+    .api-auth,
+    .api-errors {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .api-field {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .api-auth-tiers {
+        grid-template-columns: 1fr;
+    }
+
+    .api-bundles-grid {
+        grid-template-columns: 1fr;
+    }
+}

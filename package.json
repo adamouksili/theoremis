@@ -1,8 +1,11 @@
 {
   "name": "theoremis",
-  "version": "0.1.0-alpha",
+  "version": "0.2.0",
   "type": "module",
-  "description": "LaTeX to Lean 4/Coq/Isabelle proof scaffolding — parse mathematical prose into formal proof skeletons with axiom tracking and counterexample testing",
+  "description": "Hypothesis necessity linter for mathematical proofs — mutation-based analysis of LaTeX theorem statements",
+  "bin": {
+    "theoremis": "./cli/lint.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -10,10 +13,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bridge": "npx tsx src/bridge/lean-server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:tex": "npx tsx cli/lint.ts",
+    "bench": "npx tsx bench/run.ts"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
+    "@vercel/node": "^5.6.10",
     "typescript": "^5.7.0",
     "vite": "^6.1.0",
     "vitest": "^4.0.18"

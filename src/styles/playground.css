@@ -1,0 +1,270 @@
+/* ─────────────────────────────────────────────────────────────
+   Theoremis  ·  Playground Styles
+   Minimal, fast-loading, dark theme
+   ───────────────────────────────────────────────────────────── */
+
+.pg {
+  --pg-bg: #0a0a0f;
+  --pg-surface: #12121a;
+  --pg-border: rgba(255, 255, 255, 0.08);
+  --pg-text: #e0ddd4;
+  --pg-dim: #8a8780;
+  --pg-accent: #c9a86c;
+  --pg-green: #4ade80;
+  --pg-red: #f87171;
+  --pg-yellow: #fbbf24;
+  --pg-mono: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+  --pg-sans: 'Inter', -apple-system, system-ui, sans-serif;
+
+  min-height: 100vh;
+  background: var(--pg-bg);
+  color: var(--pg-text);
+  font-family: var(--pg-sans);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.pg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--pg-border);
+}
+
+.pg-logo {
+  font-family: var(--pg-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pg-accent);
+  text-decoration: none;
+}
+
+.pg-tagline {
+  font-size: 13px;
+  color: var(--pg-dim);
+}
+
+/* ── Main ───────────────────────────────────────────────── */
+
+.pg-main {
+  flex: 1;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Input ──────────────────────────────────────────────── */
+
+.pg-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pg-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pg-textarea {
+  width: 100%;
+  background: var(--pg-surface);
+  border: 1px solid var(--pg-border);
+  border-radius: 8px;
+  color: var(--pg-text);
+  font-family: var(--pg-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 16px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.pg-textarea:focus {
+  border-color: var(--pg-accent);
+}
+
+.pg-btn {
+  margin-top: 12px;
+  background: var(--pg-accent);
+  color: #0a0a0f;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.pg-btn:hover { opacity: 0.85; }
+.pg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Output ─────────────────────────────────────────────── */
+
+.pg-output {
+  min-height: 100px;
+}
+
+.pg-placeholder,
+.pg-loading {
+  color: var(--pg-dim);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.pg-error {
+  color: var(--pg-red);
+  font-size: 14px;
+  padding: 16px;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.pg-error code {
+  font-family: var(--pg-mono);
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* ── Theorem card ───────────────────────────────────────── */
+
+.pg-theorem {
+  background: var(--pg-surface);
+  border: 1px solid var(--pg-border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.pg-thm-name {
+  font-family: var(--pg-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pg-accent);
+  margin: 0 0 16px 0;
+}
+
+.pg-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--pg-dim);
+  margin: 16px 0 8px 0;
+}
+
+.pg-section-label:first-of-type {
+  margin-top: 0;
+}
+
+.pg-no-hyps {
+  color: var(--pg-dim);
+  font-size: 13px;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* ── Result rows ────────────────────────────────────────── */
+
+.pg-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.pg-row:last-child { border-bottom: none; }
+
+.pg-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pg-param {
+  font-family: var(--pg-mono);
+  font-size: 13px;
+  color: var(--pg-text);
+  min-width: 120px;
+}
+
+.pg-label {
+  font-size: 13px;
+  margin-bottom: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pg-witness,
+.pg-desc {
+  font-size: 12px;
+  color: var(--pg-dim);
+  margin-left: auto;
+}
+
+/* Status colors */
+.pg-necessary .pg-icon { color: var(--pg-green); }
+.pg-necessary .pg-label { color: var(--pg-green); }
+.pg-redundant .pg-icon { color: var(--pg-yellow); }
+.pg-redundant .pg-label { color: var(--pg-yellow); }
+.pg-caught .pg-icon { color: var(--pg-green); }
+.pg-caught .pg-label { color: var(--pg-green); }
+.pg-survived .pg-icon { color: var(--pg-dim); }
+.pg-survived .pg-label { color: var(--pg-dim); }
+
+/* ── Meta ───────────────────────────────────────────────── */
+
+.pg-meta {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--pg-dim);
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.pg-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--pg-dim);
+  border-top: 1px solid var(--pg-border);
+}
+
+.pg-footer a {
+  color: var(--pg-accent);
+  text-decoration: none;
+}
+
+.pg-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .pg-main { padding: 24px 16px; }
+  .pg-header { padding: 16px; }
+  .pg-param { min-width: 80px; }
+  .pg-row { flex-wrap: wrap; }
+  .pg-witness, .pg-desc { margin-left: 28px; }
+}

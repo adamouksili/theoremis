@@ -1,134 +1,117 @@
 # Theoremis
 
-**LaTeX → Formal Proof Scaffolding** · Fully open source (MIT)
-
-Write mathematics naturally in LaTeX. Get structured proof skeletons in **Lean 4**, **Coq**, and **Isabelle/HOL** — a starting point for formal verification, not a finished proof.
+**Hypothesis necessity linter for mathematical proofs** — mutation-based analysis of LaTeX theorem statements.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
-![Tests](https://img.shields.io/badge/Tests-388%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-428%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Open Source](https://img.shields.io/badge/Open%20Source-100%25-brightgreen)
 
 **[Live Demo → theoremis.com](https://theoremis.com)** · **[Source Code](https://github.com/adamouksili/theoremis)**
 
-> **100% open source.** The entire codebase — IDE, parser, type-checker, emitters, counterexample engine, and Lean 4 bridge — is MIT-licensed. Fork it, modify it, self-host it.
-
 ## What It Does
 
-Theoremis bridges the gap between informal mathematical writing and formal proof assistants:
+Theoremis reads LaTeX theorem statements and detects **unnecessary hypotheses** via mutation testing. For each hypothesis, the engine drops it, then searches for counterexamples to the weakened statement. If no counterexample survives, the hypothesis may be redundant.
 
-1. **Parse** — Write theorems, definitions, and proofs in standard LaTeX. The parser handles common environments (`theorem`, `definition`, `lemma`, `proof`) and mathematical notation including quantifiers, set operations, modular arithmetic, and more.
-2. **Formalize** — Automatic translation to a λΠω intermediate representation with axiom tracking. Each declaration records which axioms it requires (LEM, Choice, Funext, etc.).
-3. **Emit** — Generate Lean 4, Coq, and Isabelle/HOL source code. Proofs contain `sorry`/`admit` placeholders where the tool cannot fill in proof terms.
-4. **Test** — QuickCheck-style random testing and mutation-based counterexample search. This is **heuristic testing**, not formal verification — it validates that hypotheses are necessary, not that theorems are proven.
+```
+Input:  \begin{theorem} Let $p$ be prime and $a$ coprime to $p$. Then $a^{p-1} ≡ 1 \pmod{p}$. \end{theorem}
+Output: ● p prime — necessary (dropping breaks statement: a=2, p=4 → 2³ ≡ 0 mod 4)
+        ● a coprime to p — necessary (dropping breaks statement: a=3, p=3 → 3² ≡ 0 mod 3)
+```
 
-## Limitations
+### Core Technique
 
-> **Honest assessment of what Theoremis does and does not do:**
+1. **Parse** LaTeX into a λΠω intermediate representation with full quantifier/predicate structure
+2. **Mutate** — 7 mutation operators: `drop_hypothesis`, `weaken_condition`, `swap_quantifier`, `perturb_constant`, `change_domain`, `negate_conclusion`, `strengthen_conclusion`
+3. **Evaluate** — BigInt modular arithmetic evaluator with domain-aware random input generation
+4. **Report** — Classify each hypothesis as necessary or potentially redundant
 
-- **Proofs contain `sorry` placeholders.** The tool produces proof *scaffolding*, not verified proofs. You must fill in the actual proof terms in your chosen proof assistant.
-- **The parser handles a subset of LaTeX.** While coverage includes common mathematical environments and ~60+ LaTeX commands, it does not handle all valid LaTeX. Complex nested environments, custom macros, and unusual formatting may produce `Hole` (parse error) nodes.
-- **Emitted code is syntactically valid but not semantically checked.** The Lean 4/Coq/Isabelle output should parse without syntax errors, but the type-checking and proof obligations are left to the target proof assistant.
-- **QuickCheck testing is probabilistic.** Low pass rates on random testing often reflect constrained domains (e.g., Fermat's Little Theorem requires prime inputs), not theorem falsity.
-- **LLM suggestions are best-effort.** When enabled, GPT-4o suggests tactics, but these are unverified suggestions, not proofs.
+## Benchmark Results
+
+On our 20-theorem annotated benchmark suite (`bench/fixtures/`):
+
+| Metric | Hypothesis Detection | Mutation Detection |
+|--------|--------------------:|-------------------:|
+| Precision | **100.0%** | **90.9%** |
+| Recall | **100.0%** | **100.0%** |
+| F1 | **100.0%** | **95.2%** |
+
+```bash
+npm run bench  # Reproduce these numbers
+```
 
 ## Quick Start
 
+### CLI Linter
+
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
+npx tsx cli/lint.ts paper.tex          # Lint a single file
+npx tsx cli/lint.ts *.tex --format json # Machine-readable output
+npx tsx cli/lint.ts *.tex --format github # GitHub Actions annotations
 ```
 
-Then open [http://localhost:5173](http://localhost:5173) and paste your LaTeX.
+### Web IDE
+
+```bash
+npm run dev    # Start dev server at http://localhost:5173
+npm run build  # Production build
+npm test       # Run all 428 tests
+```
 
 ## Architecture
 
 ```
-LaTeX Input → Parser → Math-AST → λΠω IR → Type-Checker
-                                       ↓
-                              ┌────────┼────────┐
-                              ▼        ▼        ▼
-                           Lean 4    Coq    Isabelle
-                              ↓
-                        QuickCheck Testing
-                        Mutation Analysis
+LaTeX → Parser → Math-AST → λΠω IR → Mutation Engine
+                                          │
+                              ┌───────────┼───────────┐
+                              ▼           ▼           ▼
+                        drop_hypothesis  weaken    perturb
+                              │           │           │
+                              └───────────┼───────────┘
+                                          ▼
+                                  BigInt Evaluator
+                                  (counterexample search)
+                                          ▼
+                                  Hypothesis Report
 ```
 
-### Modules
+### Key Modules
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| **Core** | `src/core/` | λΠω IR types, type-checker, pretty-printer |
-| **Parser** | `src/parser/` | LaTeX → Math-AST, discourse analysis |
-| **Emitters** | `src/emitters/` | IR → Lean 4 / Coq / Isabelle code generation |
-| **Engine** | `src/engine/` | QuickCheck evaluator, counterexample search, mutation |
-| **IDE** | `src/ide/` | Browser-based IDE with axiom budget, proof steps, lens |
+| **IR** | `src/core/ir.ts` | λΠω types: 18 term variants, axiom bundles |
+| **Type-Checker** | `src/core/typechecker.ts` | Bidirectional inference, alpha-equivalence |
+| **Parser** | `src/parser/latex.ts` | Recursive descent, ~60+ LaTeX commands |
+| **Mutator** | `src/engine/mutator.ts` | 7 mutation operators on theorem IR |
+| **Evaluator** | `src/engine/evaluator.ts` | BigInt `modPow`, domain-aware generators |
+| **Counterexample** | `src/engine/counterexample.ts` | Orchestrates mutation + evaluation |
+| **CLI** | `cli/lint.ts` | Hypothesis linter CLI (text/json/github output) |
 
-## Features
+## Limitations
 
-- **Axiom Budget Sidebar** — Toggle LEM, Choice, Funext, Propext, Quotient, Univalence
-- **Multi-Backend Output** — Lean 4 (Mathlib), Coq (Gallina), Isabelle/HOL
-- **Notation Lens** — Click any declaration to see its IR and backend code
-- **Proof Step Viewer** — Tactic-by-tactic proof display with ghost suggestions
-- **Counterexample Insights** — Mutation testing to validate hypothesis necessity
-- **QuickCheck Random Testing** — Property-based testing of theorem statements
+- **Heuristic, not a proof.** "No counterexample found" ≠ "hypothesis is necessary." The engine tests ~500 random inputs per mutation. False negatives are possible for highly constrained domains.
+- **Parser covers a subset of LaTeX.** ~60+ commands, common environments. Custom macros, TikZ, unusual formatting produce parse errors.
+- **Numeric domains only.** QuickCheck generates ℕ, ℤ, ℝ (float), Bool, Prime. Abstract algebra, topology, measure theory are out of scope.
+- **The type-checker checks well-formedness, not proof validity.** It does not verify that a proof is correct — it validates IR structure.
 
-## Example
+## Proof Assistant Emitters
 
-```latex
-\begin{theorem}[Fermat's Little Theorem]
-Let $p$ be a prime number and $a$ an integer coprime to $p$.
-Then $a^{p-1} \equiv 1 \pmod{p}$.
-\end{theorem}
+Theoremis also emits proof scaffolding for **Lean 4**, **Coq**, and **Isabelle/HOL** (with `sorry`/`admit` placeholders). These are secondary to the linter — they produce starting points, not finished proofs.
 
-\begin{proof}
-We proceed by induction on $a$. Consider the set $\{1, 2, \ldots, p-1\}$.
-Since $a$ is coprime to $p$, multiplication by $a$ modulo $p$ is a bijection.
-\end{proof}
+## GitHub Action
+
+```yaml
+- uses: adamouksili/theoremis-lint@v1
+  with:
+    files: 'paper/**/*.tex'
+    format: 'github'
 ```
 
-## Lean 4 Bridge (Self-Hosted)
-
-Theoremis includes a **self-hosted** verification bridge that you run locally. It compiles emitted Lean 4 code against **Mathlib** in real-time on your own machine — no external server required.
-
-```bash
-# 1. Install Lean 4 via elan
-curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh
-
-# 2. Create a Mathlib Lake project (one-time, ~5-15 min)
-cd ..  # parent of theoremis repo
-lake init theoremis-lean-env math
-
-# 3. Start the bridge
-cd theoremis
-npm run bridge
-```
-
-The bridge runs on port 9473 with full Mathlib tactic support (`norm_num`, `omega`, `ring`, `simp`, `positivity`, `linarith`). The IDE auto-connects when it detects the bridge. See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md) for full setup instructions.
-
-## VS Code Extension (Preview)
-
-A scaffolded VS Code extension lives in `vscode-extension/`. It registers commands for verifying LaTeX documents via the Lean bridge and emitting formal code. **Status: preview / not yet published.**
-
-```bash
-cd vscode-extension
-npm install
-npm run compile
-# Then press F5 in VS Code to launch an Extension Development Host
-```
+See [`github-action/README.md`](github-action/README.md).
 
 ## Contributing
 
-Contributions welcome! Please open an issue first to discuss what you'd like to change.
+Contributions welcome. Please open an issue first.
 
 ## License
 

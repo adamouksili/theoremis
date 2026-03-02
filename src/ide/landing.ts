@@ -61,6 +61,8 @@ export function landingShell(): string {
       <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
+      <a class="landing-nav-link" href="#api">API</a>
+      <a class="landing-nav-link" href="#classroom">Classroom</a>
       <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
       <button class="landing-nav-link" data-scroll="features">Features</button>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
@@ -78,8 +80,11 @@ export function landingShell(): string {
         between informal math and <strong>machine-checked verification</strong>.
       </p>
       <div class="landing-hero-actions">
+        <button class="landing-btn-primary" id="btn-playground">
+          Try the Playground
+        </button>
         <button class="landing-btn-primary" id="btn-launch-ide">
-          Try the IDE
+          Full IDE
         </button>
         <button class="landing-btn-secondary" id="btn-download-ide">
           View Source on GitHub
@@ -352,11 +357,13 @@ function revealHtml(html: string, count: number): string {
 
 export function bindLanding(onLaunchIDE: NavigateCallback): void {
   const btnLaunch = document.getElementById('btn-launch-ide');
+  const btnPlayground = document.getElementById('btn-playground');
   const navLaunch = document.getElementById('nav-launch-ide');
   const btnDownload = document.getElementById('btn-download-ide');
   const scrollBtns = document.querySelectorAll<HTMLElement>('[data-scroll]');
 
   if (btnLaunch) btnLaunch.addEventListener('click', onLaunchIDE);
+  if (btnPlayground) btnPlayground.addEventListener('click', () => { window.location.hash = 'playground'; });
   if (navLaunch) navLaunch.addEventListener('click', onLaunchIDE);
 
   if (btnDownload) {

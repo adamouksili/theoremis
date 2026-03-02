@@ -1,0 +1,60 @@
+name: 'Theoremis Lint'
+description: 'Hypothesis necessity linter for LaTeX math — detects unnecessary hypotheses via mutation testing'
+author: 'Adam Ouksili'
+
+branding:
+  icon: 'search'
+  color: 'yellow'
+
+inputs:
+  files:
+    description: 'Files or directories to lint (space-separated). Default: current directory'
+    required: false
+    default: '.'
+  axiom-bundle:
+    description: 'Axiom bundle name (ClassicalMath, Algebraic, NumberTheory, Analysis, Topology, LinearAlgebra, SetTheory, CategoryTheory)'
+    required: false
+    default: 'ClassicalMath'
+  num-tests:
+    description: 'Number of random tests per mutation'
+    required: false
+    default: '500'
+
+outputs:
+  theorems:
+    description: 'Number of theorems analyzed'
+  unnecessary:
+    description: 'Number of potentially unnecessary hypotheses found'
+  report:
+    description: 'JSON report of all results'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Theoremis
+      shell: bash
+      run: npm install -g theoremis@latest || npm install theoremis@latest
+
+    - name: Run Theoremis lint
+      id: lint
+      shell: bash
+      run: |
+        set +e
+        ARGS="--format github --bundle ${{ inputs.axiom-bundle }} --tests ${{ inputs.num-tests }}"
+        OUTPUT=$(npx theoremis ${{ inputs.files }} $ARGS)
+        EXIT_CODE=$?
+        echo "$OUTPUT"
+
+        # JSON output for structured reporting
+        JSON_ARGS="--format json --bundle ${{ inputs.axiom-bundle }} --tests ${{ inputs.num-tests }}"
+        JSON_OUTPUT=$(npx theoremis ${{ inputs.files }} $JSON_ARGS 2>/dev/null || echo '{}')
+        echo "report<<EOF" >> $GITHUB_OUTPUT
+        echo "$JSON_OUTPUT" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE
