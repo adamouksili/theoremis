@@ -4,7 +4,7 @@
 const MOOGLE_API = 'https://www.moogle.ai/api/search';
 const LEANSEARCH_API = 'https://leansearch.net/api/search';
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({ results });
             }
         }
-    } catch { /* fall through */ }
+    } catch (e) { /* fall through to LeanSearch */ }
 
     // Fallback: LeanSearch
     try {
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
 
             return res.status(200).json({ results });
         }
-    } catch { /* fall through */ }
+    } catch (e) { /* fall through */ }
 
     return res.status(200).json({ results: [] });
-}
+};
