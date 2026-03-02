@@ -1,14 +1,17 @@
 # Theoremis
 
-**LaTeX → Formal Proof Scaffolding**
+**LaTeX → Formal Proof Scaffolding** · Fully open source (MIT)
 
 Write mathematics naturally in LaTeX. Get structured proof skeletons in **Lean 4**, **Coq**, and **Isabelle/HOL** — a starting point for formal verification, not a finished proof.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
 ![Tests](https://img.shields.io/badge/Tests-388%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Open Source](https://img.shields.io/badge/Open%20Source-100%25-brightgreen)
 
-**[Live Demo → theoremis.com](https://theoremis.com)**
+**[Live Demo → theoremis.com](https://theoremis.com)** · **[Source Code](https://github.com/adamouksili/theoremis)**
+
+> **100% open source.** The entire codebase — IDE, parser, type-checker, emitters, counterexample engine, and Lean 4 bridge — is MIT-licensed. Fork it, modify it, self-host it.
 
 ## What It Does
 
@@ -93,16 +96,24 @@ Since $a$ is coprime to $p$, multiplication by $a$ modulo $p$ is a bijection.
 \end{proof}
 ```
 
-## Lean 4 Bridge
+## Lean 4 Bridge (Self-Hosted)
 
-Theoremis includes a local verification bridge that compiles emitted Lean 4 code against **Mathlib** in real-time:
+Theoremis includes a **self-hosted** verification bridge that you run locally. It compiles emitted Lean 4 code against **Mathlib** in real-time on your own machine — no external server required.
 
 ```bash
-# Start the Lean bridge (requires Lean 4 + elan installed)
+# 1. Install Lean 4 via elan
+curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh
+
+# 2. Create a Mathlib Lake project (one-time, ~5-15 min)
+cd ..  # parent of theoremis repo
+lake init theoremis-lean-env math
+
+# 3. Start the bridge
+cd theoremis
 npm run bridge
 ```
 
-The bridge runs on port 9473 and uses a sibling Lake project (`theoremis-lean-env/`) with Mathlib for full tactic support (`norm_num`, `omega`, `ring`, `simp`, `positivity`, `linarith`). See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md) for setup instructions.
+The bridge runs on port 9473 with full Mathlib tactic support (`norm_num`, `omega`, `ring`, `simp`, `positivity`, `linarith`). The IDE auto-connects when it detects the bridge. See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md) for full setup instructions.
 
 ## VS Code Extension (Preview)
 
