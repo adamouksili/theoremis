@@ -27,6 +27,7 @@ import { renderSummary } from './render/summary';
 import { renderCodeSection } from './render/code';
 import { renderInsights, renderRandomTests } from './render/insights';
 import { renderProofSteps } from './render/proof-steps';
+import { renderMathlibSearch } from './render/mathlib-search';
 import { renderAxiomBudget, getActiveAxioms, buildAxiomBundle, renderDepGraph, setRunCallback } from './render/axioms';
 import { iconMoon, iconSun, iconCheck, iconWarn, iconShieldCheck } from './icons';
 
@@ -120,6 +121,10 @@ function shell(): string {
       <div class="bottom-panel">
         <div class="bottom-header">Proof Steps</div>
         <div class="bottom-body" id="proof-body"></div>
+      </div>
+      <div class="bottom-panel">
+        <div class="bottom-header">Mathlib Search</div>
+        <div class="bottom-body" id="mathlib-body"></div>
       </div>
     </div>
     <div class="status-line">
@@ -620,6 +625,7 @@ function renderBottomPanels() {
   renderInsights();
   renderRandomTests();
   renderProofSteps();
+  renderMathlibSearch();
 }
 
 // ── (Axiom budget delegated to ./render/axioms.ts) ──────────
