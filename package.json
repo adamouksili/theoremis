@@ -6,9 +6,6 @@
   "engines": {
     "node": ">=20"
   },
-  "bin": {
-    "theoremis": "./cli/lint.ts"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

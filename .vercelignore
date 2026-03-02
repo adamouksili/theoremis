@@ -1,0 +1,12 @@
+.git
+node_modules
+bench/
+cli/
+docs/
+github-action/
+vscode-extension/
+*.pdf
+*.md
+!README.md
+src/__tests__/
+test-pipeline.ts

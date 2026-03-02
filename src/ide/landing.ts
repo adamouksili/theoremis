@@ -74,12 +74,12 @@ export function landingShell(): string {
   <section class="landing-hero">
     <div class="landing-hero-content">
       <h1 class="landing-hero-title">
-        Write math. Get proofs<br/>working in <em>Lean&nbsp;4</em>.
+        Write math.<br/>Get proofs working in <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
-        The AI-powered assistant that helps mathematicians and students
-        write, explore, and verify formal proofs — bridging the gap
-        between informal math and <strong>machine-checked verification</strong>.
+        Parse LaTeX theorems, detect unnecessary hypotheses via mutation testing,
+        emit Lean 4 / Coq / Isabelle scaffolding, and verify proofs through a
+        live Lean bridge — all from your browser.
       </p>
       <div class="landing-hero-actions">
         <a class="landing-btn-primary" href="#playground">
@@ -186,11 +186,42 @@ export function landingShell(): string {
     </div>
   </section>
 
+  <section class="landing-tech" id="tech">
+    <div class="landing-tech-title">Under the Hood</div>
+    <div class="landing-tech-grid">
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">IR</div>
+        <div class="landing-tech-value">λΠω with 18 term variants, dependent types, universe polymorphism</div>
+      </div>
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">Type-Checker</div>
+        <div class="landing-tech-value">Bidirectional inference with alpha-equivalence and axiom tracking</div>
+      </div>
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">Mutation</div>
+        <div class="landing-tech-value">7 operators — drop, weaken, swap quantifier, perturb, change domain, negate, strengthen</div>
+      </div>
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">Evaluator</div>
+        <div class="landing-tech-value">BigInt modular arithmetic with domain-aware random input generation</div>
+      </div>
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">Emitters</div>
+        <div class="landing-tech-value">Lean 4 (Mathlib-aware), Coq, Isabelle/HOL — with sorry/admit placeholders</div>
+      </div>
+      <div class="landing-tech-item">
+        <div class="landing-tech-label">Benchmark</div>
+        <div class="landing-tech-value">100% F1 on hypothesis detection, 95.2% F1 on mutation detection (20 theorems)</div>
+      </div>
+    </div>
+  </section>
+
   <section class="landing-trust">
     <div class="landing-trust-badges">
-      <span class="landing-trust-badge">Built with TypeScript + Lean 4</span>
-      <span class="landing-trust-badge">MIT Licensed</span>
+      <span class="landing-trust-badge">~15,000 Lines of TypeScript</span>
       <span class="landing-trust-badge">428 Tests Passing</span>
+      <span class="landing-trust-badge">100% Hypothesis Detection F1</span>
+      <span class="landing-trust-badge">MIT Licensed</span>
       <span class="landing-trust-badge"><a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a></span>
     </div>
   </section>
@@ -201,13 +232,13 @@ export function landingShell(): string {
       I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics
       student at <strong>Rutgers University</strong>. I built Theoremis because
       the gap between what mathematicians <em>write</em> and what proof assistants
-      <em>accept</em> felt unnecessary — and the existing tools for bridging
-      that gap were either research prototypes or required deep expertise.
+      <em>accept</em> felt unnecessary — and no existing tool bridged it well.
     </p>
     <p class="landing-founder-text">
-      Theoremis is building the AI-powered IDE that makes formal verification
-      accessible to anyone who can write math. It's still early, and there's a
-      lot more to do — but the foundation is real, and it's growing.
+      Theoremis is ~15,000 lines of TypeScript with 428 tests, a real type-checker
+      built on λΠω type theory, 7 mutation operators for hypothesis testing, and
+      emitters for three proof assistants. It runs in the browser, as a CLI, as a
+      REST API, and as a VS Code extension.
     </p>
     <p class="landing-founder-sign">— Adam Ouksili</p>
   </section>
