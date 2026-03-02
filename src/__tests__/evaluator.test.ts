@@ -295,3 +295,72 @@ describe('quickCheck: classification', () => {
         expect(typeof report.skipped).toBe('number');
     });
 });
+
+// ── Hypothesis-aware classification tests ────────────────────
+
+describe('classifyResult: precondition-aware', () => {
+    it('returns indeterminate when many preconditions skipped and low qualifying rate', () => {
+        // 500 passed, 100 failed, 0 skipped, 600 total, but 4400 precondition-skipped
+        // qualifyingRate = 600/5000 = 0.12 < 0.5 → indeterminate
+        expect(classifyResult(500, 100, 0, 600, 4400)).toBe('indeterminate');
+    });
+
+    it('returns indeterminate when preconditions present and passRate > 0.1', () => {
+        // 100 pass, 400 fail, 0 skip, 500 total, 100 precondition-skipped
+        // passRate = 0.2 > 0.1 AND hasPreconditions → indeterminate
+        expect(classifyResult(100, 400, 0, 500, 100)).toBe('indeterminate');
+    });
+
+    it('returns verified when all qualifying tests pass with preconditions', () => {
+        // 200 pass, 0 fail, 0 skip, 200 total, 800 precondition-skipped
+        expect(classifyResult(200, 0, 0, 200, 800)).toBe('verified');
+    });
+
+    it('returns likely_true when few qualifying tests pass with preconditions', () => {
+        // 15 pass, 0 fail, 0 skip, 15 total, 985 precondition-skipped
+        expect(classifyResult(15, 0, 0, 15, 985)).toBe('likely_true');
+    });
+
+    it('returns indeterminate when too few qualifying tests with preconditions', () => {
+        // 3 pass, 0 fail, 0 skip, 3 total, 997 precondition-skipped
+        expect(classifyResult(3, 0, 0, 3, 997)).toBe('indeterminate');
+    });
+
+    it('returns falsified only without preconditions and very low pass rate', () => {
+        // No preconditions: 2 pass, 98 fail → falsified
+        expect(classifyResult(2, 98, 0, 100, 0)).toBe('falsified');
+    });
+
+    it('returns likely_false only without preconditions', () => {
+        // No preconditions: 30 pass, 70 fail → likely_false
+        expect(classifyResult(30, 70, 0, 100, 0)).toBe('likely_false');
+    });
+});
+
+describe('quickCheck: precondition params', () => {
+    it('reports preconditionSkipped count when params provided', () => {
+        // Simple tautology x = x, but with a Prime(x) precondition
+        const term = mk.binOp('=', mk.var('x'), mk.var('x'));
+        const vars = [{ name: 'x', domain: 'Int' }];
+        const params = [
+            { name: 'h_prime', type: mk.app(mk.var('Prime'), mk.var('x')), implicit: false },
+        ];
+        const result = quickCheck(term, vars, 200, params);
+        // Many values of x won't be prime, so preconditionSkipped should be > 0
+        expect(result.preconditionSkipped).toBeGreaterThan(0);
+        // Among qualifying (prime) inputs, x = x is always true
+        expect(result.failed).toBe(0);
+    });
+
+    it('passes all tests for tautology even with preconditions', () => {
+        const term = mk.binOp('=', mk.var('n'), mk.var('n'));
+        const vars = [{ name: 'n', domain: 'Nat' }];
+        const params = [
+            { name: 'h_even', type: mk.app(mk.var('Even'), mk.var('n')), implicit: false },
+        ];
+        const result = quickCheck(term, vars, 200, params);
+        expect(result.preconditionSkipped).toBeGreaterThan(0);
+        expect(result.passed).toBeGreaterThan(0);
+        expect(result.failed).toBe(0);
+    });
+});

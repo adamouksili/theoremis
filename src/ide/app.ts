@@ -65,6 +65,7 @@ function shell(): string {
     <button class="btn" id="btn-export-annotated" title="Export annotated LaTeX">Export ∇</button>
     <button class="btn" id="btn-sample">Try an example</button>
     <button class="btn" id="btn-lean" title="Verify with Lean 4" style="display:none">${iconShieldCheck} Lean 4</button>
+    <button class="btn" id="btn-share" title="Copy shareable link">Share</button>
     <button class="btn btn-primary" id="btn-verify">${iconCheck} Verify</button>
   </div>
 </nav>
@@ -140,6 +141,7 @@ function bind() {
   $('btn-download').addEventListener('click', downloadOutput);
   $('btn-lean').addEventListener('click', runLeanVerify);
   $('btn-export-annotated').addEventListener('click', downloadAnnotatedLaTeX);
+  $('btn-share').addEventListener('click', shareCurrentProof);
 
   // Dark mode
   $('btn-dark').addEventListener('click', toggleDarkMode);
@@ -278,6 +280,42 @@ function downloadAnnotatedLaTeX() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ── Share proof as URL ──────────────────────────────────────
+
+function shareCurrentProof(): void {
+  const source = S.source.trim();
+  if (!source) return;
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(source)));
+    const url = `${window.location.origin}/#p/${encoded}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = $('btn-share');
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.classList.add('btn-success');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('btn-success'); }, 2000);
+    }).catch(() => {
+      // Fallback: prompt with URL
+      window.prompt('Copy this shareable link:', url);
+    });
+  } catch {
+    // Encoding error — ignore
+  }
+}
+
+/** Load shared proof content into the editor */
+export function loadSharedProof(base64: string): void {
+  try {
+    const decoded = decodeURIComponent(escape(atob(base64)));
+    const ed = $<HTMLTextAreaElement>('editor');
+    ed.value = decoded;
+    S.source = decoded;
+    run();
+  } catch {
+    // Invalid base64 — ignore silently
+  }
 }
 
 // ── Dark mode ───────────────────────────────────────────────

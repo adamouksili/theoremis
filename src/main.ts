@@ -4,7 +4,7 @@
 
 import './styles/index.css';
 import './styles/landing.css';
-import { initApp } from './ide/app';
+import { initApp, loadSharedProof } from './ide/app';
 import { landingShell, bindLanding, stopTypingAnimation } from './ide/landing';
 
 type View = 'landing' | 'ide';
@@ -30,10 +30,28 @@ function navigateToIDE(): void {
   initApp();
 }
 
+/** Navigate to IDE with shared proof content */
+function navigateToSharedProof(base64: string): void {
+  stopTypingAnimation();
+  currentView = 'ide';
+  document.body.classList.remove('dark');
+  initApp();
+  // Small delay to let the DOM render before loading content
+  requestAnimationFrame(() => loadSharedProof(base64));
+}
+
 /** Handle hash-based routing */
 function route(): void {
   const hash = window.location.hash.replace('#', '');
-  if (hash === 'ide') {
+  if (hash.startsWith('p/')) {
+    // Shared proof URL: #p/BASE64ENCODED
+    const base64 = hash.slice(2);
+    if (currentView === 'ide') {
+      loadSharedProof(base64);
+    } else {
+      navigateToSharedProof(base64);
+    }
+  } else if (hash === 'ide') {
     navigateToIDE();
   } else {
     showLanding();

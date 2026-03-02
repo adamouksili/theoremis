@@ -517,3 +517,76 @@ describe('Isabelle emitter: extended validation', () => {
         expect(result.code).toContain('datatype MyBool');
     });
 });
+
+// ── Garbage body detection tests ────────────────────────────
+
+describe('Lean 4 emitter: garbage body detection', () => {
+    function garbageDef(body: typeof simpleDef['body']): Definition {
+        return { tag: 'Definition', name: 'test_def', params: [], returnType: mk.sort({ tag: 'Type', level: 0 }), body };
+    }
+
+    it('replaces single uppercase letter body with sorry', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.var('A'))]));
+        expect(result.code).toContain(':=\n  sorry');
+        expect(result.code).not.toMatch(/\bA\b.*:=/);
+    });
+
+    it('replaces English word body with sorry', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.var('the'))]));
+        expect(result.code).toContain('sorry');
+    });
+
+    it('replaces "For" (English word, not keyword) with sorry', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.var('For'))]));
+        expect(result.code).toContain('sorry');
+    });
+
+    it('does NOT replace legitimate numeric literal body', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.nat(42))]));
+        expect(result.code).toContain('42');
+        expect(result.code).not.toContain('sorry');
+    });
+
+    it('does NOT replace legitimate variable name body', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.var('myValue'))]));
+        expect(result.code).toContain('myValue');
+        expect(result.code).not.toContain('sorry');
+    });
+
+    it('does NOT replace legitimate expression body', () => {
+        const result = emitLean4(makeModule([garbageDef(mk.binOp('+', mk.nat(1), mk.nat(2)))]));
+        expect(result.code).not.toContain('sorry');
+    });
+});
+
+describe('Coq emitter: garbage body detection', () => {
+    function garbageDef(body: typeof simpleDef['body']): Definition {
+        return { tag: 'Definition', name: 'test_def', params: [], returnType: mk.sort({ tag: 'Type', level: 0 }), body };
+    }
+
+    it('replaces single uppercase letter body with admit', () => {
+        const result = emitCoq(makeModule([garbageDef(mk.var('A'))]));
+        expect(result.code).toContain('admit');
+    });
+
+    it('does NOT replace legitimate body', () => {
+        const result = emitCoq(makeModule([garbageDef(mk.nat(42))]));
+        expect(result.code).toContain('42');
+    });
+});
+
+describe('Isabelle emitter: garbage body detection', () => {
+    function garbageDef(body: typeof simpleDef['body']): Definition {
+        return { tag: 'Definition', name: 'test_def', params: [], returnType: mk.sort({ tag: 'Type', level: 0 }), body };
+    }
+
+    it('replaces single uppercase letter body with undefined', () => {
+        const result = emitIsabelle(makeModule([garbageDef(mk.var('A'))]));
+        expect(result.code).toContain('undefined');
+    });
+
+    it('does NOT replace legitimate body', () => {
+        const result = emitIsabelle(makeModule([garbageDef(mk.nat(42))]));
+        expect(result.code).toContain('42');
+    });
+});
