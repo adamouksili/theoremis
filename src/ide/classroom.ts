@@ -12,8 +12,10 @@ export function classroomShell(): string {
     </div>
     <div class="landing-nav-links">
       <a href="#" class="landing-nav-link">Home</a>
+      <a href="#playground" class="landing-nav-link">Playground</a>
       <a href="#api" class="landing-nav-link">API</a>
       <a href="#classroom" class="landing-nav-link" style="color:var(--l-accent)">Classroom</a>
+      <a href="#ide" class="landing-nav-link">IDE</a>
     </div>
   </nav>
 

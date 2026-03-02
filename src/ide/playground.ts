@@ -19,12 +19,26 @@ Then $a^{p-1} \\equiv 1 \\pmod{p}$.
 
 export function playgroundShell(): string {
     return `<div class="pg">
-  <header class="pg-header">
-    <a href="#" class="pg-logo">Theoremis</a>
-    <span class="pg-tagline">Hypothesis Necessity Linter</span>
-  </header>
+  <nav class="landing-nav">
+    <div class="landing-nav-brand">
+      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img">
+      <span class="landing-nav-title">Theoremis</span>
+    </div>
+    <div class="landing-nav-links">
+      <a href="#" class="landing-nav-link">Home</a>
+      <a href="#playground" class="landing-nav-link" style="color:var(--l-accent)">Playground</a>
+      <a href="#api" class="landing-nav-link">API</a>
+      <a href="#classroom" class="landing-nav-link">Classroom</a>
+      <a href="#ide" class="landing-nav-link">IDE</a>
+    </div>
+  </nav>
 
   <main class="pg-main">
+    <div class="pg-hero">
+      <h1 class="pg-hero-title">Hypothesis Necessity Linter</h1>
+      <p class="pg-hero-sub">Paste a LaTeX theorem — see which hypotheses are necessary and which might be redundant.</p>
+    </div>
+
     <div class="pg-input-section">
       <label class="pg-label" for="pg-input">Paste a LaTeX theorem</label>
       <textarea id="pg-input" class="pg-textarea" spellcheck="false" rows="8">${DEFAULT_THEOREM}</textarea>
@@ -36,12 +50,12 @@ export function playgroundShell(): string {
     </div>
   </main>
 
-  <footer class="pg-footer">
-    <a href="#ide">Full IDE</a>
+  <footer class="landing-footer">
+    <span>Built on λΠω type theory</span>
     <span>·</span>
-    <a href="https://github.com/adamouksili/theoremis" target="_blank">Source</a>
+    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a>
     <span>·</span>
-    <span>MIT License</span>
+    <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>
 </div>`;
 }

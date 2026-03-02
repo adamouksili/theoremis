@@ -12,13 +12,15 @@ export function apiDocsShell(): string {
     </div>
     <div class="landing-nav-links">
       <a href="#" class="landing-nav-link">Home</a>
-      <a href="#ide" class="landing-nav-link">IDE</a>
+      <a href="#playground" class="landing-nav-link">Playground</a>
       <a href="#api" class="landing-nav-link" style="color:var(--l-accent)">API</a>
+      <a href="#classroom" class="landing-nav-link">Classroom</a>
+      <a href="#ide" class="landing-nav-link">IDE</a>
     </div>
   </nav>
 
   <header class="api-hero">
-    <div class="api-hero-badge">v0.1.0</div>
+    <div class="api-hero-badge">v0.2.0</div>
     <h1 class="api-hero-title">Semantic Math API</h1>
     <p class="api-hero-sub">
       Parse LaTeX into structured IR, emit to Lean 4 / Coq / Isabelle,

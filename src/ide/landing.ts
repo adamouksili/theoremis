@@ -61,6 +61,7 @@ export function landingShell(): string {
       <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
+      <a class="landing-nav-link" href="#playground">Playground</a>
       <a class="landing-nav-link" href="#api">API</a>
       <a class="landing-nav-link" href="#classroom">Classroom</a>
       <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
@@ -182,7 +183,7 @@ export function landingShell(): string {
     <div class="landing-trust-badges">
       <span class="landing-trust-badge">Built with TypeScript + Lean 4</span>
       <span class="landing-trust-badge">MIT Licensed</span>
-      <span class="landing-trust-badge">369 Tests Passing</span>
+      <span class="landing-trust-badge">428 Tests Passing</span>
       <span class="landing-trust-badge"><a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a></span>
     </div>
   </section>
