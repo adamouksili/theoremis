@@ -5,8 +5,10 @@
 Write mathematics naturally in LaTeX. Get structured proof skeletons in **Lean 4**, **Coq**, and **Isabelle/HOL** — a starting point for formal verification, not a finished proof.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
+![Tests](https://img.shields.io/badge/Tests-388%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Alpha-orange)
+
+**[Live Demo → theoremis.com](https://theoremis.com)**
 
 ## What It Does
 
@@ -90,6 +92,17 @@ We proceed by induction on $a$. Consider the set $\{1, 2, \ldots, p-1\}$.
 Since $a$ is coprime to $p$, multiplication by $a$ modulo $p$ is a bijection.
 \end{proof}
 ```
+
+## Lean 4 Bridge
+
+Theoremis includes a local verification bridge that compiles emitted Lean 4 code against **Mathlib** in real-time:
+
+```bash
+# Start the Lean bridge (requires Lean 4 + elan installed)
+npm run bridge
+```
+
+The bridge runs on port 9473 and uses a sibling Lake project (`theoremis-lean-env/`) with Mathlib for full tactic support (`norm_num`, `omega`, `ring`, `simp`, `positivity`, `linarith`). See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md) for setup instructions.
 
 ## VS Code Extension (Preview)
 

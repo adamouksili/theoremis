@@ -1,6 +1,6 @@
 # Lean Bridge Setup Guide
 
-This guide explains how to connect Theoremis's IDE to a local Lean 4 installation for real-time verification feedback.
+Set up the Theoremis Lean 4 verification bridge with full Mathlib tactic support.
 
 ## Prerequisites
 
@@ -8,88 +8,127 @@ This guide explains how to connect Theoremis's IDE to a local Lean 4 installatio
 |------------|---------|-------|
 | Node.js | ≥18 | `node --version` |
 | Lean 4 (via elan) | ≥4.x.0 | `lean --version` |
-| Mathlib | latest | `lake build` in project |
 
 ## Step 1: Install elan + Lean 4
 
 ```bash
-# Install elan (Lean's version manager — like rustup for Lean)
 curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
-
-# Verify installation
 source ~/.profile  # or restart terminal
 lean --version
-# Expected: leanprover/lean4:v4.x.0
 ```
 
-## Step 2: Create a Lean 4 Project (Optional)
+## Step 2: Create the Mathlib Lake Project
 
-If you want Mathlib support for the bridge, create a Lean project:
+The bridge needs a sibling Lake project with Mathlib so that `lake env lean` resolves imports:
 
 ```bash
-# Create a new Lean 4 project with Mathlib
-mkdir -p ~/lean-workspace && cd ~/lean-workspace
-lake init MyProject math
-lake build  # This takes 15-30 minutes the first time (downloads Mathlib)
+# From the theoremis repo's parent directory:
+cd /path/to/parent-of-theoremis
+lake init theoremis-lean-env math
+
+# This downloads ~8,000 Mathlib .olean files (takes 5-15 min)
+cd theoremis-lean-env
+lake build
 ```
 
-## Step 3: Start the Bridge Server
+The resulting directory structure should be:
+
+```
+parent/
+  theoremis/           ← this repo
+  theoremis-lean-env/  ← Lake project with Mathlib
+    lakefile.toml
+    lean-toolchain
+    .lake/
+```
+
+You can override the path with `THEOREMIS_LEAN_PROJECT` env var.
+
+## Step 3: Start the Bridge
 
 ```bash
-# In the Theoremis project root:
+cd /path/to/theoremis
 npm run bridge
 ```
 
-This starts the Lean language server bridge on `localhost:3100`. The IDE will automatically connect when it detects the bridge is running.
+The bridge starts on port **9473**. You should see:
 
-## Step 4: Use in the IDE
+```
+  ╔══════════════════════════════════════════╗
+  ║  Theoremis Lean Bridge · port 9473       ║
+  ║  POST /verify  { code, language }        ║
+  ║  GET  /health                            ║
+  ║  Mathlib: .../theoremis-lean-env         ║
+  ╚══════════════════════════════════════════╝
+```
 
-1. Open [theoremis.com](https://theoremis.com) or run `npm run dev` locally
-2. Click **Open IDE**
-3. The status indicator in the top bar will show:
+## Step 4: Verify It Works
+
+```bash
+# Health check
+curl http://localhost:9473/health
+# → { "status": "ok", "lean": "...", "mathlib": true }
+
+# Verify a proof using Mathlib tactics
+curl -X POST http://localhost:9473/verify \
+  -H "Content-Type: application/json" \
+  -d '{"code": "import Mathlib.Tactic\nexample : 2 + 2 = 4 := by norm_num", "language": "lean4"}'
+# → { "success": true, ... }
+```
+
+## Step 5: Use in the IDE
+
+1. Open [theoremis.com](https://theoremis.com) or `npm run dev` locally
+2. The status bar shows:
+   - 🟢 **Lean + Mathlib** — Bridge connected with full tactic support
+   - 🟢 **Lean** — Bridge connected without Mathlib
    - 🔴 **Offline** — Bridge not running
-   - 🟢 **Connected** — Bridge active, Lean verification available
-4. Write or paste Lean 4 code → see real diagnostics inline
+3. Click **Lean 4** button to verify emitted code
+
+## Supported Mathlib Tactics
+
+Once the bridge has Mathlib, these tactics work in emitted code:
+
+| Tactic | Use Case |
+|--------|----------|
+| `norm_num` | Numeric computation |
+| `omega` | Linear integer arithmetic |
+| `ring` | Ring identities |
+| `simp` | Simplification with lemma database |
+| `positivity` | Positivity/nonnegativity goals |
+| `linarith` | Linear arithmetic over ordered fields |
 
 ## Troubleshooting
 
-### Bridge won't start
+### Port 9473 in use
 ```bash
-# Ensure tsx is available
-npx tsx --version
-
-# Check if port 3100 is in use
-lsof -i :3100
+lsof -ti:9473 | xargs kill -9
+npm run bridge
 ```
 
 ### Lean not found
 ```bash
-# Re-source your shell profile
-source ~/.bashrc  # or ~/.zshrc on macOS
-
-# Verify elan is installed
-which elan
+source ~/.zshrc  # or ~/.bashrc
 which lean
+lean --version
 ```
 
-### Mathlib import errors
+### Mathlib tactics fail
+Make sure the Lake project built successfully:
 ```bash
-# Update Mathlib to latest
-cd ~/lean-workspace
-lake update
-lake build
+cd /path/to/theoremis-lean-env
+lake env lean --version  # should print Lean version
+echo 'import Mathlib.Tactic' > Test.lean
+lake env lean Test.lean   # should succeed silently
+rm Test.lean
 ```
 
-## Architecture
+## Remote Access (ngrok)
 
-```
-Browser (theoremis.com)
-    ↕ WebSocket
-Lean Bridge Server (localhost:3100)
-    ↕ stdio
-Lean 4 Language Server (lean --server)
-    ↕ 
-Lean Toolchain + Mathlib
+To expose the bridge for the production site:
+
+```bash
+ngrok http 9473
 ```
 
-The bridge acts as a WebSocket-to-stdio proxy between the browser and the Lean 4 language server. It manages file sessions and routes diagnostics back to the IDE.
+Update `PRODUCTION_BRIDGE_URL` in `src/bridge/lean-client.ts` with the ngrok URL.
