@@ -1,9 +1,27 @@
 // ─────────────────────────────────────────────────────────────
 // Theoremis  ·  Lean Bridge Client (Browser-side)
-// Calls the local Lean bridge server to verify emitted code
+// Calls the Lean bridge server to verify emitted code.
+// Supports both local (localhost:9473) and remote bridge URLs.
 // ─────────────────────────────────────────────────────────────
 
-const BRIDGE_URL = 'http://localhost:9473';
+/** Get the bridge URL from localStorage, or fall back to localhost */
+function getBridgeUrl(): string {
+    if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('theoremis-bridge-url');
+        if (saved) return saved.replace(/\/$/, ''); // strip trailing slash
+    }
+    return 'http://localhost:9473';
+}
+
+/** Set a custom bridge URL (persisted in localStorage) */
+export function setBridgeUrl(url: string): void {
+    localStorage.setItem('theoremis-bridge-url', url.replace(/\/$/, ''));
+}
+
+/** Get the current bridge URL */
+export function currentBridgeUrl(): string {
+    return getBridgeUrl();
+}
 
 export interface LeanVerifyResult {
     success: boolean;
@@ -21,7 +39,7 @@ export interface LeanDiagnostic {
 
 export async function checkBridgeHealth(): Promise<{ available: boolean; version?: string }> {
     try {
-        const res = await fetch(`${BRIDGE_URL}/health`, { signal: AbortSignal.timeout(2000) });
+        const res = await fetch(`${getBridgeUrl()}/health`, { signal: AbortSignal.timeout(3000) });
         if (res.ok) {
             const data = await res.json();
             return { available: true, version: data.lean };
@@ -33,7 +51,7 @@ export async function checkBridgeHealth(): Promise<{ available: boolean; version
 }
 
 export async function verifyLeanCode(code: string): Promise<LeanVerifyResult> {
-    const res = await fetch(`${BRIDGE_URL}/verify`, {
+    const res = await fetch(`${getBridgeUrl()}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language: 'lean4' }),

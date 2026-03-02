@@ -307,6 +307,17 @@ function renderActiveTutorial(container: HTMLElement): void {
             <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-code)">${currentStep.goalBefore}</div>
         </div>`;
 
+        // Tactic input field
+        if (currentStep.expectedTactic) {
+            html += `<div style="margin-bottom:8px">
+                <label style="font-size:10px;color:var(--text-muted);display:block;margin-bottom:3px">Your tactic:</label>
+                <input type="text" id="tutorial-tactic-input" placeholder="Type your tactic here…"
+                    style="width:100%;box-sizing:border-box;font-size:12px;padding:6px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-family:var(--font-mono)"
+                />
+                <div id="tutorial-feedback" style="font-size:10px;margin-top:4px;min-height:16px"></div>
+            </div>`;
+        }
+
         if (currentStep.hint) {
             html += `<details style="margin-bottom:8px">
                 <summary style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:500">💡 Need a hint?</summary>
@@ -315,7 +326,7 @@ function renderActiveTutorial(container: HTMLElement): void {
         }
 
         html += `<button class="btn btn-sm btn-primary tutorial-advance-btn" style="width:100%;justify-content:center;font-size:11px">
-            ${step < t.steps.length - 1 ? 'Next Step →' : 'Complete Tutorial 🎉'}
+            ${step < t.steps.length - 1 ? 'Submit & Next Step →' : 'Submit & Complete 🎉'}
         </button>`;
     }
 
@@ -334,9 +345,60 @@ function renderActiveTutorial(container: HTMLElement): void {
     const advanceBtn = container.querySelector('.tutorial-advance-btn');
     if (advanceBtn) {
         advanceBtn.addEventListener('click', () => {
-            advanceStep();
-            renderTutorialPanel(container);
+            if (currentStep?.expectedTactic) {
+                const input = document.getElementById('tutorial-tactic-input') as HTMLInputElement | null;
+                const feedback = document.getElementById('tutorial-feedback');
+                const userInput = (input?.value || '').trim();
+
+                if (!userInput) {
+                    if (feedback) {
+                        feedback.style.color = 'var(--warning)';
+                        feedback.textContent = '⚠ Please type a tactic before submitting.';
+                    }
+                    input?.focus();
+                    return;
+                }
+
+                // Check if input matches (case-insensitive, trimmed)
+                if (userInput.toLowerCase() !== currentStep.expectedTactic.toLowerCase()) {
+                    if (feedback) {
+                        feedback.style.color = 'var(--error)';
+                        feedback.textContent = `✗ Not quite — try again. ${currentStep.hint ? 'Check the hint!' : ''}`;
+                    }
+                    if (input) {
+                        input.style.borderColor = 'var(--error)';
+                        setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 2000);
+                    }
+                    return;
+                }
+
+                // Correct!
+                if (feedback) {
+                    feedback.style.color = 'var(--success)';
+                    feedback.textContent = '✓ Correct!';
+                }
+                if (input) {
+                    input.style.borderColor = 'var(--success)';
+                    input.disabled = true;
+                }
+            }
+
+            // Advance after a brief success flash
+            setTimeout(() => {
+                advanceStep();
+                renderTutorialPanel(container);
+            }, currentStep?.expectedTactic ? 600 : 0);
         });
+    }
+
+    // Enter key submits
+    const tacticInput = container.querySelector('#tutorial-tactic-input') as HTMLInputElement | null;
+    if (tacticInput && advanceBtn) {
+        tacticInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') (advanceBtn as HTMLButtonElement).click();
+        });
+        // Auto-focus the input
+        setTimeout(() => tacticInput.focus(), 100);
     }
 
     const backBtn = container.querySelector('.tutorial-back-btn');

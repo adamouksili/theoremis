@@ -217,10 +217,37 @@ function bindAcceptButtons(_thms: ProofDecl[]): void {
         session.acceptedTactics.push(accepted.tactic);
         session.pendingSuggestions = []; // Clear pending after accept
         session.goalHistory.push(accepted.tactic);
+
+        // ── INSERT TACTIC INTO LEAN CODE PANEL ──
+        // Find the code output element and replace the first `sorry` with the accepted tactic
+        insertTacticIntoCode(accepted.tactic);
+
         renderProofSteps();
       }
     });
   });
+}
+
+/** Replace the first `sorry` in the Lean 4 code panel with the accepted tactic */
+function insertTacticIntoCode(tactic: string): void {
+  // The Lean 4 code panel uses a <pre><code> block inside the output section
+  const codeBlocks = document.querySelectorAll('.code-output pre code, .output-section pre code, #output pre code');
+  for (const block of codeBlocks) {
+    const text = block.textContent || '';
+    if (text.includes('sorry')) {
+      // Replace first occurrence of `sorry` (preserving indentation)
+      block.textContent = text.replace(/(\s*)sorry/, `$1${tactic}`);
+
+      // Flash green to show the change
+      const pre = block.parentElement;
+      if (pre) {
+        pre.style.transition = 'background 300ms';
+        pre.style.background = 'rgba(34, 197, 94, 0.1)';
+        setTimeout(() => { pre.style.background = ''; }, 1500);
+      }
+      return;
+    }
+  }
 }
 
 function getMathlibHints(decl: ProofDecl): string[] {

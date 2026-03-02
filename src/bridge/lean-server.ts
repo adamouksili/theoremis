@@ -177,16 +177,21 @@ function readBody(req: IncomingMessage): Promise<string> {
     });
 }
 
-function cors(res: ServerResponse) {
-    // Only allow local origins; tighten further for production deployments
-    const allowedOrigin = process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173';
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+function cors(res: ServerResponse, req: IncomingMessage) {
+    // Allow the configured origin, or default to local dev
+    const allowed = (process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173').split(',');
+    const origin = req.headers.origin || '';
+    if (allowed.includes('*') || allowed.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', allowed[0]);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 const server = createServer(async (req, res) => {
-    cors(res);
+    cors(res, req);
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
