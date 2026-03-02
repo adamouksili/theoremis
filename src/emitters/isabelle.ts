@@ -52,8 +52,9 @@ function emitDeclaration(decl: Declaration): { code: string; warns: string[] } {
             const params = decl.params.map(emitParam).join(' ');
             const body = emitTerm(decl.body);
             const retType = emitTerm(decl.returnType);
+            const safeBody = isIsabelleGarbageBody(body) ? 'undefined' : body;
             return {
-                code: `definition ${decl.name} :: "${params.length > 0 ? params + ' \\<Rightarrow> ' : ''}${retType}" where\n  "${decl.name}${params.length > 0 ? ' ' + decl.params.map(p => p.name).join(' ') : ''} = ${body}"`,
+                code: `definition ${decl.name} :: "${params.length > 0 ? params + ' \\<Rightarrow> ' : ''}${retType}" where\n  "${decl.name}${params.length > 0 ? ' ' + decl.params.map(p => p.name).join(' ') : ''} = ${safeBody}"`,
                 warns,
             };
         }
@@ -255,4 +256,27 @@ function mapAxiomIsabelle(axiom: string): string {
 
 function sanitizeTheoryName(name: string): string {
     return name.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^_+|_+$/g, '') || 'Generated';
+}
+
+// ── Garbage body detection ──────────────────────────────────
+
+const GARBAGE_WORDS = new Set([
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'let', 'for', 'all',
+    'if', 'then', 'we', 'it', 'that', 'this', 'there', 'here', 'to', 'of',
+    'in', 'on', 'by', 'with', 'from', 'not', 'or', 'and', 'but', 'so', 'as',
+    'set', 'such', 'given', 'where', 'when', 'which', 'while', 'since',
+    'thus', 'hence', 'therefore', 'prove', 'show', 'assume', 'suppose',
+]);
+
+function isIsabelleGarbageBody(body: string): boolean {
+    const trimmed = body.trim();
+    if (!trimmed || trimmed === 'undefined') return true;
+    if (/^[A-Z]$/.test(trimmed)) return true;
+    // Don't catch legitimate Isabelle syntax
+    const firstWord = trimmed.split(/\s/)[0].toLowerCase();
+    const ISA_KEYWORDS = new Set(['datatype', 'case', 'let', 'if', 'fun', 'primrec', 'record', 'inductive']);
+    if (ISA_KEYWORDS.has(firstWord)) return false;
+    if (GARBAGE_WORDS.has(trimmed.toLowerCase())) return true;
+    if (/^[A-Za-z]+\s+[A-Za-z]+/.test(trimmed) && !trimmed.includes('::') && !trimmed.includes('=>')) return true;
+    return false;
 }

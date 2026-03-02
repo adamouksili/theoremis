@@ -63,8 +63,9 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
             const retType = emitTerm(decl.returnType);
             const body = emitTerm(decl.body);
             const paramStr = params ? `${params} ` : '';
-            // If the body is just a hole or produces invalid syntax, use sorry
-            const safeBody = body === 'sorry' || !body.trim() ? 'sorry' : body;
+            // If the body is just a hole, empty, or a garbage extraction from English
+            // prose (e.g., parser extracted "A" from "A natural number..."), use sorry
+            const safeBody = isGarbageBody(body) ? 'sorry' : body;
             return {
                 code: `def ${decl.name} ${paramStr}: ${retType} :=\n  ${safeBody}`,
                 warns,
@@ -247,6 +248,38 @@ function mapAxiomLean4(axiom: string): string {
         'ClassicalLogic': 'Classical.byContradiction',
     };
     return map[axiom] ?? `axiom_${axiom}`;
+}
+
+// ── Garbage body detection ──────────────────────────────────
+// The parser sometimes extracts English words from prose as variable names.
+// E.g., "A natural number $p > 1$..." → Var('A'). Detect and replace with sorry.
+
+const ENGLISH_WORDS = new Set([
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
+    'should', 'may', 'might', 'must', 'can', 'could', 'let', 'for', 'all',
+    'if', 'then', 'we', 'it', 'its', 'that', 'this', 'there', 'here',
+    'to', 'of', 'in', 'on', 'at', 'by', 'with', 'from', 'not', 'or',
+    'and', 'but', 'so', 'as', 'any', 'each', 'every', 'no', 'nor',
+    'say', 'says', 'said', 'set', 'such', 'given', 'where', 'when',
+    'which', 'while', 'since', 'thus', 'hence', 'therefore', 'prove',
+    'show', 'assume', 'suppose', 'consider', 'define', 'denote',
+]);
+
+function isGarbageBody(body: string): boolean {
+    const trimmed = body.trim();
+    if (!trimmed || trimmed === 'sorry') return true;
+    // Single uppercase letter — almost certainly a parser artifact from English prose
+    if (/^[A-Z]$/.test(trimmed)) return true;
+    // Don't catch legitimate Lean 4 syntax keywords
+    const firstWord = trimmed.split(/\s/)[0].toLowerCase();
+    const LEAN_KEYWORDS = new Set(['match', 'fun', 'let', 'if', 'inductive', 'structure', 'class', 'instance', 'where', 'do', 'return']);
+    if (LEAN_KEYWORDS.has(firstWord)) return false;
+    // Common English words mistakenly extracted as variable names
+    if (ENGLISH_WORDS.has(trimmed.toLowerCase())) return true;
+    // Multiple words (the emitter shouldn't produce spaces in a simple term body)
+    if (/^[A-Za-z]+\s+[A-Za-z]+/.test(trimmed) && !trimmed.includes(':') && !trimmed.includes('→') && !trimmed.includes('=>')) return true;
+    return false;
 }
 
 // ── Emitter result type ─────────────────────────────────────

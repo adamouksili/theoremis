@@ -50,7 +50,8 @@ function emitDeclaration(decl: Declaration): string {
             const params = decl.params.map(emitParam).join(' ');
             const retType = emitTerm(decl.returnType);
             const body = emitTerm(decl.body);
-            return `Definition ${decl.name} ${params} : ${retType} :=\n  ${body}.`;
+            const safeBody = isCoqGarbageBody(body) ? 'admit' : body;
+            return `Definition ${decl.name} ${params} : ${retType} :=\n  ${safeBody}.`;
         }
 
         case 'Theorem': {
@@ -209,4 +210,26 @@ function mapAxiomCoq(axiom: string): string {
         'ClassicalLogic': 'NNPP',
     };
     return map[axiom] ?? `axiom_${axiom}`;
+}
+
+// ── Garbage body detection ──────────────────────────────────
+
+const GARBAGE_WORDS = new Set([
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
+    'should', 'may', 'might', 'must', 'can', 'could', 'let', 'for', 'all',
+    'if', 'then', 'we', 'it', 'its', 'that', 'this', 'there', 'here',
+    'to', 'of', 'in', 'on', 'at', 'by', 'with', 'from', 'not', 'or',
+    'and', 'but', 'so', 'as', 'any', 'each', 'every', 'no', 'nor',
+    'set', 'such', 'given', 'where', 'when', 'which', 'while', 'since',
+    'thus', 'hence', 'therefore', 'prove', 'show', 'assume', 'suppose',
+]);
+
+function isCoqGarbageBody(body: string): boolean {
+    const trimmed = body.trim();
+    if (!trimmed || trimmed === 'admit') return true;
+    if (/^[A-Z]$/.test(trimmed)) return true;
+    if (GARBAGE_WORDS.has(trimmed.toLowerCase())) return true;
+    if (/^[A-Za-z]+\s+[A-Za-z]+/.test(trimmed) && !trimmed.includes(':') && !trimmed.includes('=>')) return true;
+    return false;
 }

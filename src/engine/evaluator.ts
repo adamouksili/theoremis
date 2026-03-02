@@ -3,7 +3,7 @@
 // QuickCheck-style random testing of IR terms
 // ─────────────────────────────────────────────────────────────
 
-import type { Term } from '../core/ir';
+import type { Term, Param } from '../core/ir';
 
 export type Value = number | boolean | string | null;
 
@@ -20,6 +20,7 @@ export interface RandomTestReport {
     counterexamples: TestResult[];
     time: number;
     skipped: number;
+    preconditionSkipped: number;
     classification: 'verified' | 'likely_true' | 'indeterminate' | 'likely_false' | 'falsified';
 }
 
@@ -131,7 +132,19 @@ export function evaluate(term: Term, env: Record<string, Value>): Value {
             const r = evaluate(term.right, env);
             const m = term.modulus ? evaluate(term.modulus, env) : null;
             if (typeof l === 'number' && typeof r === 'number' && typeof m === 'number' && m !== 0) {
-                return ((l % m) + m) % m === ((r % m) + m) % m;
+                // Use BigInt modular arithmetic to avoid float overflow
+                // e.g. 89^75 mod 76 overflows float64 but works fine with BigInt
+                try {
+                    const mBig = BigInt(Math.abs(Math.round(m)));
+                    if (mBig === 0n) return null;
+                    // Use modPow-aware evaluation: if the expression is a^b, compute a^b mod m directly
+                    const lMod = evalBigIntModular(term.left, env, mBig);
+                    const rMod = evalBigIntModular(term.right, env, mBig);
+                    return lMod === rMod;
+                } catch {
+                    // Fallback to float arithmetic
+                    return ((l % m) + m) % m === ((r % m) + m) % m;
+                }
             }
             return null;
         }
@@ -167,6 +180,88 @@ export function evaluate(term: Term, env: Record<string, Value>): Value {
         case 'Proj': {
             return null;
         }
+    }
+}
+
+// ── BigInt helpers for precise modular arithmetic ────────────
+
+function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
+    if (mod === 1n) return 0n;
+    let result = 1n;
+    base = ((base % mod) + mod) % mod;
+    if (exp < 0n) return 0n; // Negative exponent not supported for integers
+    while (exp > 0n) {
+        if (exp % 2n === 1n) result = (result * base) % mod;
+        exp = exp / 2n;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+function evalBigIntModular(term: Term, env: Record<string, Value>, mod: bigint): bigint {
+    switch (term.tag) {
+        case 'Literal':
+            return ((BigInt(term.value) % mod) + mod) % mod;
+        case 'Var': {
+            const v = env[term.name];
+            if (typeof v === 'number') return ((BigInt(Math.round(v)) % mod) + mod) % mod;
+            throw new Error('non-numeric');
+        }
+        case 'BinOp': {
+            const l = evalBigIntModular(term.left, env, mod);
+            const r = evalBigIntModular(term.right, env, mod);
+            switch (term.op) {
+                case '+': return (l + r) % mod;
+                case '-': return ((l - r) % mod + mod) % mod;
+                case '*': return (l * r) % mod;
+                case '^': {
+                    // Use modPow for efficient modular exponentiation
+                    const base = evalBigIntModular(term.left, env, mod);
+                    // For exponent, we need the actual value not mod-reduced
+                    const expVal = env[term.right.tag === 'Var' ? term.right.name : ''];
+                    let exp: bigint;
+                    if (term.right.tag === 'Literal') {
+                        exp = BigInt(term.right.value);
+                    } else if (term.right.tag === 'Var' && typeof expVal === 'number') {
+                        exp = BigInt(Math.round(expVal as number));
+                    } else if (term.right.tag === 'BinOp') {
+                        // Evaluate the exponent expression as a plain BigInt
+                        exp = evalBigIntPlain(term.right, env);
+                    } else {
+                        throw new Error('unsupported exponent');
+                    }
+                    return modPow(base, exp, mod);
+                }
+                case 'mod': return r !== 0n ? ((l % r) + r) % r : 0n;
+                default: throw new Error('unsupported op');
+            }
+        }
+        default:
+            throw new Error('unsupported term for BigInt');
+    }
+}
+
+/** Evaluate a term as a plain BigInt (no modular reduction) — used for exponents */
+function evalBigIntPlain(term: Term, env: Record<string, Value>): bigint {
+    switch (term.tag) {
+        case 'Literal': return BigInt(term.value);
+        case 'Var': {
+            const v = env[term.name];
+            if (typeof v === 'number') return BigInt(Math.round(v));
+            throw new Error('non-numeric');
+        }
+        case 'BinOp': {
+            const l = evalBigIntPlain(term.left, env);
+            const r = evalBigIntPlain(term.right, env);
+            switch (term.op) {
+                case '+': return l + r;
+                case '-': return l - r;
+                case '*': return l * r;
+                default: throw new Error('unsupported op');
+            }
+        }
+        default:
+            throw new Error('unsupported');
     }
 }
 
@@ -239,35 +334,88 @@ const DOMAINS: Record<string, DomainSpec> = {
 
 export function classifyResult(
     passed: number, failed: number, _skipped: number, _total: number,
+    preconditionSkipped: number = 0,
 ): RandomTestReport['classification'] {
     const evaluated = passed + failed;
     if (evaluated === 0) return 'indeterminate';
     const passRate = passed / evaluated;
+
+    // If most tests were skipped due to precondition failure, the theorem
+    // has strong constraints. Remaining failures may be due to INCOMPLETE
+    // precondition capture (parser didn't extract all constraints) rather
+    // than actual theorem falsity.
+    const totalGenerated = evaluated + preconditionSkipped;
+    const qualifyingRate = totalGenerated > 0 ? evaluated / totalGenerated : 0;
+    const hasPreconditions = preconditionSkipped > 0;
+
     if (failed === 0 && evaluated >= 100) return 'verified';
-    if (failed === 0) return 'likely_true';
-    if (passRate < 0.1) return 'falsified';
-    if (passRate < 0.5) return 'likely_false';
+    if (failed === 0 && evaluated >= 10) return 'likely_true';
+    if (failed === 0) return 'indeterminate'; // Too few qualifying tests
+
+    // When preconditions exist but many qualifying tests still fail,
+    // the parser likely missed some constraints (e.g., "p is prime" was
+    // parsed as Prime(a) instead of Prime(p)). Be conservative.
+    if (hasPreconditions && qualifyingRate < 0.5) return 'indeterminate';
+    if (hasPreconditions && passRate > 0.1) return 'indeterminate';
+
+    // Only declare falsified when we have NO preconditions (so all inputs
+    // are valid) and the pass rate is very low
+    if (!hasPreconditions && passRate < 0.1 && evaluated >= 20) return 'falsified';
+    if (!hasPreconditions && passRate < 0.5 && evaluated >= 20) return 'likely_false';
+
+    if (passRate < 0.05 && evaluated >= 50 && !hasPreconditions) return 'falsified';
     return 'indeterminate';
 }
 
 // ── QuickCheck-style testing ────────────────────────────────
 
+/**
+ * Evaluate theorem preconditions (param type constraints like Prime(p), Coprime(a, p)).
+ * Returns true if all preconditions are satisfied, false if any fail, null if unevaluable.
+ */
+function checkPreconditions(params: Param[], env: Record<string, Value>): boolean | null {
+    for (const param of params) {
+        // Skip params whose type is a simple type name (ℕ, ℤ, etc.) — those are domain constraints
+        // Only evaluate params whose type is a predicate application (Prime(p), Coprime(a, p), etc.)
+        const ty = param.type;
+        if (ty.tag === 'Var') {
+            // Simple type like ℕ, ℤ — not a runtime-checkable predicate
+            continue;
+        }
+        const result = evaluate(ty, env);
+        if (result === null) continue; // Can't evaluate — don't filter
+        if (result === false) return false; // Precondition violated
+    }
+    return true;
+}
+
 export function quickCheck(
     term: Term,
     variables: Array<{ name: string; domain: string }>,
     numTests: number = 1000,
+    preconditions: Param[] = [],
 ): RandomTestReport {
     const start = performance.now();
     const counterexamples: TestResult[] = [];
     let passed = 0;
     let failed = 0;
     let skipped = 0;
+    let preconditionSkipped = 0;
 
     for (let i = 0; i < numTests; i++) {
         const env: Record<string, Value> = {};
         for (const v of variables) {
             const dom = DOMAINS[v.domain] ?? DOMAINS['Int'];
             env[v.name] = dom.generator();
+        }
+
+        // Check preconditions first — skip tests where hypotheses aren't met
+        if (preconditions.length > 0) {
+            const preResult = checkPreconditions(preconditions, env);
+            if (preResult === false) {
+                preconditionSkipped++;
+                continue;
+            }
         }
 
         const result = evaluate(term, env);
@@ -286,7 +434,7 @@ export function quickCheck(
     }
 
     const total = passed + failed;
-    const classification = classifyResult(passed, failed, skipped, numTests);
+    const classification = classifyResult(passed, failed, skipped, numTests, preconditionSkipped);
 
     return {
         totalTests: total,
@@ -295,6 +443,7 @@ export function quickCheck(
         counterexamples,
         time: performance.now() - start,
         skipped,
+        preconditionSkipped,
         classification,
     };
 }

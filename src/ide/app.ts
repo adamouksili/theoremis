@@ -509,7 +509,9 @@ async function run() {
       for (const thm of theorems) {
         const vars = extractVariables(thm.statement);
         if (vars.length > 0) {
-          const rr = quickCheck(thm.statement, vars, 5000);
+          // Pass theorem params as preconditions so the tester
+          // skips inputs that violate hypotheses (e.g., non-prime p)
+          const rr = quickCheck(thm.statement, vars, 5000, thm.params);
           if (!S.randomReport || rr.failed > 0) {
             S.randomReport = rr;
           }

@@ -35,19 +35,27 @@ export function renderRandomTests(): void {
   }
 
   const r = S.randomReport;
-  const pct = r.totalTests > 0 ? Math.round((r.passed / r.totalTests) * 100) : 0;
+  const qualifyingTests = r.passed + r.failed;
+  const pct = qualifyingTests > 0 ? Math.round((r.passed / qualifyingTests) * 100) : 0;
   const color = pct === 100 ? 'var(--success)' : pct > 90 ? 'var(--warning)' : 'var(--error)';
   const classLabel = classificationLabel(r.classification);
+  const preSkip = (r as any).preconditionSkipped ?? 0;
 
   let html = `
     <div class="confidence-line" style="border:none;padding:8px 0">
-      <div class="confidence-label">${r.passed}/${r.totalTests} passed</div>
+      <div class="confidence-label">${r.passed}/${qualifyingTests} passed</div>
       <div class="confidence-track"><div class="confidence-fill" style="width:${pct}%;background:${color}"></div></div>
       <div class="confidence-label">${pct}%</div>
     </div>
     <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">
       ${r.time.toFixed(1)}ms · QuickCheck random testing · ${classLabel}${r.skipped > 0 ? ` · ${r.skipped} unevaluable` : ''}
     </div>`;
+
+  if (preSkip > 0) {
+    html += `<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-style:italic">
+      ${preSkip} of ${preSkip + qualifyingTests + r.skipped} inputs didn't meet hypotheses (filtered)
+    </div>`;
+  }
 
   if (r.counterexamples.length > 0) {
     html += `<div style="font-size:11px;font-weight:600;color:var(--error);margin-bottom:4px">Counterexamples found:</div>`;
