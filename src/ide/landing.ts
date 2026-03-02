@@ -58,7 +58,7 @@ export function landingShell(): string {
     <div class="landing-nav-brand">
       <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img" />
       <div class="landing-nav-logo">Theoremis</div>
-      <div class="landing-nav-tag">v0.1.0-alpha</div>
+      <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
       <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
@@ -70,18 +70,16 @@ export function landingShell(): string {
   <section class="landing-hero">
     <div class="landing-hero-content">
       <h1 class="landing-hero-title">
-        Write proofs in LaTeX.<br/>
-        Get <em>Lean&nbsp;4</em> scaffolding.
+        Write math. Get proofs<br/>working in <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
-        Theoremis translates informal mathematical prose into
-        structured proof skeletons for Lean&nbsp;4, Coq, and
-        Isabelle/HOL — a starting point for formal verification,
-        not a finished proof.
+        The AI-powered assistant that helps mathematicians and students
+        write, explore, and verify formal proofs — bridging the gap
+        between informal math and <strong>machine-checked verification</strong>.
       </p>
       <div class="landing-hero-actions">
         <button class="landing-btn-primary" id="btn-launch-ide">
-          Open the Editor
+          Try the IDE
         </button>
         <button class="landing-btn-secondary" id="btn-download-ide">
           View Source on GitHub
@@ -109,32 +107,52 @@ export function landingShell(): string {
   </section>
 
   <section class="landing-pipeline">
-    <div class="landing-pipeline-title">Pipeline</div>
+    <div class="landing-pipeline-title">How It Works</div>
     <div class="landing-pipeline-steps">
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Parse</div>
-        <div class="landing-pipeline-step-desc">LaTeX to Math-AST</div>
+        <div class="landing-pipeline-step-label">Write</div>
+        <div class="landing-pipeline-step-desc">LaTeX or Lean 4</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Formalize</div>
+        <div class="landing-pipeline-step-label">Analyze</div>
         <div class="landing-pipeline-step-desc">λΠω type theory IR</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Emit</div>
-        <div class="landing-pipeline-step-desc">Lean 4 / Coq / Isabelle</div>
+        <div class="landing-pipeline-step-label">Suggest</div>
+        <div class="landing-pipeline-step-desc">AI tactic hints</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Test</div>
-        <div class="landing-pipeline-step-desc">QuickCheck + Mutation</div>
+        <div class="landing-pipeline-step-label">Verify</div>
+        <div class="landing-pipeline-step-desc">Lean 4 bridge</div>
       </div>
     </div>
   </section>
 
   <section class="landing-features" id="features">
-    <div class="landing-features-title">Design Principles</div>
+    <div class="landing-features-title">Why Theoremis</div>
+
+    <div class="landing-feature">
+      <div class="landing-feature-title">Lean 4 First</div>
+      <div class="landing-feature-desc">
+        Deep integration with <strong>Lean 4</strong> and <strong>Mathlib</strong>.
+        Auto-generated imports, Mathlib-aware type signatures, and
+        real verification feedback through the Lean bridge — not just
+        syntax highlighting.
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature-title">AI-Assisted Proof Writing</div>
+      <div class="landing-feature-desc">
+        LLM-powered tactic suggestions that understand your proof state.
+        Multi-provider support (OpenAI, Anthropic, Gemini) with explicit
+        confidence scores — so you always know what was AI-suggested
+        vs. machine-verified.
+      </div>
+    </div>
 
     <div class="landing-feature">
       <div class="landing-feature-title">Axiom Budget Tracking</div>
@@ -146,30 +164,11 @@ export function landingShell(): string {
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">One source, three backends</div>
+      <div class="landing-feature-title">Hypothesis Testing</div>
       <div class="landing-feature-desc">
-        Write once in LaTeX. Generate Lean 4 (Mathlib), Coq (Gallina),
-        and Isabelle/HOL proof skeletons from the same intermediate
-        representation. Proofs contain <code>sorry</code> placeholders
-        for you to fill in.
-      </div>
-    </div>
-
-    <div class="landing-feature">
-      <div class="landing-feature-title">Counterexample Testing</div>
-      <div class="landing-feature-desc">
-        QuickCheck-style random testing and mutation analysis validate
-        that your hypotheses are necessary — not that your theorem is
-        proven. This is heuristic testing, not formal verification.
-      </div>
-    </div>
-
-    <div class="landing-feature">
-      <div class="landing-feature-title">LLM-Assisted Gap Filling</div>
-      <div class="landing-feature-desc">
-        When the parser can't resolve a hypothesis or tactic, structured
-        LLM prompting suggests candidates — with explicit confidence
-        scores so you know exactly what was inferred vs. parsed.
+        QuickCheck-style random testing checks whether your hypotheses
+        are necessary. Mutation analysis validates theorem structure.
+        Hypothesis-aware filtering avoids false negatives on constrained theorems.
       </div>
     </div>
   </section>
@@ -178,6 +177,7 @@ export function landingShell(): string {
     <div class="landing-trust-badges">
       <span class="landing-trust-badge">Built with TypeScript + Lean 4</span>
       <span class="landing-trust-badge">MIT Licensed</span>
+      <span class="landing-trust-badge">369 Tests Passing</span>
       <span class="landing-trust-badge"><a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a></span>
     </div>
   </section>
@@ -187,15 +187,14 @@ export function landingShell(): string {
     <p class="landing-founder-text">
       I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics
       student at <strong>Rutgers University</strong>. I built Theoremis because
-      I kept running into the same wall: beautiful proofs on paper that had no
-      easy path to machine verification. The gap between what mathematicians
-      <em>write</em> and what proof assistants <em>accept</em> felt unnecessary.
+      the gap between what mathematicians <em>write</em> and what proof assistants
+      <em>accept</em> felt unnecessary — and the existing tools for bridging
+      that gap were either research prototypes or required deep expertise.
     </p>
     <p class="landing-founder-text">
-      This project is my attempt to close that gap — to make formal verification
-      something any mathematician or student can reach for, not just the handful
-      who've spent years learning Lean syntax. It's still early, and there's a
-      lot more to do.
+      Theoremis is building the AI-powered IDE that makes formal verification
+      accessible to anyone who can write math. It's still early, and there's a
+      lot more to do — but the foundation is real, and it's growing.
     </p>
     <p class="landing-founder-sign">— Adam Ouksili</p>
   </section>
