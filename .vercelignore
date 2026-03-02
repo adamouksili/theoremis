@@ -9,4 +9,3 @@ vscode-extension/
 *.md
 !README.md
 src/__tests__/
-test-pipeline.ts

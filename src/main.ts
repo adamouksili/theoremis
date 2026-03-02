@@ -4,9 +4,6 @@
 
 import './styles/index.css';
 import './styles/landing.css';
-import './styles/api-docs.css';
-import './styles/classroom.css';
-import './styles/playground.css';
 import { initApp, loadSharedProof } from './ide/app';
 import { landingShell, bindLanding, stopTypingAnimation } from './ide/landing';
 import { apiDocsShell } from './ide/api-docs';
@@ -63,6 +60,7 @@ function showApiDocs(): void {
   stopTypingAnimation();
   currentView = 'api';
   if (!isSubdomain()) window.location.hash = 'api';
+  import('./styles/api-docs.css');
   document.body.classList.add('dark'); // API docs use dark theme
   const app = document.getElementById('app')!;
   app.innerHTML = apiDocsShell();
@@ -75,6 +73,7 @@ function showClassroom(): void {
   stopTypingAnimation();
   currentView = 'classroom';
   if (!isSubdomain()) window.location.hash = 'classroom';
+  import('./styles/classroom.css');
   document.body.classList.add('dark');
   const app = document.getElementById('app')!;
   app.innerHTML = classroomShell();
@@ -88,6 +87,7 @@ function showPlayground(): void {
   stopTypingAnimation();
   currentView = 'playground';
   if (!isSubdomain()) window.location.hash = 'playground';
+  import('./styles/playground.css');
   document.body.classList.add('dark');
   const app = document.getElementById('app')!;
   app.innerHTML = playgroundShell();

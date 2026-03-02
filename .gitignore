@@ -14,3 +14,4 @@ out/
 vscode-extension/out/
 vscode-extension/node_modules/
 .vercel/
+*.pdf
