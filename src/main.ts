@@ -16,10 +16,19 @@ import { playgroundShell, bindPlayground } from './ide/playground';
 type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground';
 let currentView: View = 'landing';
 
+/** Check if we're on a subdomain (not the main site) */
+function isSubdomain(): boolean {
+  const host = window.location.hostname;
+  return host === 'playground.theoremis.com'
+      || host === 'api.theoremis.com'
+      || host === 'classroom.theoremis.com'
+      || host === 'ide.theoremis.com';
+}
+
 /** Render landing page */
 function showLanding(): void {
   currentView = 'landing';
-  window.location.hash = '';
+  if (!isSubdomain()) window.location.hash = '';
   document.body.classList.add('dark'); // Landing is always dark
   const app = document.getElementById('app')!;
   app.innerHTML = landingShell();
@@ -31,16 +40,17 @@ function navigateToIDE(): void {
   if (currentView === 'ide') return;
   stopTypingAnimation();
   currentView = 'ide';
-  window.location.hash = 'ide';
+  if (!isSubdomain()) window.location.hash = 'ide';
   document.body.classList.remove('dark'); // IDE starts in light mode
   initApp();
 }
 
 /** Show API documentation */
 function showApiDocs(): void {
+  if (currentView === 'api') return;
   stopTypingAnimation();
   currentView = 'api';
-  window.location.hash = 'api';
+  if (!isSubdomain()) window.location.hash = 'api';
   document.body.classList.add('dark'); // API docs use dark theme
   const app = document.getElementById('app')!;
   app.innerHTML = apiDocsShell();
@@ -48,9 +58,10 @@ function showApiDocs(): void {
 
 /** Show Classroom / Grader */
 function showClassroom(): void {
+  if (currentView === 'classroom') return;
   stopTypingAnimation();
   currentView = 'classroom';
-  window.location.hash = 'classroom';
+  if (!isSubdomain()) window.location.hash = 'classroom';
   document.body.classList.add('dark');
   const app = document.getElementById('app')!;
   app.innerHTML = classroomShell();
@@ -59,9 +70,10 @@ function showClassroom(): void {
 
 /** Show Playground (minimal hypothesis linter) */
 function showPlayground(): void {
+  if (currentView === 'playground') return;
   stopTypingAnimation();
   currentView = 'playground';
-  window.location.hash = 'playground';
+  if (!isSubdomain()) window.location.hash = 'playground';
   document.body.classList.add('dark');
   const app = document.getElementById('app')!;
   app.innerHTML = playgroundShell();
@@ -83,13 +95,11 @@ function route(): void {
   const hash = window.location.hash.replace('#', '');
   const host = window.location.hostname;
 
-  // Subdomain detection — if Vercel serves the app before redirect fires
-  if (!hash || hash === '') {
-    if (host === 'playground.theoremis.com') { showPlayground(); return; }
-    if (host === 'api.theoremis.com') { showApiDocs(); return; }
-    if (host === 'classroom.theoremis.com') { showClassroom(); return; }
-    if (host === 'ide.theoremis.com') { navigateToIDE(); return; }
-  }
+  // Subdomain detection — always takes priority over hash routing
+  if (host === 'playground.theoremis.com') { showPlayground(); return; }
+  if (host === 'api.theoremis.com') { showApiDocs(); return; }
+  if (host === 'classroom.theoremis.com') { showClassroom(); return; }
+  if (host === 'ide.theoremis.com') { navigateToIDE(); return; }
 
   if (hash.startsWith('p/')) {
     // Shared proof URL: #p/BASE64ENCODED
