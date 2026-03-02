@@ -39,7 +39,10 @@ export interface LeanDiagnostic {
 
 export async function checkBridgeHealth(): Promise<{ available: boolean; version?: string }> {
     try {
-        const res = await fetch(`${getBridgeUrl()}/health`, { signal: AbortSignal.timeout(3000) });
+        const res = await fetch(`${getBridgeUrl()}/health`, {
+            signal: AbortSignal.timeout(3000),
+            headers: { 'ngrok-skip-browser-warning': 'true' },
+        });
         if (res.ok) {
             const data = await res.json();
             return { available: true, version: data.lean };
@@ -53,7 +56,7 @@ export async function checkBridgeHealth(): Promise<{ available: boolean; version
 export async function verifyLeanCode(code: string): Promise<LeanVerifyResult> {
     const res = await fetch(`${getBridgeUrl()}/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ code, language: 'lean4' }),
         signal: AbortSignal.timeout(35_000),
     });

@@ -179,7 +179,7 @@ function readBody(req: IncomingMessage): Promise<string> {
 
 function cors(res: ServerResponse, req: IncomingMessage) {
     // Allow the configured origin, or default to local dev
-    const allowed = (process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173').split(',');
+    const allowed = (process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173,https://www.theoremis.com,https://theoremis.com').split(',');
     const origin = req.headers.origin || '';
     if (allowed.includes('*') || allowed.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
