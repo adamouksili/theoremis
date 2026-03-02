@@ -3,6 +3,9 @@
   "version": "0.2.0",
   "type": "module",
   "description": "Hypothesis necessity linter for mathematical proofs — mutation-based analysis of LaTeX theorem statements",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "theoremis": "./cli/lint.ts"
   },

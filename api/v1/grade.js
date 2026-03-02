@@ -1,26 +1,19 @@
 // ─────────────────────────────────────────────────────────────
-// Theoremis API  ·  POST /api/v1/parse
-// LaTeX → AST → IR → TypeCheck
+// Theoremis API  ·  POST /api/v1/grade
+// Auto-grade a LaTeX submission against a rubric
 // ─────────────────────────────────────────────────────────────
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { apiParse } from '../../src/api/pipeline';
+import { gradeSubmission } from '../../src/api/grader.js';
 
-interface AuthResult {
-    valid: boolean;
-    tier: 'free' | 'pro';
-    rateLimit: number;
-}
-
-function validateKey(req: VercelRequest): AuthResult {
+function validateKey(req) {
     const auth = req.headers['authorization'] || '';
-    const key = typeof auth === 'string' ? auth.replace('Bearer ', '').trim() : '';
-    if (!key) return { valid: true, tier: 'free', rateLimit: 100 };
-    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 10000 };
-    return { valid: true, tier: 'free', rateLimit: 100 };
+    const key = auth.replace('Bearer ', '').trim();
+    if (!key) return { valid: true, tier: 'free', rateLimit: 20 };
+    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 5000 };
+    return { valid: true, tier: 'free', rateLimit: 20 };
 }
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -36,23 +29,33 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { latex, axiomBundle } = req.body || {};
+        const { latex, rubric, studentId } = req.body || {};
 
         if (!latex || typeof latex !== 'string') {
             return res.status(400).json({
                 error: 'Missing required field: latex (string)',
                 usage: {
                     method: 'POST',
-                    body: { latex: '\\begin{theorem}...\\end{theorem}', axiomBundle: 'ClassicalMath' },
+                    body: {
+                        latex: '\\begin{theorem}...\\end{theorem}',
+                        rubric: {
+                            expectedTheorems: ['fermats_little'],
+                            axiomBundle: 'NumberTheory',
+                            requireTypeCheck: true,
+                            numTests: 1000,
+                            maxPoints: 100,
+                        },
+                        studentId: 'student_123',
+                    },
                 },
             });
         }
 
-        if (latex.length > 50_000) {
-            return res.status(413).json({ error: 'Input too large. Maximum 50,000 characters.' });
+        if (latex.length > 100000) {
+            return res.status(413).json({ error: 'Input too large. Maximum 100,000 characters.' });
         }
 
-        const result = apiParse(latex, axiomBundle);
+        const result = gradeSubmission(latex, rubric ?? {}, studentId);
 
         return res.status(200).json({
             ok: true,
