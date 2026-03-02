@@ -28,6 +28,7 @@ import { renderCodeSection } from './render/code';
 import { renderInsights, renderRandomTests } from './render/insights';
 import { renderProofSteps } from './render/proof-steps';
 import { renderMathlibSearch } from './render/mathlib-search';
+import { renderTutorialPanel } from './tutorials';
 import { renderAxiomBudget, getActiveAxioms, buildAxiomBundle, renderDepGraph, setRunCallback } from './render/axioms';
 import { iconMoon, iconSun, iconCheck, iconWarn, iconShieldCheck } from './icons';
 
@@ -65,6 +66,7 @@ function shell(): string {
     <button class="btn" id="btn-download" title="Download output">Download</button>
     <button class="btn" id="btn-export-annotated" title="Export annotated LaTeX">Export ∇</button>
     <button class="btn" id="btn-sample">Try an example</button>
+    <button class="btn" id="btn-learn" title="Interactive tutorials">📚 Learn</button>
     <button class="btn" id="btn-lean" title="Verify with Lean 4" style="display:none">${iconShieldCheck} Lean 4</button>
     <button class="btn" id="btn-share" title="Copy shareable link">Share</button>
     <button class="btn btn-primary" id="btn-verify">${iconCheck} Verify</button>
@@ -133,7 +135,10 @@ function shell(): string {
     </div>
   </div>
 </div>
-<div id="lens-root"></div>`;
+<div id="lens-root"></div>
+<div id="tutorial-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center">
+  <div id="tutorial-panel" style="background:var(--bg);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:480px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border)"></div>
+</div>`;
 }
 
 // ── Bind events ─────────────────────────────────────────────
@@ -147,6 +152,21 @@ function bind() {
   $('btn-lean').addEventListener('click', runLeanVerify);
   $('btn-export-annotated').addEventListener('click', downloadAnnotatedLaTeX);
   $('btn-share').addEventListener('click', shareCurrentProof);
+  $('btn-learn').addEventListener('click', toggleTutorialPanel);
+
+  // Tutorial event: load LaTeX when a tutorial starts
+  window.addEventListener('tutorial-start', ((e: CustomEvent) => {
+    const tutorial = e.detail?.tutorial;
+    if (tutorial?.latexSource) {
+      const ed = $<HTMLTextAreaElement>('editor');
+      ed.value = tutorial.latexSource;
+      S.source = tutorial.latexSource;
+      run();
+      renderKaTeXPreview(tutorial.latexSource);
+      // Close overlay
+      $('tutorial-overlay').style.display = 'none';
+    }
+  }) as EventListener);
 
   // Dark mode
   $('btn-dark').addEventListener('click', toggleDarkMode);
@@ -321,6 +341,28 @@ export function loadSharedProof(base64: string): void {
   } catch {
     // Invalid base64 — ignore silently
   }
+}
+
+// ── Tutorial panel ──────────────────────────────────────────
+
+function toggleTutorialPanel(): void {
+  const overlay = $('tutorial-overlay');
+  const panel = $('tutorial-panel');
+  const isVisible = overlay.style.display === 'flex';
+
+  if (isVisible) {
+    overlay.style.display = 'none';
+  } else {
+    overlay.style.display = 'flex';
+    renderTutorialPanel(panel);
+  }
+
+  // Click backdrop to close
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.style.display = 'none';
+    }
+  }, { once: true });
 }
 
 // ── Dark mode ───────────────────────────────────────────────
