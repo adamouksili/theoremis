@@ -35,6 +35,18 @@ function showLanding(): void {
   bindLanding(navigateToIDE);
 }
 
+/** Bind mobile hamburger menu on any page that has it */
+function bindHamburger(): void {
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks = document.querySelector('.landing-nav-links') as HTMLElement | null;
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      hamburger.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
+    });
+  }
+}
+
 /** Navigate to IDE */
 function navigateToIDE(): void {
   if (currentView === 'ide') return;
@@ -54,6 +66,7 @@ function showApiDocs(): void {
   document.body.classList.add('dark'); // API docs use dark theme
   const app = document.getElementById('app')!;
   app.innerHTML = apiDocsShell();
+  bindHamburger();
 }
 
 /** Show Classroom / Grader */
@@ -66,6 +79,7 @@ function showClassroom(): void {
   const app = document.getElementById('app')!;
   app.innerHTML = classroomShell();
   bindClassroom();
+  bindHamburger();
 }
 
 /** Show Playground (minimal hypothesis linter) */
@@ -78,6 +92,7 @@ function showPlayground(): void {
   const app = document.getElementById('app')!;
   app.innerHTML = playgroundShell();
   bindPlayground();
+  bindHamburger();
 }
 
 /** Navigate to IDE with shared proof content */

@@ -68,6 +68,7 @@ export function landingShell(): string {
       <button class="landing-nav-link" data-scroll="features">Features</button>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
+    <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
   </nav>
 
   <section class="landing-hero">
@@ -81,15 +82,21 @@ export function landingShell(): string {
         between informal math and <strong>machine-checked verification</strong>.
       </p>
       <div class="landing-hero-actions">
-        <button class="landing-btn-primary" id="btn-playground">
-          Try the Playground
-        </button>
-        <button class="landing-btn-primary" id="btn-launch-ide">
+        <a class="landing-btn-primary" href="#playground">
+          Playground
+        </a>
+        <a class="landing-btn-primary" href="#ide">
           Full IDE
-        </button>
-        <button class="landing-btn-secondary" id="btn-download-ide">
+        </a>
+        <a class="landing-btn-primary" href="#api">
+          API Docs
+        </a>
+        <a class="landing-btn-primary" href="#classroom">
+          Classroom
+        </a>
+        <a class="landing-btn-secondary" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">
           View Source on GitHub
-        </button>
+        </a>
       </div>
     </div>
 
@@ -357,19 +364,18 @@ function revealHtml(html: string, count: number): string {
 // ── Bind landing page events ────────────────────────────────
 
 export function bindLanding(onLaunchIDE: NavigateCallback): void {
-  const btnLaunch = document.getElementById('btn-launch-ide');
-  const btnPlayground = document.getElementById('btn-playground');
   const navLaunch = document.getElementById('nav-launch-ide');
-  const btnDownload = document.getElementById('btn-download-ide');
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks = document.querySelector('.landing-nav-links') as HTMLElement | null;
   const scrollBtns = document.querySelectorAll<HTMLElement>('[data-scroll]');
 
-  if (btnLaunch) btnLaunch.addEventListener('click', onLaunchIDE);
-  if (btnPlayground) btnPlayground.addEventListener('click', () => { window.location.hash = 'playground'; });
   if (navLaunch) navLaunch.addEventListener('click', onLaunchIDE);
 
-  if (btnDownload) {
-    btnDownload.addEventListener('click', () => {
-      window.open('https://github.com/adamouksili/theoremis', '_blank', 'noopener');
+  // Mobile hamburger toggle
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      hamburger.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
     });
   }
 

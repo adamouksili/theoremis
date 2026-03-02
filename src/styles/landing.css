@@ -117,6 +117,19 @@
   opacity: 0.85;
 }
 
+/* ── Hamburger (mobile) ────────────────────────────────────── */
+
+.landing-nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--l-text-strong);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
 /* ── Hero ──────────────────────────────────────────────────── */
 
 .landing-hero {
@@ -538,10 +551,25 @@
 @media (max-width: 600px) {
   .landing-nav {
     padding: 16px 20px;
+    flex-wrap: wrap;
   }
 
   .landing-nav-links {
     display: none;
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--l-border);
+    margin-top: 12px;
+  }
+
+  .landing-nav-links.open {
+    display: flex;
+  }
+
+  .landing-nav-hamburger {
+    display: block;
   }
 
   .landing-hero {
