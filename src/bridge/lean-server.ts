@@ -12,15 +12,20 @@
 // ─────────────────────────────────────────────────────────────
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
-import { writeFile, unlink, mkdir } from 'fs/promises';
+import { writeFile, unlink } from 'fs/promises';
 import { execFile } from 'child_process';
-import { tmpdir } from 'os';
 import { join } from 'path';
 import { promisify } from 'util';
 
 const exec = promisify(execFile);
 const PORT = 9473;
-const LEAN_TIMEOUT = 30_000;
+const LEAN_TIMEOUT = 120_000; // Mathlib imports can be slow on first run
+
+// Path to the Lake project with Mathlib dependency.
+// The bridge writes temp .lean files here so `lake env lean` resolves Mathlib imports.
+// Default: ../theoremis-lean-env (sibling to the Theoremis repo)
+const LEAN_PROJECT_DIR = process.env.THEOREMIS_LEAN_PROJECT
+    || join(process.cwd(), '..', 'theoremis-lean-env');
 
 /** Shape returned by promisified `execFile` on failure. */
 interface ExecError extends Error {
@@ -94,19 +99,18 @@ function parseLeanOutput(stderr: string): LeanError[] {
 // ── Verify Lean code ────────────────────────────────────────
 
 async function verifyLean(code: string): Promise<VerifyResult> {
-    const leanBin = await findLean();
-    const tmpDir = join(tmpdir(), 'theoremis');
-    await mkdir(tmpDir, { recursive: true });
-    const tmpFile = join(tmpDir, `check_${Date.now()}.lean`);
+    const tmpFile = join(LEAN_PROJECT_DIR, `Scratch_${Date.now()}.lean`);
 
     const start = performance.now();
 
     try {
         await writeFile(tmpFile, code, 'utf-8');
 
-        const { stdout, stderr } = await exec(leanBin, [tmpFile], {
+        // Use `lake env lean` so Mathlib imports resolve correctly
+        const { stdout, stderr } = await exec('lake', ['env', 'lean', tmpFile], {
             timeout: LEAN_TIMEOUT,
-            env: { ...process.env, LEAN_PATH: process.env.LEAN_PATH || '' },
+            cwd: LEAN_PROJECT_DIR,
+            env: { ...process.env },
         });
 
         const elapsed = performance.now() - start;
@@ -222,14 +226,24 @@ const server = createServer(async (req, res) => {
 
     if (req.method === 'GET' && req.url === '/health') {
         try {
-            const lean = await findLean();
-            const { stdout } = await exec(lean, ['--version'], { timeout: 5000 });
+            const { stdout } = await exec('lake', ['env', 'lean', '--version'], {
+                timeout: 10000,
+                cwd: LEAN_PROJECT_DIR,
+            });
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'ok', lean: stdout.trim() }));
+            res.end(JSON.stringify({ status: 'ok', lean: stdout.trim(), mathlib: true, project: LEAN_PROJECT_DIR }));
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            res.writeHead(503, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'error', message: msg }));
+            // Fallback: try bare lean
+            try {
+                const lean = await findLean();
+                const { stdout } = await exec(lean, ['--version'], { timeout: 5000 });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ok', lean: stdout.trim(), mathlib: false }));
+            } catch (err2: unknown) {
+                const msg = err2 instanceof Error ? err2.message : String(err2);
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'error', message: msg }));
+            }
         }
         return;
     }
@@ -243,5 +257,6 @@ server.listen(PORT, () => {
     console.log(`  ║  Theoremis Lean Bridge · port ${PORT}       ║`);
     console.log(`  ║  POST /verify  { code, language }        ║`);
     console.log(`  ║  GET  /health                            ║`);
+    console.log(`  ║  Mathlib: ${LEAN_PROJECT_DIR.slice(-30).padEnd(30)} ║`);
     console.log(`  ╚══════════════════════════════════════════╝\n`);
 });

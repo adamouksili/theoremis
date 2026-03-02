@@ -220,15 +220,16 @@ function bind() {
   });
 
   // Check Lean bridge on startup
-  checkBridgeHealth().then(({ available, version }) => {
+  checkBridgeHealth().then(({ available, version, mathlib }) => {
     const dot = document.querySelector('#bridge-status .bridge-dot') as HTMLElement;
     const label = document.querySelector('#bridge-status .bridge-label') as HTMLElement;
     if (available) {
       $('btn-lean').style.display = '';
-      $('btn-lean').title = `Lean 4 available: ${version || 'connected'}`;
+      const mathlibTag = mathlib ? ' + Mathlib' : '';
+      $('btn-lean').title = `Lean 4 available: ${version || 'connected'}${mathlibTag}`;
       if (dot) { dot.className = 'bridge-dot online'; }
-      if (label) { label.textContent = version ? `Lean ${version}` : 'Connected'; }
-      $('bridge-status').title = `Lean 4 Bridge: connected (${version || ''})`;
+      if (label) { label.textContent = mathlib ? 'Lean + Mathlib' : (version ? `Lean ${version}` : 'Connected'); }
+      $('bridge-status').title = `Lean 4 Bridge: connected (${version || ''}${mathlibTag})`;
     } else {
       if (dot) { dot.className = 'bridge-dot offline'; }
       if (label) { label.textContent = 'Offline'; }

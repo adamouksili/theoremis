@@ -45,15 +45,15 @@ export interface LeanDiagnostic {
     severity: 'error' | 'warning' | 'information';
 }
 
-export async function checkBridgeHealth(): Promise<{ available: boolean; version?: string }> {
+export async function checkBridgeHealth(): Promise<{ available: boolean; version?: string; mathlib?: boolean }> {
     try {
         const res = await fetch(`${getBridgeUrl()}/health`, {
-            signal: AbortSignal.timeout(3000),
+            signal: AbortSignal.timeout(5000),
             headers: { 'ngrok-skip-browser-warning': 'true' },
         });
         if (res.ok) {
             const data = await res.json();
-            return { available: true, version: data.lean };
+            return { available: true, version: data.lean, mathlib: !!data.mathlib };
         }
         return { available: false };
     } catch {
