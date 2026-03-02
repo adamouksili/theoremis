@@ -187,7 +187,7 @@ function cors(res: ServerResponse, req: IncomingMessage) {
         res.setHeader('Access-Control-Allow-Origin', allowed[0]);
     }
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, ngrok-skip-browser-warning');
 }
 
 const server = createServer(async (req, res) => {
