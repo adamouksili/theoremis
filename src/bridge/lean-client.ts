@@ -4,11 +4,19 @@
 // Supports both local (localhost:9473) and remote bridge URLs.
 // ─────────────────────────────────────────────────────────────
 
-/** Get the bridge URL from localStorage, or fall back to localhost */
+/** Default bridge URL for production (ngrok tunnel to local Lean server) */
+const PRODUCTION_BRIDGE_URL = 'https://diamagnetic-preauricular-andree.ngrok-free.dev';
+
+/** Get the bridge URL from localStorage, or fall back to sensible default */
 function getBridgeUrl(): string {
     if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('theoremis-bridge-url');
         if (saved) return saved.replace(/\/$/, ''); // strip trailing slash
+    }
+    // In production (theoremis.com), use the ngrok tunnel; locally, use localhost
+    if (typeof window !== 'undefined' &&
+        (window.location.hostname === 'theoremis.com' || window.location.hostname === 'www.theoremis.com')) {
+        return PRODUCTION_BRIDGE_URL;
     }
     return 'http://localhost:9473';
 }
