@@ -4,141 +4,194 @@
 
 import './styles/index.css';
 import './styles/landing.css';
-import { initApp, loadSharedProof } from './ide/app';
-import { landingShell, bindLanding, stopTypingAnimation } from './ide/landing';
-import { apiDocsShell } from './ide/api-docs';
-import { classroomShell, bindClassroom } from './ide/classroom';
-import { playgroundShell, bindPlayground } from './ide/playground';
 
 type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground';
 let currentView: View = 'landing';
+let routeToken = 0;
 
 /** Check if we're on a subdomain (not the main site) */
 function isSubdomain(): boolean {
-  const host = window.location.hostname;
-  return host === 'playground.theoremis.com'
-      || host === 'api.theoremis.com'
-      || host === 'classroom.theoremis.com'
-      || host === 'ide.theoremis.com';
-}
-
-/** Render landing page */
-function showLanding(): void {
-  currentView = 'landing';
-  if (!isSubdomain()) window.location.hash = '';
-  document.body.classList.add('dark'); // Landing is always dark
-  const app = document.getElementById('app')!;
-  app.innerHTML = landingShell();
-  bindLanding(navigateToIDE);
+    const host = window.location.hostname;
+    return host === 'playground.theoremis.com'
+        || host === 'api.theoremis.com'
+        || host === 'classroom.theoremis.com'
+        || host === 'ide.theoremis.com';
 }
 
 /** Bind mobile hamburger menu on any page that has it */
 function bindHamburger(): void {
-  const hamburger = document.getElementById('nav-hamburger');
-  const navLinks = document.querySelector('.landing-nav-links') as HTMLElement | null;
-  if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
-      hamburger.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
-    });
-  }
+    const hamburger = document.getElementById('nav-hamburger');
+    const navLinks = document.querySelector('.landing-nav-links') as HTMLElement | null;
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+            hamburger.textContent = navLinks.classList.contains('open') ? '✕' : '☰';
+        });
+    }
+}
+
+async function stopLandingTyping(): Promise<void> {
+    const landing = await import('./ide/landing');
+    landing.stopTypingAnimation();
+}
+
+/** Render landing page */
+async function showLanding(): Promise<void> {
+    const token = ++routeToken;
+    currentView = 'landing';
+    if (!isSubdomain()) window.location.hash = '';
+    document.body.classList.add('dark'); // Landing is always dark
+
+    const landing = await import('./ide/landing');
+    if (token !== routeToken) return;
+
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = landing.landingShell();
+    landing.bindLanding(() => { void navigateToIDE(); });
 }
 
 /** Navigate to IDE */
-function navigateToIDE(): void {
-  if (currentView === 'ide') return;
-  stopTypingAnimation();
-  currentView = 'ide';
-  if (!isSubdomain()) window.location.hash = 'ide';
-  document.body.classList.remove('dark'); // IDE starts in light mode
-  initApp();
+async function navigateToIDE(): Promise<void> {
+    if (currentView === 'ide') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'ide';
+    if (!isSubdomain()) window.location.hash = 'ide';
+    document.body.classList.remove('dark');
+
+    const ide = await import('./ide/app');
+    if (token !== routeToken) return;
+    ide.initApp();
 }
 
 /** Show API documentation */
-function showApiDocs(): void {
-  if (currentView === 'api') return;
-  stopTypingAnimation();
-  currentView = 'api';
-  if (!isSubdomain()) window.location.hash = 'api';
-  import('./styles/api-docs.css');
-  document.body.classList.add('dark'); // API docs use dark theme
-  const app = document.getElementById('app')!;
-  app.innerHTML = apiDocsShell();
-  bindHamburger();
+async function showApiDocs(): Promise<void> {
+    if (currentView === 'api') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'api';
+    if (!isSubdomain()) window.location.hash = 'api';
+
+    await import('./styles/api-docs.css');
+    if (token !== routeToken) return;
+
+    const apiDocs = await import('./ide/api-docs');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = apiDocs.apiDocsShell();
+    bindHamburger();
 }
 
 /** Show Classroom / Grader */
-function showClassroom(): void {
-  if (currentView === 'classroom') return;
-  stopTypingAnimation();
-  currentView = 'classroom';
-  if (!isSubdomain()) window.location.hash = 'classroom';
-  import('./styles/classroom.css');
-  document.body.classList.add('dark');
-  const app = document.getElementById('app')!;
-  app.innerHTML = classroomShell();
-  bindClassroom();
-  bindHamburger();
+async function showClassroom(): Promise<void> {
+    if (currentView === 'classroom') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'classroom';
+    if (!isSubdomain()) window.location.hash = 'classroom';
+
+    await import('./styles/classroom.css');
+    if (token !== routeToken) return;
+
+    const classroom = await import('./ide/classroom');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = classroom.classroomShell();
+    classroom.bindClassroom();
+    bindHamburger();
 }
 
 /** Show Playground (minimal hypothesis linter) */
-function showPlayground(): void {
-  if (currentView === 'playground') return;
-  stopTypingAnimation();
-  currentView = 'playground';
-  if (!isSubdomain()) window.location.hash = 'playground';
-  import('./styles/playground.css');
-  document.body.classList.add('dark');
-  const app = document.getElementById('app')!;
-  app.innerHTML = playgroundShell();
-  bindPlayground();
-  bindHamburger();
+async function showPlayground(): Promise<void> {
+    if (currentView === 'playground') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'playground';
+    if (!isSubdomain()) window.location.hash = 'playground';
+
+    await import('./styles/playground.css');
+    if (token !== routeToken) return;
+
+    const playground = await import('./ide/playground');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = playground.playgroundShell();
+    playground.bindPlayground();
+    bindHamburger();
 }
 
 /** Navigate to IDE with shared proof content */
-function navigateToSharedProof(base64: string): void {
-  stopTypingAnimation();
-  currentView = 'ide';
-  document.body.classList.remove('dark');
-  initApp();
-  // Small delay to let the DOM render before loading content
-  requestAnimationFrame(() => loadSharedProof(base64));
+async function navigateToSharedProof(base64: string): Promise<void> {
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'ide';
+    document.body.classList.remove('dark');
+
+    const ide = await import('./ide/app');
+    if (token !== routeToken) return;
+
+    ide.initApp();
+    requestAnimationFrame(() => ide.loadSharedProof(base64));
 }
 
 /** Handle hash-based routing (also handles subdomain detection) */
-function route(): void {
-  const hash = window.location.hash.replace('#', '');
-  const host = window.location.hostname;
+async function route(): Promise<void> {
+    const hash = window.location.hash.replace('#', '');
+    const host = window.location.hostname;
 
-  // Subdomain detection — always takes priority over hash routing
-  if (host === 'playground.theoremis.com') { showPlayground(); return; }
-  if (host === 'api.theoremis.com') { showApiDocs(); return; }
-  if (host === 'classroom.theoremis.com') { showClassroom(); return; }
-  if (host === 'ide.theoremis.com') { navigateToIDE(); return; }
+    // Subdomain routing takes priority over hash routing.
+    if (host === 'playground.theoremis.com') { await showPlayground(); return; }
+    if (host === 'api.theoremis.com') { await showApiDocs(); return; }
+    if (host === 'classroom.theoremis.com') { await showClassroom(); return; }
+    if (host === 'ide.theoremis.com') { await navigateToIDE(); return; }
 
-  if (hash.startsWith('p/')) {
-    // Shared proof URL: #p/BASE64ENCODED
-    const base64 = hash.slice(2);
-    if (currentView === 'ide') {
-      loadSharedProof(base64);
-    } else {
-      navigateToSharedProof(base64);
+    if (hash.startsWith('p/')) {
+        const base64 = hash.slice(2);
+        if (currentView === 'ide') {
+            const ide = await import('./ide/app');
+            ide.loadSharedProof(base64);
+        } else {
+            await navigateToSharedProof(base64);
+        }
+        return;
     }
-  } else if (hash === 'ide') {
-    navigateToIDE();
-  } else if (hash === 'api') {
-    showApiDocs();
-  } else if (hash === 'classroom') {
-    showClassroom();
-  } else if (hash === 'playground') {
-    showPlayground();
-  } else {
-    showLanding();
-  }
+
+    if (hash === 'ide') { await navigateToIDE(); return; }
+    if (hash === 'api') { await showApiDocs(); return; }
+    if (hash === 'classroom') { await showClassroom(); return; }
+    if (hash === 'playground') { await showPlayground(); return; }
+
+    await showLanding();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  route();
+    void route();
 });
 
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => {
+    void route();
+});

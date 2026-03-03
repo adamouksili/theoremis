@@ -26,5 +26,17 @@ export default defineConfig({
     build: {
         // Inline tiny assets (<4 KB) to reduce HTTP requests
         assetsInlineLimit: 4096,
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('/node_modules/katex/')) return 'katex';
+                    if (id.includes('/src/ide/')) return 'ide';
+                    if (id.includes('/src/parser/') || id.includes('/src/engine/') || id.includes('/src/core/')) {
+                        return 'math-core';
+                    }
+                    return undefined;
+                },
+            },
+        },
     },
 });

@@ -4,26 +4,36 @@
 // Supports both local (localhost:9473) and remote bridge URLs.
 // ─────────────────────────────────────────────────────────────
 
-/** Default bridge URL for production (ngrok tunnel to local Lean server) */
-const PRODUCTION_BRIDGE_URL = 'https://diamagnetic-preauricular-andree.ngrok-free.dev';
+const ENV_BRIDGE_URL = (import.meta.env?.VITE_THEOREMIS_BRIDGE_URL || '').trim();
+const DEFAULT_PRODUCTION_BRIDGE_URL = 'https://lean.theoremis.com';
+
+function sanitizeBridgeUrl(url: string): string {
+    return url.replace(/\/$/, '');
+}
 
 /** Get the bridge URL from localStorage, or fall back to sensible default */
 function getBridgeUrl(): string {
     if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('theoremis-bridge-url');
-        if (saved) return saved.replace(/\/$/, ''); // strip trailing slash
+        if (saved) return sanitizeBridgeUrl(saved);
     }
-    // In production (theoremis.com), use the ngrok tunnel; locally, use localhost
+
+    if (ENV_BRIDGE_URL) {
+        return sanitizeBridgeUrl(ENV_BRIDGE_URL);
+    }
+
+    // In production use a stable bridge host; locally use localhost by default.
     if (typeof window !== 'undefined' &&
         (window.location.hostname === 'theoremis.com' || window.location.hostname === 'www.theoremis.com')) {
-        return PRODUCTION_BRIDGE_URL;
+        return DEFAULT_PRODUCTION_BRIDGE_URL;
     }
+
     return 'http://localhost:9473';
 }
 
 /** Set a custom bridge URL (persisted in localStorage) */
 export function setBridgeUrl(url: string): void {
-    localStorage.setItem('theoremis-bridge-url', url.replace(/\/$/, ''));
+    localStorage.setItem('theoremis-bridge-url', sanitizeBridgeUrl(url));
 }
 
 /** Get the current bridge URL */
