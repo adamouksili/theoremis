@@ -1,56 +1,93 @@
-// ─────────────────────────────────────────────────────────────
-// Theoremis API  ·  POST /api/v1/analyze
-// LaTeX → QuickCheck + Counterexample Engine
-// ─────────────────────────────────────────────────────────────
-
-import { apiAnalyze } from '../../src/api/pipeline.js';
-
-function validateKey(req) {
-    const auth = req.headers['authorization'] || '';
-    const key = auth.replace('Bearer ', '').trim();
-    if (!key) return { valid: true, tier: 'free', rateLimit: 100 };
-    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 10000 };
-    return { valid: true, tier: 'free', rateLimit: 100 };
-}
+import { authenticate, applyCors, applyRateLimit, handlePreflight, requireMethod, sendError, parseAnalyzeOptions } from './_shared.js';
+import { runAnalyzeTaskInWorker } from './_analyze-runner.js';
 
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    applyCors(req, res, ['POST', 'OPTIONS']);
+    if (handlePreflight(req, res)) return;
+    if (!requireMethod(req, res, 'POST')) return;
 
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    const auth = authenticate(req);
+    if (!auth.valid) {
+        return sendError(res, auth.status || 401, auth.error || 'Invalid API key.');
     }
 
-    const auth = validateKey(req);
-    if (!auth.valid) {
-        return res.status(401).json({ error: 'Invalid API key.' });
+    const rate = await applyRateLimit(req, res, auth);
+    if (!rate.ok) {
+        return sendError(res, rate.status || 429, rate.error || 'Rate limit exceeded.');
     }
 
     try {
-        const { latex, axiomBundle, numTests } = req.body || {};
+        const body = req.body || {};
+        const { latex, axiomBundle } = body;
 
         if (!latex || typeof latex !== 'string') {
-            return res.status(400).json({
-                error: 'Missing required field: latex (string)',
+            return sendError(res, 400, 'Missing required field: latex (string)', {
                 usage: {
                     method: 'POST',
                     body: {
                         latex: '\\begin{theorem}...\\end{theorem}',
                         axiomBundle: 'ClassicalMath',
                         numTests: 1000,
+                        seed: 1234,
+                        timeoutMs: 2000,
+                        maxCounterexamples: 5,
+                        maxWorkItems: 100,
+                        typeCheckMode: 'strict',
                     },
                 },
             });
         }
 
         if (latex.length > 50000) {
-            return res.status(413).json({ error: 'Input too large. Maximum 50,000 characters.' });
+            return sendError(res, 413, 'Input too large. Maximum 50,000 characters.');
         }
 
-        const tests = typeof numTests === 'number' ? Math.min(numTests, 10000) : undefined;
-        const result = apiAnalyze(latex, axiomBundle, tests);
+        const defaultTypeCheckMode = process.env.NODE_ENV === 'production' ? 'strict' : 'permissive';
+        const { numTests, seed, timeoutMs, maxCounterexamples, maxWorkItems, typeCheckMode } = parseAnalyzeOptions(
+            body,
+            defaultTypeCheckMode,
+        );
+        const workerResponse = await runAnalyzeTaskInWorker(
+            {
+                kind: 'analyze',
+                latex,
+                axiomBundle,
+                options: {
+                    numTests,
+                    seed,
+                    timeoutMs,
+                    maxCounterexamples,
+                    maxWorkItems,
+                    typeCheckMode,
+                },
+            },
+            timeoutMs,
+        );
+
+        if (!workerResponse?.ok) {
+            if (workerResponse?.timeout) {
+                return res.status(200).json({
+                    ok: true,
+                    tier: auth.tier,
+                    theorems: [],
+                    overall: {
+                        totalDeclarations: 0,
+                        theoremCount: 0,
+                        definitionCount: 0,
+                        lemmaCount: 0,
+                        analyzedTheoremCount: 0,
+                        axiomBudget: [],
+                        typeCheckValid: false,
+                        diagnosticCount: 1,
+                    },
+                    truncated: true,
+                    truncationReason: workerResponse.error || 'worker timeout',
+                });
+            }
+            return sendError(res, 500, workerResponse?.error || 'Analyze worker failed.');
+        }
+
+        const result = workerResponse.result;
 
         return res.status(200).json({
             ok: true,
@@ -59,6 +96,6 @@ export default async function handler(req, res) {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return res.status(500).json({ ok: false, error: message });
+        return sendError(res, 500, message);
     }
 }

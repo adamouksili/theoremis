@@ -1,57 +1,43 @@
-// ─────────────────────────────────────────────────────────────
-// Theoremis API  ·  POST /api/v1/parse
-// LaTeX → AST → IR → TypeCheck
-// ─────────────────────────────────────────────────────────────
-
 import { apiParse } from '../../src/api/pipeline.js';
-
-// Simple API key validation
-function validateKey(req) {
-    const auth = req.headers['authorization'] || '';
-    const key = auth.replace('Bearer ', '').trim();
-
-    // For now, accept any non-empty key (we'll add Stripe-linked keys later)
-    // Also allow unauthenticated access for the free tier
-    if (!key) return { valid: true, tier: 'free', rateLimit: 100 };
-    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 10000 };
-
-    return { valid: true, tier: 'free', rateLimit: 100 };
-}
+import { authenticate, applyCors, applyRateLimit, handlePreflight, requireMethod, sendError, parseTypeCheckMode } from './_shared.js';
 
 export default async function handler(req, res) {
-    // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    applyCors(req, res, ['POST', 'OPTIONS']);
+    if (handlePreflight(req, res)) return;
+    if (!requireMethod(req, res, 'POST')) return;
 
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    const auth = authenticate(req);
+    if (!auth.valid) {
+        return sendError(res, auth.status || 401, auth.error || 'Invalid API key.');
     }
 
-    const auth = validateKey(req);
-    if (!auth.valid) {
-        return res.status(401).json({ error: 'Invalid API key.' });
+    const rate = await applyRateLimit(req, res, auth);
+    if (!rate.ok) {
+        return sendError(res, rate.status || 429, rate.error || 'Rate limit exceeded.');
     }
 
     try {
-        const { latex, axiomBundle } = req.body || {};
+        const { latex, axiomBundle, typeCheckMode: requestedTypeCheckMode } = req.body || {};
 
         if (!latex || typeof latex !== 'string') {
-            return res.status(400).json({
-                error: 'Missing required field: latex (string)',
+            return sendError(res, 400, 'Missing required field: latex (string)', {
                 usage: {
                     method: 'POST',
-                    body: { latex: '\\begin{theorem}...\\end{theorem}', axiomBundle: 'ClassicalMath' },
+                    body: {
+                        latex: '\\begin{theorem}...\\end{theorem}',
+                        axiomBundle: 'ClassicalMath',
+                        typeCheckMode: 'permissive',
+                    },
                 },
             });
         }
 
         if (latex.length > 50000) {
-            return res.status(413).json({ error: 'Input too large. Maximum 50,000 characters.' });
+            return sendError(res, 413, 'Input too large. Maximum 50,000 characters.');
         }
 
-        const result = apiParse(latex, axiomBundle);
+        const typeCheckMode = parseTypeCheckMode(requestedTypeCheckMode, 'permissive');
+        const result = apiParse(latex, axiomBundle, typeCheckMode);
 
         return res.status(200).json({
             ok: true,
@@ -60,6 +46,6 @@ export default async function handler(req, res) {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return res.status(500).json({ ok: false, error: message });
+        return sendError(res, 500, message);
     }
 }

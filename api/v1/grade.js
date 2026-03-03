@@ -1,39 +1,26 @@
-// ─────────────────────────────────────────────────────────────
-// Theoremis API  ·  POST /api/v1/grade
-// Auto-grade a LaTeX submission against a rubric
-// ─────────────────────────────────────────────────────────────
-
 import { gradeSubmission } from '../../src/api/grader.js';
+import { authenticate, applyCors, applyRateLimit, handlePreflight, requireMethod, sendError, parseTypeCheckMode } from './_shared.js';
 
-function validateKey(req) {
-    const auth = req.headers['authorization'] || '';
-    const key = auth.replace('Bearer ', '').trim();
-    if (!key) return { valid: true, tier: 'free', rateLimit: 20 };
-    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 5000 };
-    return { valid: true, tier: 'free', rateLimit: 20 };
-}
+export default async function handler(req, res) {
+    applyCors(req, res, ['POST', 'OPTIONS']);
+    if (handlePreflight(req, res)) return;
+    if (!requireMethod(req, res, 'POST')) return;
 
-export default function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    const auth = authenticate(req, { free: 20, pro: 5000 });
+    if (!auth.valid) {
+        return sendError(res, auth.status || 401, auth.error || 'Invalid API key.');
     }
 
-    const auth = validateKey(req);
-    if (!auth.valid) {
-        return res.status(401).json({ error: 'Invalid API key.' });
+    const rate = await applyRateLimit(req, res, auth);
+    if (!rate.ok) {
+        return sendError(res, rate.status || 429, rate.error || 'Rate limit exceeded.');
     }
 
     try {
-        const { latex, rubric, studentId } = req.body || {};
+        const { latex, rubric, studentId, typeCheckMode: bodyTypeCheckMode } = req.body || {};
 
         if (!latex || typeof latex !== 'string') {
-            return res.status(400).json({
-                error: 'Missing required field: latex (string)',
+            return sendError(res, 400, 'Missing required field: latex (string)', {
                 usage: {
                     method: 'POST',
                     body: {
@@ -45,6 +32,7 @@ export default function handler(req, res) {
                             numTests: 1000,
                             maxPoints: 100,
                         },
+                        typeCheckMode: 'strict',
                         studentId: 'student_123',
                     },
                 },
@@ -52,10 +40,16 @@ export default function handler(req, res) {
         }
 
         if (latex.length > 100000) {
-            return res.status(413).json({ error: 'Input too large. Maximum 100,000 characters.' });
+            return sendError(res, 413, 'Input too large. Maximum 100,000 characters.');
         }
 
-        const result = gradeSubmission(latex, rubric ?? {}, studentId);
+        const defaultTypeCheckMode = process.env.NODE_ENV === 'production' ? 'strict' : 'permissive';
+        const typeCheckMode = parseTypeCheckMode(
+            bodyTypeCheckMode ?? rubric?.typeCheckMode,
+            defaultTypeCheckMode,
+        );
+        const rubricWithMode = { ...(rubric ?? {}), typeCheckMode };
+        const result = gradeSubmission(latex, rubricWithMode, studentId);
 
         return res.status(200).json({
             ok: true,
@@ -64,6 +58,6 @@ export default function handler(req, res) {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return res.status(500).json({ ok: false, error: message });
+        return sendError(res, 500, message);
     }
 }

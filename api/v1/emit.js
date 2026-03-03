@@ -1,41 +1,28 @@
-// ─────────────────────────────────────────────────────────────
-// Theoremis API  ·  POST /api/v1/emit
-// LaTeX → Lean 4, Coq, Isabelle/HOL
-// ─────────────────────────────────────────────────────────────
-
 import { apiEmit } from '../../src/api/pipeline.js';
-
-function validateKey(req) {
-    const auth = req.headers['authorization'] || '';
-    const key = auth.replace('Bearer ', '').trim();
-    if (!key) return { valid: true, tier: 'free', rateLimit: 100 };
-    if (key.startsWith('thm_')) return { valid: true, tier: 'pro', rateLimit: 10000 };
-    return { valid: true, tier: 'free', rateLimit: 100 };
-}
+import { authenticate, applyCors, applyRateLimit, handlePreflight, requireMethod, sendError } from './_shared.js';
 
 const VALID_TARGETS = ['lean4', 'coq', 'isabelle'];
 
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    applyCors(req, res, ['POST', 'OPTIONS']);
+    if (handlePreflight(req, res)) return;
+    if (!requireMethod(req, res, 'POST')) return;
 
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    const auth = authenticate(req);
+    if (!auth.valid) {
+        return sendError(res, auth.status || 401, auth.error || 'Invalid API key.');
     }
 
-    const auth = validateKey(req);
-    if (!auth.valid) {
-        return res.status(401).json({ error: 'Invalid API key.' });
+    const rate = await applyRateLimit(req, res, auth);
+    if (!rate.ok) {
+        return sendError(res, rate.status || 429, rate.error || 'Rate limit exceeded.');
     }
 
     try {
         const { latex, axiomBundle, targets } = req.body || {};
 
         if (!latex || typeof latex !== 'string') {
-            return res.status(400).json({
-                error: 'Missing required field: latex (string)',
+            return sendError(res, 400, 'Missing required field: latex (string)', {
                 usage: {
                     method: 'POST',
                     body: {
@@ -48,16 +35,14 @@ export default async function handler(req, res) {
         }
 
         if (latex.length > 50000) {
-            return res.status(413).json({ error: 'Input too large. Maximum 50,000 characters.' });
+            return sendError(res, 413, 'Input too large. Maximum 50,000 characters.');
         }
 
         // Validate targets
         if (targets && Array.isArray(targets)) {
             const invalid = targets.filter((t) => !VALID_TARGETS.includes(t));
             if (invalid.length) {
-                return res.status(400).json({
-                    error: `Invalid targets: ${invalid.join(', ')}. Valid: ${VALID_TARGETS.join(', ')}`,
-                });
+                return sendError(res, 400, `Invalid targets: ${invalid.join(', ')}. Valid: ${VALID_TARGETS.join(', ')}`);
             }
         }
 
@@ -70,6 +55,6 @@ export default async function handler(req, res) {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return res.status(500).json({ ok: false, error: message });
+        return sendError(res, 500, message);
     }
 }
