@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { parseLatex, documentToIR } from '../parser/latex';
-import { typeCheck } from '../core/typechecker';
+import { typeCheck, type TypeCheckMode } from '../core/typechecker';
 import { emitLean4 } from '../emitters/lean4';
 import { quickCheck, extractVariables } from '../engine/evaluator';
 import { BUNDLES } from '../core/ir';
@@ -25,6 +25,8 @@ export interface GradeRubric {
     requireTypeCheck?: boolean;
     /** Number of QuickCheck tests */
     numTests?: number;
+    /** Type-check semantics mode */
+    typeCheckMode?: TypeCheckMode;
     /** Whether emitted Lean 4 must have no warnings */
     requireCleanEmission?: boolean;
     /** Custom point allocations */
@@ -98,6 +100,7 @@ export function gradeSubmission(
     const bundleName = rubric.axiomBundle ?? 'ClassicalMath';
     const bundle: AxiomBundle = BUNDLES[bundleName] ?? BUNDLES.ClassicalMath;
     const numTests = rubric.numTests ?? 500;
+    const typeCheckMode: TypeCheckMode = rubric.typeCheckMode ?? 'permissive';
 
     const overallFeedback: string[] = [];
     const diagnostics: Array<{ severity: string; message: string }> = [];
@@ -146,7 +149,7 @@ export function gradeSubmission(
 
     if (ir) {
         try {
-            const tc = typeCheck(ir);
+            const tc = typeCheck(ir, { mode: typeCheckMode });
             tcValid = tc.valid;
 
             for (const d of tc.diagnostics) {

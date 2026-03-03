@@ -283,4 +283,30 @@ describe('typeCheck', () => {
         const result = typeCheck(mod);
         expect(result.valid).toBe(true);
     });
+
+    it('keeps permissive mode by default', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'permissive_app',
+            params: [],
+            returnType: Types.Type0,
+            body: mk.app(mk.nat(1), mk.nat(2)),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.mode).toBe('permissive');
+    });
+
+    it('rejects unresolved application typing in strict mode', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'strict_app',
+            params: [],
+            returnType: Types.Type0,
+            body: mk.app(mk.nat(1), mk.nat(2)),
+        }]);
+        const result = typeCheck(mod, { mode: 'strict' });
+        expect(result.valid).toBe(false);
+        expect(result.mode).toBe('strict');
+        expect((result.strictDiagnostics?.fallbackErrors ?? 0) > 0).toBe(true);
+    });
 });

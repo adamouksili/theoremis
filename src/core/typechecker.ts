@@ -34,14 +34,24 @@ export interface Diagnostic {
     term?: Term;
 }
 
+export type TypeCheckMode = 'permissive' | 'strict';
+
+export interface StrictDiagnostics {
+    fallbackErrors: number;
+    unresolvedTermErrors: number;
+    universeErrors: number;
+}
+
 // ── Type-check result ───────────────────────────────────────
 
 export interface TypeCheckResult {
     valid: boolean;
+    mode: TypeCheckMode;
     diagnostics: Diagnostic[];
     inferredTypes: Map<string, Term>;
     holes: HoleInfo[];
     axiomUsage: Set<string>;
+    strictDiagnostics?: StrictDiagnostics;
 }
 
 export interface HoleInfo {
@@ -451,23 +461,52 @@ function makeStdContext(ctx: TypeContext): TypeContext {
 
 // ── The type-checker ────────────────────────────────────────
 
-export function typeCheck(module: IRModule): TypeCheckResult {
+export interface TypeCheckOptions {
+    mode?: TypeCheckMode;
+}
+
+function newStrictDiagnostics(): StrictDiagnostics {
+    return {
+        fallbackErrors: 0,
+        unresolvedTermErrors: 0,
+        universeErrors: 0,
+    };
+}
+
+function strictFail(
+    diagnostics: Diagnostic[],
+    mode: TypeCheckMode,
+    strict: StrictDiagnostics,
+    kind: keyof StrictDiagnostics,
+    message: string,
+    term?: Term,
+): null {
+    if (mode === 'strict') strict[kind] += 1;
+    diagnostics.push({ severity: 'error', message, term });
+    return null;
+}
+
+export function typeCheck(module: IRModule, options: TypeCheckOptions = {}): TypeCheckResult {
+    const mode: TypeCheckMode = options.mode ?? 'permissive';
     const ctx = makeStdContext(emptyContext(module.axiomBundle));
     const diagnostics: Diagnostic[] = [];
     const inferredTypes = new Map<string, Term>();
     const holes: HoleInfo[] = [];
     const axiomUsage = new Set<string>();
+    const strict = newStrictDiagnostics();
 
     for (const decl of module.declarations) {
-        checkDeclaration(ctx, decl, diagnostics, inferredTypes, holes, axiomUsage);
+        checkDeclaration(ctx, decl, diagnostics, inferredTypes, holes, axiomUsage, mode, strict);
     }
 
     return {
         valid: diagnostics.every(d => d.severity !== 'error'),
+        mode,
         diagnostics,
         inferredTypes,
         holes,
         axiomUsage,
+        strictDiagnostics: mode === 'strict' ? strict : undefined,
     };
 }
 
@@ -477,12 +516,14 @@ function checkDeclaration(
     diagnostics: Diagnostic[],
     inferredTypes: Map<string, Term>,
     holes: HoleInfo[],
-    axiomUsage: Set<string>
+    axiomUsage: Set<string>,
+    mode: TypeCheckMode,
+    strict: StrictDiagnostics,
 ): void {
     switch (decl.tag) {
         case 'Definition': {
-            const paramCtx = addParams(ctx, decl.params, diagnostics, holes, axiomUsage);
-            const bodyType = inferType(paramCtx, decl.body, holes, axiomUsage, diagnostics);
+            const paramCtx = addParams(ctx, decl.params, diagnostics, holes, axiomUsage, mode, strict);
+            const bodyType = inferType(paramCtx, decl.body, holes, axiomUsage, diagnostics, mode, strict);
 
             if (bodyType) {
                 inferredTypes.set(decl.name, bodyType);
@@ -492,7 +533,7 @@ function checkDeclaration(
                 const inferredNorm = normalize(bodyType, paramCtx);
                 if (!termsEqual(declaredNorm, inferredNorm) && declaredNorm.tag !== 'Sort') {
                     diagnostics.push({
-                        severity: 'warning',
+                        severity: mode === 'strict' ? 'error' : 'warning',
                         message: `Definition '${decl.name}': declared return type may not match inferred type`,
                         location: decl.name, term: bodyType,
                     });
@@ -514,10 +555,10 @@ function checkDeclaration(
         }
         case 'Theorem':
         case 'Lemma': {
-            const paramCtx = addParams(ctx, decl.params, diagnostics, holes, axiomUsage);
+            const paramCtx = addParams(ctx, decl.params, diagnostics, holes, axiomUsage, mode, strict);
 
             // Check that the statement is well-formed (must be a type/prop)
-            const stmtType = inferType(paramCtx, decl.statement, holes, axiomUsage, diagnostics);
+            const stmtType = inferType(paramCtx, decl.statement, holes, axiomUsage, diagnostics, mode, strict);
             if (stmtType) {
                 inferredTypes.set(decl.name, decl.statement);
 
@@ -531,7 +572,7 @@ function checkDeclaration(
                     });
                 } else {
                     diagnostics.push({
-                        severity: 'warning',
+                        severity: mode === 'strict' ? 'error' : 'warning',
                         message: `${decl.tag} '${decl.name}': statement type could not be fully resolved`,
                         location: decl.name, term: stmtType,
                     });
@@ -588,18 +629,27 @@ function addParams(
     params: Param[],
     diagnostics: Diagnostic[],
     holes: HoleInfo[],
-    axiomUsage: Set<string>
+    axiomUsage: Set<string>,
+    mode: TypeCheckMode,
+    strict: StrictDiagnostics,
 ): TypeContext {
     let result = ctx;
     for (const p of params) {
         // Verify each parameter type is well-formed
-        const paramTypeType = inferType(result, p.type, holes, axiomUsage, diagnostics);
+        const paramTypeType = inferType(result, p.type, holes, axiomUsage, diagnostics, mode, strict);
         if (!paramTypeType) {
             diagnostics.push({
                 severity: 'error',
                 message: `Parameter '${p.name}': type is not well-formed`,
                 term: p.type,
             });
+        } else if (mode === 'strict' && normalize(paramTypeType, result).tag !== 'Sort') {
+            diagnostics.push({
+                severity: 'error',
+                message: `Parameter '${p.name}': parameter type must itself be a universe`,
+                term: p.type,
+            });
+            strict.universeErrors += 1;
         }
         result = extendContext(result, p.name, p.type);
     }
@@ -613,7 +663,9 @@ export function inferType(
     term: Term,
     holes: HoleInfo[],
     axiomUsage: Set<string>,
-    diagnostics: Diagnostic[]
+    diagnostics: Diagnostic[],
+    mode: TypeCheckMode = 'permissive',
+    strict: StrictDiagnostics = newStrictDiagnostics(),
 ): Term | null {
     switch (term.tag) {
         case 'Var': {
@@ -637,18 +689,38 @@ export function inferType(
         }
 
         case 'Sort': {
-            // Type : Type (simplified, ignoring universe inconsistency for now)
             if (term.universe.tag === 'Prop') return TYPE1;
+            if (!Number.isInteger(term.universe.level) || term.universe.level < 0) {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'universeErrors',
+                    `Invalid universe level '${term.universe.level}'`,
+                    term,
+                );
+            }
+            // Cumulative universes: Type u : Type (u + 1)
             return { tag: 'Sort', universe: { tag: 'Type', level: term.universe.level + 1 } };
         }
 
         case 'Lam': {
             // Check parameter type is well-formed
-            const paramTypeType = inferType(ctx, term.paramType, holes, axiomUsage, diagnostics);
+            const paramTypeType = inferType(ctx, term.paramType, holes, axiomUsage, diagnostics, mode, strict);
             if (!paramTypeType) return null;
+            if (mode === 'strict' && normalize(paramTypeType, ctx).tag !== 'Sort') {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'universeErrors',
+                    `Lambda parameter '${term.param}' must have a type-level annotation`,
+                    term.paramType,
+                );
+            }
 
             const bodyCtx = extendContext(ctx, term.param, term.paramType);
-            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
             if (bodyType) {
                 return { tag: 'Pi', param: term.param, paramType: term.paramType, body: bodyType };
             }
@@ -656,45 +728,75 @@ export function inferType(
         }
 
         case 'App': {
-            const funcType = inferType(ctx, term.func, holes, axiomUsage, diagnostics);
+            const funcType = inferType(ctx, term.func, holes, axiomUsage, diagnostics, mode, strict);
             if (!funcType) return null;
 
             const funcNorm = normalize(funcType, ctx);
 
             if (funcNorm.tag === 'Pi') {
                 // Check argument type matches parameter type
-                const argType = inferType(ctx, term.arg, holes, axiomUsage, diagnostics);
+                const argType = inferType(ctx, term.arg, holes, axiomUsage, diagnostics, mode, strict);
                 if (argType) {
                     const argNorm = normalize(argType, ctx);
                     const paramNorm = normalize(funcNorm.paramType, ctx);
                     if (!termsEqual(argNorm, paramNorm)) {
-                        // Soft warning — math notation is flexible
                         diagnostics.push({
-                            severity: 'hint',
+                            severity: mode === 'strict' ? 'error' : 'hint',
                             message: `Application: argument type may not match parameter type`,
                             term: term.arg,
                         });
+                        if (mode === 'strict') strict.unresolvedTermErrors += 1;
                     }
                 }
                 // Substitute argument into body to get result type
                 return substitute(funcNorm.body, funcNorm.param, term.arg);
             }
 
-            // If we can't resolve the function type, infer argument and return generic
-            inferType(ctx, term.arg, holes, axiomUsage, diagnostics);
+            inferType(ctx, term.arg, holes, axiomUsage, diagnostics, mode, strict);
+            if (mode === 'strict') {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'fallbackErrors',
+                    'Application target does not infer to a function type',
+                    term.func,
+                );
+            }
             return TYPE0;
         }
 
         case 'Pi': {
-            const paramTypeType = inferType(ctx, term.paramType, holes, axiomUsage, diagnostics);
+            const paramTypeType = inferType(ctx, term.paramType, holes, axiomUsage, diagnostics, mode, strict);
             const bodyCtx = extendContext(ctx, term.param, term.paramType);
-            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
 
             if (paramTypeType && bodyType) {
                 // Π (x : A) → B where A : Type_i and B : Type_j has type Type_max(i,j)
                 // If B : Prop, then Π-type : Prop (impredicativity)
                 const paramSort = normalize(paramTypeType, ctx);
                 const bodySort = normalize(bodyType, ctx);
+
+                if (mode === 'strict' && paramSort.tag !== 'Sort') {
+                    return strictFail(
+                        diagnostics,
+                        mode,
+                        strict,
+                        'universeErrors',
+                        `Pi-domain '${term.param}' does not infer to a universe`,
+                        term.paramType,
+                    );
+                }
+                if (mode === 'strict' && bodySort.tag !== 'Sort') {
+                    return strictFail(
+                        diagnostics,
+                        mode,
+                        strict,
+                        'universeErrors',
+                        `Pi-codomain for '${term.param}' does not infer to a universe`,
+                        term.body,
+                    );
+                }
 
                 if (bodySort.tag === 'Sort' && bodySort.universe.tag === 'Prop') {
                     return PROP;
@@ -704,21 +806,44 @@ export function inferType(
                 const bodyLevel = bodySort.tag === 'Sort' && bodySort.universe.tag === 'Type' ? bodySort.universe.level : 0;
                 return { tag: 'Sort', universe: { tag: 'Type', level: Math.max(paramLevel, bodyLevel) } };
             }
+            if (mode === 'strict') {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'fallbackErrors',
+                    `Could not fully infer Pi type for binder '${term.param}'`,
+                    term,
+                );
+            }
             return TYPE0;
         }
 
         case 'Sigma': {
-            inferType(ctx, term.paramType, holes, axiomUsage, diagnostics);
+            const paramTypeType = inferType(ctx, term.paramType, holes, axiomUsage, diagnostics, mode, strict);
             const bodyCtx = extendContext(ctx, term.param, term.paramType);
-            inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
+            if (paramTypeType && bodyType) {
+                return TYPE0;
+            }
+            if (mode === 'strict') {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'fallbackErrors',
+                    `Could not fully infer Sigma type for binder '${term.param}'`,
+                    term,
+                );
+            }
             return TYPE0;
         }
 
         case 'ForAll': {
             // ∀ x ∈ D, P(x)  has type Prop
-            inferType(ctx, term.domain, holes, axiomUsage, diagnostics);
+            inferType(ctx, term.domain, holes, axiomUsage, diagnostics, mode, strict);
             const bodyCtx = extendContext(ctx, term.param, term.domain);
-            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
             if (bodyType) {
                 const bodyNorm = normalize(bodyType, ctx);
                 if (bodyNorm.tag === 'Sort' && bodyNorm.universe.tag === 'Prop') {
@@ -729,15 +854,15 @@ export function inferType(
         }
 
         case 'Exists': {
-            inferType(ctx, term.domain, holes, axiomUsage, diagnostics);
+            inferType(ctx, term.domain, holes, axiomUsage, diagnostics, mode, strict);
             const bodyCtx = extendContext(ctx, term.param, term.domain);
-            inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
             return PROP;
         }
 
         case 'BinOp': {
-            const leftType = inferType(ctx, term.left, holes, axiomUsage, diagnostics);
-            const rightType = inferType(ctx, term.right, holes, axiomUsage, diagnostics);
+            const leftType = inferType(ctx, term.left, holes, axiomUsage, diagnostics, mode, strict);
+            const rightType = inferType(ctx, term.right, holes, axiomUsage, diagnostics, mode, strict);
 
             const propOps = new Set(['=', '<', '>', '≤', '≥', '∧', '∨', '→', '↔', '∈', '∉', '⊆']);
             if (propOps.has(term.op)) {
@@ -763,7 +888,7 @@ export function inferType(
         }
 
         case 'UnaryOp': {
-            const opType = inferType(ctx, term.operand, holes, axiomUsage, diagnostics);
+            const opType = inferType(ctx, term.operand, holes, axiomUsage, diagnostics, mode, strict);
             if (term.op === '¬') return PROP;
             // Negation: ℕ → ℤ, ℤ → ℤ, ℝ → ℝ
             if (opType) {
@@ -775,9 +900,9 @@ export function inferType(
         }
 
         case 'Equiv': {
-            inferType(ctx, term.left, holes, axiomUsage, diagnostics);
-            inferType(ctx, term.right, holes, axiomUsage, diagnostics);
-            if (term.modulus) inferType(ctx, term.modulus, holes, axiomUsage, diagnostics);
+            inferType(ctx, term.left, holes, axiomUsage, diagnostics, mode, strict);
+            inferType(ctx, term.right, holes, axiomUsage, diagnostics, mode, strict);
+            if (term.modulus) inferType(ctx, term.modulus, holes, axiomUsage, diagnostics, mode, strict);
             return PROP;
         }
 
@@ -805,8 +930,8 @@ export function inferType(
         }
 
         case 'Pair': {
-            const fstType = inferType(ctx, term.fst, holes, axiomUsage, diagnostics);
-            const sndType = inferType(ctx, term.snd, holes, axiomUsage, diagnostics);
+            const fstType = inferType(ctx, term.fst, holes, axiomUsage, diagnostics, mode, strict);
+            const sndType = inferType(ctx, term.snd, holes, axiomUsage, diagnostics, mode, strict);
             if (fstType && sndType) {
                 return { tag: 'Sigma', param: '_', paramType: fstType, body: sndType };
             }
@@ -814,47 +939,68 @@ export function inferType(
         }
 
         case 'Proj': {
-            const pairType = inferType(ctx, term.term, holes, axiomUsage, diagnostics);
+            const pairType = inferType(ctx, term.term, holes, axiomUsage, diagnostics, mode, strict);
             if (pairType) {
                 const norm = normalize(pairType, ctx);
                 if (norm.tag === 'Sigma') {
                     return term.index === 1 ? norm.paramType : norm.body;
                 }
             }
+            if (mode === 'strict') {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'fallbackErrors',
+                    `Projection .${term.index} used on a non-pair value`,
+                    term.term,
+                );
+            }
             return TYPE0;
         }
 
         case 'LetIn': {
-            const valType = inferType(ctx, term.value, holes, axiomUsage, diagnostics);
-            const declaredType = inferType(ctx, term.type, holes, axiomUsage, diagnostics);
+            const valType = inferType(ctx, term.value, holes, axiomUsage, diagnostics, mode, strict);
+            const declaredType = inferType(ctx, term.type, holes, axiomUsage, diagnostics, mode, strict);
 
             if (valType && declaredType) {
                 const valNorm = normalize(valType, ctx);
                 const declNorm = normalize(term.type, ctx);
                 if (!termsEqual(valNorm, declNorm)) {
                     diagnostics.push({
-                        severity: 'warning',
+                        severity: mode === 'strict' ? 'error' : 'warning',
                         message: `let '${term.name}': declared type may not match value type`,
                         term: term.value,
                     });
+                    if (mode === 'strict') strict.unresolvedTermErrors += 1;
                 }
             }
 
             const bodyCtx = extendContext(ctx, term.name, term.type);
-            return inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics);
+            return inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
         }
 
         case 'Ind':
             return TYPE1;
 
         case 'Match': {
-            inferType(ctx, term.scrutinee, holes, axiomUsage, diagnostics);
+            inferType(ctx, term.scrutinee, holes, axiomUsage, diagnostics, mode, strict);
             let resultType: Term | null = null;
             for (const c of term.cases) {
                 const caseCtx = c.bindings.reduce((acc, b) => extendContext(acc, b, TYPE0), ctx);
-                const caseType = inferType(caseCtx, c.body, holes, axiomUsage, diagnostics);
+                const caseType = inferType(caseCtx, c.body, holes, axiomUsage, diagnostics, mode, strict);
                 if (caseType && !resultType) resultType = caseType;
                 // Could check all cases return compatible types
+            }
+            if (mode === 'strict' && !resultType) {
+                return strictFail(
+                    diagnostics,
+                    mode,
+                    strict,
+                    'fallbackErrors',
+                    'Match expression does not infer a consistent result type',
+                    term,
+                );
             }
             return resultType || TYPE0;
         }

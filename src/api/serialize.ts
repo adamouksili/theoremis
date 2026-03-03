@@ -184,6 +184,7 @@ function serializeNode(node: MathNode): Record<string, unknown> {
 export function serializeTypeCheck(tc: TypeCheckResult): Record<string, unknown> {
     return {
         valid: tc.valid,
+        mode: tc.mode,
         diagnostics: tc.diagnostics.map(d => ({
             severity: d.severity,
             message: d.message,
@@ -197,6 +198,7 @@ export function serializeTypeCheck(tc: TypeCheckResult): Record<string, unknown>
         inferredTypes: Object.fromEntries(
             Array.from(tc.inferredTypes.entries()).map(([k, v]) => [k, serializeTerm(v)])
         ),
+        strictDiagnostics: tc.strictDiagnostics ?? null,
     };
 }
 

@@ -42,6 +42,12 @@ describe('apiParse', () => {
         const result = apiParse(SIMPLE_THEOREM, 'NonExistentBundle');
         expect(result.ir).toBeDefined();
     });
+
+    test('supports strict typecheck mode metadata', () => {
+        const result = apiParse(SIMPLE_THEOREM, 'ClassicalMath', 'strict');
+        expect(result.strictDiagnostics).toBeDefined();
+        expect(result.strictDiagnostics?.mode).toBe('strict');
+    });
 });
 
 describe('apiEmit', () => {
@@ -71,7 +77,9 @@ describe('apiAnalyze', () => {
         expect(result.overall).toBeDefined();
         expect(result.overall.totalDeclarations).toBeGreaterThanOrEqual(1);
         expect(result.overall.theoremCount).toBeGreaterThanOrEqual(1);
+        expect(result.overall.analyzedTheoremCount).toBeGreaterThanOrEqual(1);
         expect(result.theorems.length).toBeGreaterThanOrEqual(1);
+        expect(result.truncated).toBe(false);
     });
 
     test('theorem entry has expected shape', () => {
@@ -87,6 +95,22 @@ describe('apiAnalyze', () => {
         // Just make sure it doesn't throw with a custom count
         const result = apiAnalyze(SIMPLE_THEOREM, undefined, 10);
         expect(result.overall).toBeDefined();
+    });
+
+    test('supports deterministic quickcheck options', () => {
+        const a = apiAnalyze(SIMPLE_THEOREM, undefined, 200, { seed: 99 });
+        const b = apiAnalyze(SIMPLE_THEOREM, undefined, 200, { seed: 99 });
+        const qa = a.theorems[0]?.quickCheck as Record<string, unknown>;
+        const qb = b.theorems[0]?.quickCheck as Record<string, unknown>;
+        expect(qa.passed).toBe(qb.passed);
+        expect(qa.failed).toBe(qb.failed);
+        expect(qa.counterexamples).toEqual(qb.counterexamples);
+    });
+
+    test('truncates theorem analysis when maxWorkItems is hit', () => {
+        const result = apiAnalyze(`${SIMPLE_THEOREM}\n${SIMPLE_THEOREM}`, undefined, 200, { maxWorkItems: 1 });
+        expect(result.truncated).toBe(true);
+        expect(result.overall.analyzedTheoremCount).toBe(1);
     });
 });
 
@@ -108,6 +132,11 @@ describe('apiFullPipeline', () => {
 
         // analysis
         expect(result.analysis.overall.totalDeclarations).toBeGreaterThanOrEqual(1);
+    });
+
+    test('accepts analyze options', () => {
+        const result = apiFullPipeline(SIMPLE_THEOREM, undefined, { numTests: 50, seed: 123, timeoutMs: 1000 });
+        expect(result.analysis.theorems.length).toBeGreaterThan(0);
     });
 });
 
