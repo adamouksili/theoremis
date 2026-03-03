@@ -3,6 +3,7 @@
 **AI-powered proof IDE for Lean 4** — parse LaTeX, detect unnecessary hypotheses via mutation testing, emit Lean 4 / Coq / Isabelle scaffolding, and verify proofs through a live Lean bridge.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white)
+![CI](https://github.com/adamouksili/theoremis/actions/workflows/ci.yml/badge.svg)
 ![Tests](https://img.shields.io/badge/Tests-428%20passing-brightgreen?logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
@@ -104,26 +105,30 @@ Requires a local Lean 4 + Mathlib installation. See [`docs/lean-bridge-setup.md`
 
 | Module | Path | Lines | Purpose |
 |--------|------|------:|---------|
-| **λΠω IR** | `src/core/ir.ts` | 332 | 18 term variants, universe hierarchy, axiom bundles |
-| **Type-Checker** | `src/core/typechecker.ts` | 358 | Bidirectional inference, alpha-equivalence |
-| **Parser** | `src/parser/latex.ts` | 812 | Recursive descent, ~60+ LaTeX commands |
-| **Discourse Parser** | `src/parser/discourse.ts` | 457 | Natural language → quantified structure |
+| **λΠω IR** | `src/core/ir.ts` | 331 | 18 term variants, universe hierarchy, axiom bundles |
+| **Type-Checker** | `src/core/typechecker.ts` | 896 | Bidirectional inference, alpha-equivalence, axiom tracking |
+| **Pretty Printer** | `src/core/pretty.ts` | 151 | Human-readable IR output |
+| **LaTeX Parser** | `src/parser/latex.ts` | 1,220 | Recursive descent with tokenizer, ~60+ LaTeX commands |
+| **Discourse Parser** | `src/parser/discourse.ts` | 165 | Rhetorical roles, dependency graphs |
+| **AST Types** | `src/parser/ast.ts` | 119 | Math document & node type definitions |
 | **LLM Hypothesis** | `src/parser/llm-hypothesis.ts` | 555 | AI-assisted hypothesis extraction |
 | **Multi-file** | `src/parser/multifile.ts` | 152 | Cross-file theorem resolution |
-| **Mutator** | `src/engine/mutator.ts` | 264 | 7 mutation operators on theorem IR |
-| **Evaluator** | `src/engine/evaluator.ts` | 422 | BigInt `modPow`, domain-aware generators |
-| **Counterexample** | `src/engine/counterexample.ts` | 347 | Orchestrates mutation + evaluation |
-| **LLM Engine** | `src/engine/llm.ts` | 314 | Multi-provider tactic suggestions |
-| **Lean 4 Emitter** | `src/emitters/lean4.ts` | 283 | Mathlib-aware emission with imports |
-| **Coq Emitter** | `src/emitters/coq.ts` | 196 | Coq proof scaffolding |
-| **Isabelle Emitter** | `src/emitters/isabelle.ts` | 186 | Isabelle/HOL scaffolding |
-| **Lean Bridge** | `src/bridge/lean-client.ts` | 120 | Client for live verification |
-| **Mathlib Search** | `src/bridge/mathlib-db.ts` | 293 | Local Mathlib theorem database |
-| **Moogle Search** | `src/bridge/moogle-search.ts` | 73 | Moogle API integration |
+| **Mutator** | `src/engine/mutator.ts` | 113 | 7 mutation operators on theorem IR |
+| **Evaluator** | `src/engine/evaluator.ts` | 573 | BigInt `modPow`, domain-aware generators |
+| **Counterexample** | `src/engine/counterexample.ts` | 346 | Orchestrates mutation + evaluation |
+| **LLM Engine** | `src/engine/llm.ts` | 293 | Multi-provider tactic suggestions |
+| **Lean 4 Emitter** | `src/emitters/lean4.ts` | 293 | Mathlib-aware emission with imports |
+| **Coq Emitter** | `src/emitters/coq.ts` | 235 | Coq proof scaffolding |
+| **Isabelle Emitter** | `src/emitters/isabelle.ts` | 282 | Isabelle/HOL scaffolding |
+| **Lean Bridge** | `src/bridge/lean-client.ts` | 102 | Client for live verification |
+| **Lean Server** | `src/bridge/lean-server.ts` | 262 | HTTP server wrapping Lean 4 CLI |
+| **Mathlib DB** | `src/bridge/mathlib-db.ts` | 241 | Local Mathlib theorem database |
+| **Moogle Search** | `src/bridge/moogle-search.ts` | 46 | Moogle API integration |
 | **API Pipeline** | `src/api/pipeline.ts` | 185 | REST pipeline orchestration |
 | **Grader** | `src/api/grader.ts` | 386 | Auto-grading engine with rubrics |
-| **CLI Linter** | `cli/lint.ts` | 346 | Command-line hypothesis linter |
-| **Bench Runner** | `bench/run.ts` | 240 | Precision/recall benchmark |
+| **Serializer** | `src/api/serialize.ts` | 220 | API response serialization |
+| **CLI Linter** | `cli/lint.ts` | 345 | Command-line hypothesis linter |
+| **Bench Runner** | `bench/run.ts` | 239 | Precision/recall benchmark |
 
 ## Mutation Operators
 

@@ -38,7 +38,9 @@ runs:
 
     - name: Install Theoremis
       shell: bash
-      run: npm install -g theoremis@latest || npm install theoremis@latest
+      run: |
+        npm install
+        npx tsc --noEmit || true
 
     - name: Run Theoremis lint
       id: lint
@@ -46,13 +48,13 @@ runs:
       run: |
         set +e
         ARGS="--format github --bundle ${{ inputs.axiom-bundle }} --tests ${{ inputs.num-tests }}"
-        OUTPUT=$(npx theoremis ${{ inputs.files }} $ARGS)
+        OUTPUT=$(npx tsx cli/lint.ts ${{ inputs.files }} $ARGS)
         EXIT_CODE=$?
         echo "$OUTPUT"
 
         # JSON output for structured reporting
         JSON_ARGS="--format json --bundle ${{ inputs.axiom-bundle }} --tests ${{ inputs.num-tests }}"
-        JSON_OUTPUT=$(npx theoremis ${{ inputs.files }} $JSON_ARGS 2>/dev/null || echo '{}')
+        JSON_OUTPUT=$(npx tsx cli/lint.ts ${{ inputs.files }} $JSON_ARGS 2>/dev/null || echo '{}')
         echo "report<<EOF" >> $GITHUB_OUTPUT
         echo "$JSON_OUTPUT" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT

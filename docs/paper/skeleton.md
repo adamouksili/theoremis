@@ -20,11 +20,11 @@
 **Key claims to make:**
 - We present a technique for automatically detecting unnecessary hypotheses in mathematical theorem statements via mutation testing
 - We implement 7 mutation operators over a λΠω intermediate representation
-- We evaluate on a benchmark of [N] annotated theorems across number theory, algebra, and analysis
-- We achieve [X]% precision and [Y]% recall on hypothesis necessity detection
+- We evaluate on a benchmark of 20 annotated theorems across number theory, algebra, and analysis
+- We achieve 100% precision and 100% recall on hypothesis necessity detection
 - We discuss limitations (soundness, domain coverage) and applications to specification auditing
 
-**Current numbers (will update as benchmark grows):**
+**Current numbers:**
 - 20 theorems, 100% precision, 100% recall for hypothesis necessity
 - 90.9% precision, 100% recall for mutation detection
 - <10ms total analysis time
