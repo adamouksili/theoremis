@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white)
 ![CI](https://github.com/adamouksili/theoremis/actions/workflows/ci.yml/badge.svg)
-![Tests](https://img.shields.io/badge/Tests-428%20passing-brightgreen?logo=vitest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-451%20passing-brightgreen?logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Lean 4](https://img.shields.io/badge/Lean_4-Bridge-blue)
@@ -58,13 +58,17 @@ LaTeX → Parser → Math-AST → λΠω IR → Type-Checker
 
 ## Benchmark Results
 
-On our 20-theorem annotated benchmark suite (`bench/fixtures/core-theorems.tex`):
+Benchmarks are now split into:
+- Internal suite: `bench/fixtures/internal/`
+- Holdout suite: `bench/fixtures/holdout/` (with provenance metadata)
+
+Latest aggregate run:
 
 | Metric | Hypothesis Detection | Mutation Detection |
 |--------|--------------------:|-------------------:|
-| Precision | **100.0%** | **90.9%** |
+| Precision | **100.0%** | **93.3%** |
 | Recall | **100.0%** | **100.0%** |
-| F1 | **100.0%** | **95.2%** |
+| F1 | **100.0%** | **96.6%** |
 
 ```bash
 npm run bench  # Reproduce these numbers
@@ -79,8 +83,10 @@ npm install
 
 npm run dev      # Dev server → http://localhost:5173
 npm run build    # Production build
-npm test         # Run all 428 tests
+npm test         # Run all tests (451 currently)
 npm run bench    # Benchmark suite with precision/recall
+npm run perf     # Deterministic runtime harness (median-based)
+npm run size:check # Enforce bundle/dist size budgets
 ```
 
 ### CLI
@@ -98,6 +104,49 @@ npm run bridge   # Starts verification server on port 9473
 ```
 
 Requires a local Lean 4 + Mathlib installation. See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md).
+
+## Performance & Size Budgets
+
+Theoremis includes CI-enforced optimization gates:
+
+- `npm run perf:ci` checks runtime budgets from `bench/perf-budget.json` using median + p90 sampling, CI jitter tolerance, and baseline drift checks
+- `npm run size:check` checks entry JS/CSS and runtime `dist/` budgets (excluding social metadata images)
+- Perf reports are emitted to `bench/artifacts/perf-report.json`
+
+Use these locally before pushing performance-sensitive changes:
+
+```bash
+npm run build
+npm run perf
+npm run perf:ci
+npm run size:check
+```
+
+## Security & Deployment Env Vars
+
+Runtime and deployment settings are environment-driven:
+
+- `VITE_THEOREMIS_BRIDGE_URL` — default Lean bridge URL used by the web client
+- `THEOREMIS_API_KEYS` — comma-separated valid API keys for `/api/v1/*` endpoints (required in production)
+- `THEOREMIS_ALLOWED_ORIGINS` — comma-separated CORS allowlist for API endpoints
+- `THEOREMIS_REDIS_URL` — Redis REST endpoint used for distributed sliding-window rate limits
+- `THEOREMIS_REDIS_TOKEN` — Redis auth token
+- `THEOREMIS_RATE_LIMIT_WINDOW_SEC` — window size for rate limiting (seconds)
+- `THEOREMIS_RATE_LIMIT_FREE` — free-tier request budget per window
+- `THEOREMIS_RATE_LIMIT_PRO` — pro-tier request budget per window
+- `THEOREMIS_LEAN_PROJECT` — path to local/sibling Lean + Mathlib Lake project
+
+API request bodies for `/api/v1/parse`, `/api/v1/analyze`, `/api/v1/pipeline`, and `/api/v1/grade` accept:
+- `typeCheckMode: "permissive" | "strict"`
+
+Analyze and pipeline requests additionally accept:
+- `timeoutMs` and `maxWorkItems` guardrails
+
+Analyze responses now include additive metadata:
+- `truncated: boolean` (+ `truncationReason` when limits trigger)
+- `strictDiagnostics` when strict mode is active
+
+Deployment details: see [`docs/api-hardening.md`](docs/api-hardening.md).
 
 ## Architecture
 

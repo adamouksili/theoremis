@@ -73,6 +73,12 @@ Set the CORS origin for your domain:
 export SIGMA_CORS_ORIGIN="https://www.theoremis.com"
 ```
 
+If you deploy the frontend separately, set its default bridge URL at build time:
+
+```bash
+export VITE_THEOREMIS_BRIDGE_URL="https://lean.theoremis.com"
+```
+
 Test the bridge:
 
 ```bash
@@ -218,3 +224,10 @@ localStorage.setItem('theoremis-bridge-url', 'https://lean.theoremis.com')
 | CORS errors in browser | Verify `SIGMA_CORS_ORIGIN` is set to your domain |
 | Lean timeout on first run | First compilation downloads Mathlib cache (~2-5 min). Subsequent runs are fast. |
 | Out of memory | Upgrade to $12/mo droplet (2 GB RAM) |
+
+## API Hardening Variables
+
+For the `/api/v1/*` serverless endpoints, configure:
+
+- `THEOREMIS_API_KEYS` — comma-separated accepted bearer tokens for pro access
+- `THEOREMIS_ALLOWED_ORIGINS` — comma-separated CORS allowlist (for example `https://theoremis.com,https://www.theoremis.com`)

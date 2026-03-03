@@ -131,4 +131,15 @@ To expose the bridge for the production site:
 ngrok http 9473
 ```
 
-Update `PRODUCTION_BRIDGE_URL` in `src/bridge/lean-client.ts` with the ngrok URL.
+Set the bridge URL at runtime instead of editing source code:
+
+```bash
+export VITE_THEOREMIS_BRIDGE_URL="https://YOUR-NGROK-URL.ngrok-free.app"
+npm run build
+```
+
+For local ad-hoc testing you can still override in the browser:
+
+```javascript
+localStorage.setItem('theoremis-bridge-url', 'https://YOUR-NGROK-URL.ngrok-free.app')
+```
