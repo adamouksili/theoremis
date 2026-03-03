@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "baseline": {
+    "parseMs": 0.37,
+    "emitMs": 0.24,
+    "analyze500Ms": 1.2,
+    "analyze5000Ms": 9.62,
+    "counterexamplePerTheoremMs": 0.29
+  },
+  "notes": "Baseline captured March 3, 2026 (internal suite)."
+}

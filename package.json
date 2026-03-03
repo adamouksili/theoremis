@@ -15,7 +15,10 @@
     "bridge": "npx tsx src/bridge/lean-server.ts",
     "typecheck": "tsc --noEmit",
     "lint:tex": "npx tsx cli/lint.ts",
-    "bench": "npx tsx bench/run.ts"
+    "bench": "npx tsx bench/run.ts",
+    "perf": "npx tsx bench/perf.ts",
+    "perf:ci": "npx tsx bench/perf.ts --ci",
+    "size:check": "npx tsx bench/size-check.ts"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",

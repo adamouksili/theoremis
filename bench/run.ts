@@ -6,13 +6,12 @@
 // against manually annotated ground truth.
 // ─────────────────────────────────────────────────────────────
 
-import { readFileSync, readdirSync } from 'fs';
-import { resolve, extname, relative } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'fs';
+import { resolve, extname } from 'path';
 import { parseLatex, documentToIR } from '../src/parser/latex';
 import { BUNDLES } from '../src/core/ir';
 import type { Theorem } from '../src/core/ir';
 import { runCounterexampleEngine, type CounterexampleResult } from '../src/engine/counterexample';
-import { quickCheck, extractVariables } from '../src/engine/evaluator';
 
 // ── Ground truth parsing ────────────────────────────────────
 
@@ -99,133 +98,233 @@ function computeMetrics(tp: number, fp: number, tn: number, fn: number): Metrics
 
 // ── Runner ──────────────────────────────────────────────────
 
-async function runBenchmark(): Promise<void> {
-    const fixtureDir = resolve(import.meta.dirname ?? '.', 'fixtures');
-    const files = readdirSync(fixtureDir).filter(f => extname(f) === '.tex');
+interface Confusion {
+    tp: number;
+    fp: number;
+    tn: number;
+    fn: number;
+}
+
+interface SuiteAccumulator {
+    hypothesis: Confusion;
+    mutation: Confusion;
+    theoremsParsed: number;
+    theoremsAnalyzed: number;
+}
+
+interface SuiteReport {
+    version: number;
+    suite: 'internal' | 'holdout';
+    files: string[];
+    theoremsParsed: number;
+    theoremsAnalyzed: number;
+    elapsedMs: number;
+    hypothesisDetection: Metrics;
+    mutationDetection: Metrics;
+}
+
+function zeroConfusion(): Confusion {
+    return { tp: 0, fp: 0, tn: 0, fn: 0 };
+}
+
+function updateConfusion(conf: Confusion, predicted: boolean, actual: boolean): void {
+    if (predicted && actual) conf.tp++;
+    else if (predicted && !actual) conf.fp++;
+    else if (!predicted && !actual) conf.tn++;
+    else conf.fn++;
+}
+
+function mergeConfusion(a: Confusion, b: Confusion): Confusion {
+    return {
+        tp: a.tp + b.tp,
+        fp: a.fp + b.fp,
+        tn: a.tn + b.tn,
+        fn: a.fn + b.fn,
+    };
+}
+
+async function runSuite(
+    suite: 'internal' | 'holdout',
+    fixtureDir: string,
+): Promise<SuiteReport> {
+    const files = existsSync(fixtureDir)
+        ? readdirSync(fixtureDir).filter(f => extname(f) === '.tex')
+        : [];
 
     if (files.length === 0) {
-        console.error('No .tex fixtures found in bench/fixtures/');
-        process.exit(1);
+        return {
+            version: 1,
+            suite,
+            files: [],
+            theoremsParsed: 0,
+            theoremsAnalyzed: 0,
+            elapsedMs: 0,
+            hypothesisDetection: computeMetrics(0, 0, 0, 0),
+            mutationDetection: computeMetrics(0, 0, 0, 0),
+        };
     }
 
-    console.log('\n  Theoremis Hypothesis Linter — Benchmark');
-    console.log('  ═══════════════════════════════════════\n');
-
-    let totalTP = 0, totalFP = 0, totalTN = 0, totalFN = 0;
-    let mutTP = 0, mutFP = 0, mutTN = 0, mutFN = 0;
-    let theoremsAnalyzed = 0;
-    let theoremsParsed = 0;
-    const startTime = performance.now();
+    const start = performance.now();
+    const acc: SuiteAccumulator = {
+        hypothesis: zeroConfusion(),
+        mutation: zeroConfusion(),
+        theoremsParsed: 0,
+        theoremsAnalyzed: 0,
+    };
 
     for (const file of files) {
         const filePath = resolve(fixtureDir, file);
         const latex = readFileSync(filePath, 'utf-8');
         const gt = parseAnnotations(latex);
 
-        console.log(`  ── ${file} ──`);
+        console.log(`  ── [${suite}] ${file} ──`);
 
-        const bundle = BUNDLES['ClassicalMath'];
+        const bundle = BUNDLES.ClassicalMath;
         const doc = parseLatex(latex);
         const ir = documentToIR(doc, bundle);
 
         const theorems = ir.declarations.filter(
             (d): d is Theorem => d.tag === 'Theorem' || d.tag === 'Lemma',
         );
-
-        theoremsParsed += theorems.length;
+        acc.theoremsParsed += theorems.length;
 
         for (const thm of theorems) {
-            theoremsAnalyzed++;
+            acc.theoremsAnalyzed++;
             const nameKey = thm.name;
-
-            // Run analysis
             const pathology = await runCounterexampleEngine(thm);
 
-            // ── Hypothesis necessity evaluation ─────────
             const gtHyps = gt.hypotheses.get(nameKey);
             if (gtHyps) {
-                // Build a map: param index → drop_hypothesis result
                 const dropResults: CounterexampleResult[] = pathology.results.filter(
                     r => r.mutation.type === 'drop_hypothesis' && r.mutation.droppedParam,
                 );
 
                 for (let pi = 0; pi < dropResults.length; pi++) {
                     const result = dropResults[pi];
-                    const paramName = result.mutation.droppedParam!;
-                    const predictedNecessary = result.status === 'counterexample_found';
-
-                    // Match by index (annotation uses 0-based index)
                     const actualNecessary = gtHyps.get(String(pi));
+                    if (actualNecessary === undefined) continue;
 
-                    if (actualNecessary !== undefined) {
-                        if (predictedNecessary && actualNecessary) { totalTP++; }
-                        else if (predictedNecessary && !actualNecessary) { totalFP++; }
-                        else if (!predictedNecessary && !actualNecessary) { totalTN++; }
-                        else if (!predictedNecessary && actualNecessary) { totalFN++; }
+                    const predictedNecessary = result.status === 'counterexample_found';
+                    updateConfusion(acc.hypothesis, predictedNecessary, actualNecessary);
 
-                        const icon = (predictedNecessary === actualNecessary) ? '✓' : '✗';
-                        console.log(`    ${icon} ${thm.name} / ${paramName} [${pi}]: predicted=${predictedNecessary ? 'necessary' : 'redundant'}, actual=${actualNecessary ? 'necessary' : 'redundant'}`);
-                    }
+                    const icon = predictedNecessary === actualNecessary ? '✓' : '✗';
+                    const paramName = result.mutation.droppedParam!;
+                    console.log(
+                        `    ${icon} ${thm.name} / ${paramName} [${pi}]: predicted=${predictedNecessary ? 'necessary' : 'redundant'}, actual=${actualNecessary ? 'necessary' : 'redundant'}`,
+                    );
                 }
             }
 
-            // ── Mutation evaluation ─────────────────────
             const gtMuts = gt.mutations.get(nameKey);
             if (gtMuts) {
                 for (const result of pathology.results) {
-                    const mutType = result.mutation.type;
-                    const gtCaught = gtMuts.get(mutType);
+                    const gtCaught = gtMuts.get(result.mutation.type);
                     if (gtCaught === undefined) continue;
 
                     const predictedCaught = result.status === 'counterexample_found';
-                    if (predictedCaught && gtCaught) { mutTP++; }
-                    else if (predictedCaught && !gtCaught) { mutFP++; }
-                    else if (!predictedCaught && !gtCaught) { mutTN++; }
-                    else if (!predictedCaught && gtCaught) { mutFN++; }
+                    updateConfusion(acc.mutation, predictedCaught, gtCaught);
                 }
             }
         }
     }
 
-    const elapsed = performance.now() - startTime;
+    const elapsedMs = Math.round(performance.now() - start);
+    return {
+        version: 1,
+        suite,
+        files: [...files].sort(),
+        theoremsParsed: acc.theoremsParsed,
+        theoremsAnalyzed: acc.theoremsAnalyzed,
+        elapsedMs,
+        hypothesisDetection: computeMetrics(
+            acc.hypothesis.tp,
+            acc.hypothesis.fp,
+            acc.hypothesis.tn,
+            acc.hypothesis.fn,
+        ),
+        mutationDetection: computeMetrics(
+            acc.mutation.tp,
+            acc.mutation.fp,
+            acc.mutation.tn,
+            acc.mutation.fn,
+        ),
+    };
+}
 
-    // ── Results ─────────────────────────────────────────
-    const hypMetrics = computeMetrics(totalTP, totalFP, totalTN, totalFN);
-    const mutMetrics = computeMetrics(mutTP, mutFP, mutTN, mutFN);
+async function runBenchmark(): Promise<void> {
+    const baseFixtureDir = resolve(import.meta.dirname ?? '.', 'fixtures');
+    const internalDir = resolve(baseFixtureDir, 'internal');
+    const holdoutDir = resolve(baseFixtureDir, 'holdout');
+
+    console.log('\n  Theoremis Hypothesis Linter — Benchmark');
+    console.log('  ═══════════════════════════════════════\n');
+
+    const internal = await runSuite('internal', internalDir);
+    const holdout = await runSuite('holdout', holdoutDir);
+
+    const aggHyp = mergeConfusion(
+        {
+            tp: internal.hypothesisDetection.truePositives,
+            fp: internal.hypothesisDetection.falsePositives,
+            tn: internal.hypothesisDetection.trueNegatives,
+            fn: internal.hypothesisDetection.falseNegatives,
+        },
+        {
+            tp: holdout.hypothesisDetection.truePositives,
+            fp: holdout.hypothesisDetection.falsePositives,
+            tn: holdout.hypothesisDetection.trueNegatives,
+            fn: holdout.hypothesisDetection.falseNegatives,
+        },
+    );
+    const aggMut = mergeConfusion(
+        {
+            tp: internal.mutationDetection.truePositives,
+            fp: internal.mutationDetection.falsePositives,
+            tn: internal.mutationDetection.trueNegatives,
+            fn: internal.mutationDetection.falseNegatives,
+        },
+        {
+            tp: holdout.mutationDetection.truePositives,
+            fp: holdout.mutationDetection.falsePositives,
+            tn: holdout.mutationDetection.trueNegatives,
+            fn: holdout.mutationDetection.falseNegatives,
+        },
+    );
+
+    const aggregate = {
+        version: 1,
+        theoremsParsed: internal.theoremsParsed + holdout.theoremsParsed,
+        theoremsAnalyzed: internal.theoremsAnalyzed + holdout.theoremsAnalyzed,
+        elapsedMs: internal.elapsedMs + holdout.elapsedMs,
+        hypothesisDetection: computeMetrics(aggHyp.tp, aggHyp.fp, aggHyp.tn, aggHyp.fn),
+        mutationDetection: computeMetrics(aggMut.tp, aggMut.fp, aggMut.tn, aggMut.fn),
+    };
 
     console.log('\n  ═══════════════════════════════════════');
     console.log('  Results\n');
+    console.log(`  Internal theorems analyzed: ${internal.theoremsAnalyzed}`);
+    console.log(`  Holdout theorems analyzed:  ${holdout.theoremsAnalyzed}`);
+    console.log(`  Aggregate analyzed:         ${aggregate.theoremsAnalyzed}`);
+    console.log(`  Aggregate time:             ${(aggregate.elapsedMs / 1000).toFixed(2)}s\n`);
 
-    console.log(`  Theorems parsed:    ${theoremsParsed}`);
-    console.log(`  Theorems analyzed:  ${theoremsAnalyzed}`);
-    console.log(`  Time:               ${(elapsed / 1000).toFixed(2)}s\n`);
+    console.log('  Aggregate Hypothesis Detection:');
+    console.log(`    Precision: ${(aggregate.hypothesisDetection.precision * 100).toFixed(1)}%`);
+    console.log(`    Recall:    ${(aggregate.hypothesisDetection.recall * 100).toFixed(1)}%`);
+    console.log(`    F1:        ${(aggregate.hypothesisDetection.f1 * 100).toFixed(1)}%\n`);
 
-    console.log('  Hypothesis Necessity Detection:');
-    console.log(`    True Positives:   ${hypMetrics.truePositives}`);
-    console.log(`    False Positives:  ${hypMetrics.falsePositives}`);
-    console.log(`    True Negatives:   ${hypMetrics.trueNegatives}`);
-    console.log(`    False Negatives:  ${hypMetrics.falseNegatives}`);
-    console.log(`    Precision:        ${(hypMetrics.precision * 100).toFixed(1)}%`);
-    console.log(`    Recall:           ${(hypMetrics.recall * 100).toFixed(1)}%`);
-    console.log(`    F1:               ${(hypMetrics.f1 * 100).toFixed(1)}%\n`);
+    console.log('  Aggregate Mutation Detection:');
+    console.log(`    Precision: ${(aggregate.mutationDetection.precision * 100).toFixed(1)}%`);
+    console.log(`    Recall:    ${(aggregate.mutationDetection.recall * 100).toFixed(1)}%`);
+    console.log(`    F1:        ${(aggregate.mutationDetection.f1 * 100).toFixed(1)}%\n`);
 
-    console.log('  Mutation Detection:');
-    console.log(`    True Positives:   ${mutMetrics.truePositives}`);
-    console.log(`    False Positives:  ${mutMetrics.falsePositives}`);
-    console.log(`    True Negatives:   ${mutMetrics.trueNegatives}`);
-    console.log(`    False Negatives:  ${mutMetrics.falseNegatives}`);
-    console.log(`    Precision:        ${(mutMetrics.precision * 100).toFixed(1)}%`);
-    console.log(`    Recall:           ${(mutMetrics.recall * 100).toFixed(1)}%`);
-    console.log(`    F1:               ${(mutMetrics.f1 * 100).toFixed(1)}%\n`);
-
-    // JSON output for CI
     const report = {
+        version: 2,
         timestamp: new Date().toISOString(),
-        theoremsParsed,
-        theoremsAnalyzed,
-        elapsedMs: Math.round(elapsed),
-        hypothesisDetection: hypMetrics,
-        mutationDetection: mutMetrics,
+        benchmark: {
+            internal,
+            holdout,
+            aggregate,
+        },
     };
 
     console.log('  JSON:');

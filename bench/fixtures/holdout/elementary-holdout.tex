@@ -1,0 +1,24 @@
+% Holdout benchmark fixtures for Theoremis.
+% These statements are distinct from the internal canonical suite.
+
+\begin{theorem}[Absolute Value Non-Negativity]
+For all $x \in \mathbb{Z}$, $x^2 \geq 0$.
+\end{theorem}
+%! mutation change_domain survives
+%! mutation strengthen_conclusion caught
+
+\begin{theorem}[Integer Self Equality]
+For all $a \in \mathbb{Z}$, $a = a$.
+\end{theorem}
+%! mutation negate_conclusion caught
+
+\begin{theorem}[Coprime One]
+For all $n \in \mathbb{N}$, $n$ and $1$ are coprime.
+\end{theorem}
+%! mutation drop_hypothesis survives
+
+\begin{theorem}[Prime Not One]
+Let $p$ be a prime number. Then $p \neq 1$.
+\end{theorem}
+%! hypothesis 0 necessary
+%! mutation drop_hypothesis caught

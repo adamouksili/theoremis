@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "performance": {
+    "parseMs": 1.0,
+    "emitMs": 0.8,
+    "analyze500Ms": 2.0,
+    "analyze5000Ms": 7.2,
+    "counterexamplePerTheoremMs": 0.22
+  },
+  "size": {
+    "mainJsKb": 350,
+    "mainCssKb": 45,
+    "distKb": 850
+  }
+}
