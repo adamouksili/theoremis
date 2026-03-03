@@ -296,6 +296,34 @@ describe('quickCheck: classification', () => {
     });
 });
 
+describe('quickCheck options', () => {
+    it('supports deterministic seeded runs', () => {
+        const term = mk.binOp('>', mk.var('x'), mk.nat(50));
+        const vars = [{ name: 'x', domain: 'Int' }];
+
+        const a = quickCheck(term, vars, 200, [], { seed: 42 });
+        const b = quickCheck(term, vars, 200, [], { seed: 42 });
+
+        expect(a.passed).toBe(b.passed);
+        expect(a.failed).toBe(b.failed);
+        expect(a.counterexamples).toEqual(b.counterexamples);
+    });
+
+    it('respects maxCounterexamples cap', () => {
+        const term = mk.binOp('>', mk.nat(0), mk.var('x')); // fails for many generated x
+        const vars = [{ name: 'x', domain: 'Int' }];
+        const report = quickCheck(term, vars, 500, [], { maxCounterexamples: 2 });
+        expect(report.counterexamples.length).toBeLessThanOrEqual(2);
+    });
+
+    it('supports timeout-based early stop', () => {
+        const term = mk.binOp('=', mk.var('x'), mk.var('x'));
+        const vars = [{ name: 'x', domain: 'Int' }];
+        const report = quickCheck(term, vars, 100000, [], { timeoutMs: 1 });
+        expect(report.totalTests).toBeLessThan(100000);
+    });
+});
+
 // ── Hypothesis-aware classification tests ────────────────────
 
 describe('classifyResult: precondition-aware', () => {

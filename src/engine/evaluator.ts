@@ -24,6 +24,15 @@ export interface RandomTestReport {
     classification: 'verified' | 'likely_true' | 'indeterminate' | 'likely_false' | 'falsified';
 }
 
+export interface QuickCheckOptions {
+    seed?: number;
+    timeoutMs?: number;
+    maxCounterexamples?: number;
+}
+
+type RNG = () => number;
+type EvalFn = (env: Record<string, Value>) => Value;
+
 // ── Evaluate an IR term with given variable bindings ────────
 
 export function evaluate(term: Term, env: Record<string, Value>): Value {
@@ -297,37 +306,68 @@ function evalBinOp(op: string, l: Value, r: Value): Value {
 // ── Random value generators ─────────────────────────────────
 
 export function randomNat(): number {
-    return Math.floor(Math.random() * 100);
+    return randomNatWith(Math.random);
 }
 
 export function randomInt(): number {
-    return Math.floor(Math.random() * 201) - 100;
+    return randomIntWith(Math.random);
 }
 
 export function randomReal(): number {
-    return (Math.random() * 200) - 100;
+    return randomRealWith(Math.random);
 }
 
 export function randomPrime(): number {
-    const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
-    return primes[Math.floor(Math.random() * primes.length)];
+    return randomPrimeWith(Math.random);
 }
 
 export function randomBool(): boolean {
-    return Math.random() < 0.5;
+    return randomBoolWith(Math.random);
+}
+
+function randomNatWith(rng: RNG): number {
+    return Math.floor(rng() * 100);
+}
+
+function randomIntWith(rng: RNG): number {
+    return Math.floor(rng() * 201) - 100;
+}
+
+function randomRealWith(rng: RNG): number {
+    return (rng() * 200) - 100;
+}
+
+function randomPrimeWith(rng: RNG): number {
+    const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+    return primes[Math.floor(rng() * primes.length)];
+}
+
+function randomBoolWith(rng: RNG): boolean {
+    return rng() < 0.5;
+}
+
+function createSeededRng(seed: number): RNG {
+    let state = (seed >>> 0) || 0x9e3779b9;
+    return () => {
+        // xorshift32: fast deterministic PRNG for repeatable test generation
+        state ^= state << 13;
+        state ^= state >>> 17;
+        state ^= state << 5;
+        return (state >>> 0) / 0x100000000;
+    };
 }
 
 interface DomainSpec {
     name: string;
-    generator: () => Value;
+    generator: (rng: RNG) => Value;
 }
 
 const DOMAINS: Record<string, DomainSpec> = {
-    'Nat': { name: 'ℕ', generator: randomNat },
-    'Int': { name: 'ℤ', generator: randomInt },
-    'Real': { name: 'ℝ', generator: randomReal },
-    'Bool': { name: 'Bool', generator: () => randomBool() },
-    'Prime': { name: 'Prime', generator: randomPrime },
+    'Nat': { name: 'ℕ', generator: randomNatWith },
+    'Int': { name: 'ℤ', generator: randomIntWith },
+    'Real': { name: 'ℝ', generator: randomRealWith },
+    'Bool': { name: 'Bool', generator: randomBoolWith },
+    'Prime': { name: 'Prime', generator: randomPrimeWith },
 };
 
 // ── Result classification ───────────────────────────────────
@@ -373,18 +413,77 @@ export function classifyResult(
  * Evaluate theorem preconditions (param type constraints like Prime(p), Coprime(a, p)).
  * Returns true if all preconditions are satisfied, false if any fail, null if unevaluable.
  */
-function checkPreconditions(params: Param[], env: Record<string, Value>): boolean | null {
-    for (const param of params) {
-        // Skip params whose type is a simple type name (ℕ, ℤ, etc.) — those are domain constraints
-        // Only evaluate params whose type is a predicate application (Prime(p), Coprime(a, p), etc.)
-        const ty = param.type;
-        if (ty.tag === 'Var') {
-            // Simple type like ℕ, ℤ — not a runtime-checkable predicate
-            continue;
+function compileEvaluator(term: Term): EvalFn {
+    switch (term.tag) {
+        case 'Literal': {
+            const value: Value = term.kind === 'Nat' || term.kind === 'Int'
+                ? Number.isFinite(Number(term.value)) ? Number(term.value) : null
+                : term.kind === 'Bool' ? term.value === 'true' : term.value;
+            return () => value;
         }
-        const result = evaluate(ty, env);
-        if (result === null) continue; // Can't evaluate — don't filter
-        if (result === false) return false; // Precondition violated
+        case 'Var': {
+            const { name } = term;
+            return (env) => env[name] ?? null;
+        }
+        case 'BinOp': {
+            const left = compileEvaluator(term.left);
+            const right = compileEvaluator(term.right);
+            const op = term.op;
+            return (env) => {
+                const l = left(env);
+                const r = right(env);
+                if (l === null || r === null) return null;
+                return evalBinOp(op, l, r);
+            };
+        }
+        case 'UnaryOp': {
+            const operand = compileEvaluator(term.operand);
+            const op = term.op;
+            return (env) => {
+                const v = operand(env);
+                if (v === null) return null;
+                if (op === '¬' && typeof v === 'boolean') return !v;
+                if (op === '-' && typeof v === 'number') return -v;
+                return null;
+            };
+        }
+        case 'ForAll':
+        case 'Exists':
+        case 'Lam':
+        case 'Pi':
+        case 'Sigma':
+        case 'Sort':
+        case 'Ind':
+        case 'Match':
+        case 'Hole':
+        case 'Proj':
+            return () => null;
+        case 'AxiomRef':
+            return () => true;
+        case 'Equiv':
+        case 'App':
+        case 'LetIn':
+        case 'Pair':
+            // These paths are less common and more nuanced; defer to the full evaluator.
+            return (env) => evaluate(term, env);
+    }
+}
+
+function compilePreconditionChecks(params: Param[]): EvalFn[] {
+    const runtimeCheckable: EvalFn[] = [];
+    for (let i = 0; i < params.length; i++) {
+        const ty = params[i].type;
+        // Simple type labels (ℕ, ℤ, ...) are domain declarations, not runtime predicate checks.
+        if (ty.tag !== 'Var') runtimeCheckable.push(compileEvaluator(ty));
+    }
+    return runtimeCheckable;
+}
+
+function checkCompiledPreconditions(preconditions: EvalFn[], env: Record<string, Value>): boolean | null {
+    for (let i = 0; i < preconditions.length; i++) {
+        const result = preconditions[i](env);
+        if (result === null) continue;
+        if (result === false) return false;
     }
     return true;
 }
@@ -394,42 +493,60 @@ export function quickCheck(
     variables: Array<{ name: string; domain: string }>,
     numTests: number = 1000,
     preconditions: Param[] = [],
+    options: QuickCheckOptions = {},
 ): RandomTestReport {
     const start = performance.now();
     const counterexamples: TestResult[] = [];
+    const rng: RNG = options.seed === undefined ? Math.random : createSeededRng(options.seed);
+    const maxCounterexamples = options.maxCounterexamples ?? 5;
+    const timeoutMs = options.timeoutMs;
+
+    const variableNames = variables.map(v => v.name);
+    const variableGens = variables.map(v => (DOMAINS[v.domain] ?? DOMAINS['Int']).generator);
+    const evalTerm = compileEvaluator(term);
+    const compiledPreconditions = preconditions.length > 0 ? compilePreconditionChecks(preconditions) : [];
+    const env: Record<string, Value> = {};
+
     let passed = 0;
     let failed = 0;
     let skipped = 0;
     let preconditionSkipped = 0;
 
-    for (let i = 0; i < numTests; i++) {
-        const env: Record<string, Value> = {};
-        for (const v of variables) {
-            const dom = DOMAINS[v.domain] ?? DOMAINS['Int'];
-            env[v.name] = dom.generator();
+    const runSingle = () => {
+        for (let j = 0; j < variableNames.length; j++) {
+            env[variableNames[j]] = variableGens[j](rng);
         }
 
-        // Check preconditions first — skip tests where hypotheses aren't met
-        if (preconditions.length > 0) {
-            const preResult = checkPreconditions(preconditions, env);
+        if (compiledPreconditions.length > 0) {
+            const preResult = checkCompiledPreconditions(compiledPreconditions, env);
             if (preResult === false) {
                 preconditionSkipped++;
-                continue;
+                return;
             }
         }
 
-        const result = evaluate(term, env);
+        const result = evalTerm(env);
         if (result === null) {
             skipped++;
-            continue;
+            return;
         }
         if (result === true || result === 1) {
             passed++;
-        } else {
-            failed++;
-            if (counterexamples.length < 5) {
-                counterexamples.push({ passed: false, witness: { ...env }, evaluated: result });
-            }
+            return;
+        }
+
+        failed++;
+        if (counterexamples.length < maxCounterexamples) {
+            counterexamples.push({ passed: false, witness: { ...env }, evaluated: result });
+        }
+    };
+
+    if (timeoutMs === undefined) {
+        for (let i = 0; i < numTests; i++) runSingle();
+    } else {
+        for (let i = 0; i < numTests; i++) {
+            if (performance.now() - start >= timeoutMs) break;
+            runSingle();
         }
     }
 

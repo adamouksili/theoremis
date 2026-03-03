@@ -21,11 +21,27 @@ export interface Mutation {
 
 export function generateMutations(theorem: Theorem): Mutation[] {
     const mutations: Mutation[] = [];
+    const seen = new Set<string>();
+    const originalKey = termKey(theorem.statement);
+
+    const addMutation = (mutation: Mutation) => {
+        // Keep drop_hypothesis mutations even though their term is unchanged.
+        if (mutation.type !== 'drop_hypothesis' && termKey(mutation.mutated) === originalKey) {
+            return;
+        }
+
+        const key = mutation.type === 'drop_hypothesis'
+            ? `${mutation.type}:${mutation.droppedParam ?? ''}`
+            : `${mutation.type}:${termKey(mutation.mutated)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        mutations.push(mutation);
+    };
 
     // Drop each hypothesis
     for (let i = 0; i < theorem.params.length; i++) {
         const param = theorem.params[i];
-        mutations.push({
+        addMutation({
             type: 'drop_hypothesis',
             description: `Drop hypothesis: ${param.name}`,
             original: theorem.statement,
@@ -37,26 +53,26 @@ export function generateMutations(theorem: Theorem): Mutation[] {
 
     // Weaken conditions
     for (const w of weakenTerm(theorem.statement)) {
-        mutations.push({ type: 'weaken_condition', ...w, original: theorem.statement, params: theorem.params });
+        addMutation({ type: 'weaken_condition', ...w, original: theorem.statement, params: theorem.params });
     }
 
     // Swap quantifiers
     const swapped = swapQuantifiers(theorem.statement);
     if (swapped) {
-        mutations.push({ type: 'swap_quantifier', description: 'Swap ∀/∃', original: theorem.statement, mutated: swapped, params: theorem.params });
+        addMutation({ type: 'swap_quantifier', description: 'Swap ∀/∃', original: theorem.statement, mutated: swapped, params: theorem.params });
     }
 
     // Change domains
     for (const d of changeDomains(theorem.statement)) {
-        mutations.push({ type: 'change_domain', ...d, original: theorem.statement, params: theorem.params });
+        addMutation({ type: 'change_domain', ...d, original: theorem.statement, params: theorem.params });
     }
 
     // Negate conclusion
-    mutations.push({ type: 'negate_conclusion', description: 'Negate conclusion', original: theorem.statement, mutated: mk.unaryOp('¬', theorem.statement), params: theorem.params });
+    addMutation({ type: 'negate_conclusion', description: 'Negate conclusion', original: theorem.statement, mutated: mk.unaryOp('¬', theorem.statement), params: theorem.params });
 
     // Strengthen
     for (const s of strengthenConclusion(theorem.statement)) {
-        mutations.push({ type: 'strengthen_conclusion', ...s, original: theorem.statement, params: theorem.params });
+        addMutation({ type: 'strengthen_conclusion', ...s, original: theorem.statement, params: theorem.params });
     }
 
     return mutations;
@@ -110,4 +126,47 @@ function strengthenConclusion(term: Term): Array<{ mutated: Term; description: s
         for (const s of strengthenConclusion(term.body)) r.push({ mutated: mk.forAll(term.param, term.domain, s.mutated), description: s.description });
     }
     return r;
+}
+
+function termKey(term: Term): string {
+    switch (term.tag) {
+        case 'Var':
+            return `Var(${term.name})`;
+        case 'Lam':
+            return `Lam(${term.param}|${termKey(term.paramType)}|${termKey(term.body)})`;
+        case 'App':
+            return `App(${termKey(term.func)}|${termKey(term.arg)})`;
+        case 'Pi':
+            return `Pi(${term.param}|${termKey(term.paramType)}|${termKey(term.body)})`;
+        case 'Sigma':
+            return `Sigma(${term.param}|${termKey(term.paramType)}|${termKey(term.body)})`;
+        case 'Pair':
+            return `Pair(${termKey(term.fst)}|${termKey(term.snd)})`;
+        case 'Proj':
+            return `Proj(${term.index}|${termKey(term.term)})`;
+        case 'LetIn':
+            return `Let(${term.name}|${termKey(term.type)}|${termKey(term.value)}|${termKey(term.body)})`;
+        case 'Sort':
+            return term.universe.tag === 'Prop' ? 'Sort(Prop)' : `Sort(Type${term.universe.level})`;
+        case 'Ind':
+            return `Ind(${term.name}|${termKey(term.type)}|${term.constructors.map(c => `${c.name}:${termKey(c.type)}`).join(',')})`;
+        case 'Match':
+            return `Match(${termKey(term.scrutinee)}|${term.cases.map(c => `${c.pattern}[${c.bindings.join(',')}]:${termKey(c.body)}`).join(';')})`;
+        case 'Hole':
+            return `Hole(${term.id})`;
+        case 'AxiomRef':
+            return `Axiom(${term.axiom})`;
+        case 'Literal':
+            return `Literal(${term.kind}:${term.value})`;
+        case 'BinOp':
+            return `BinOp(${term.op}|${termKey(term.left)}|${termKey(term.right)})`;
+        case 'UnaryOp':
+            return `UnaryOp(${term.op}|${termKey(term.operand)})`;
+        case 'Equiv':
+            return `Equiv(${termKey(term.left)}|${termKey(term.right)}|${term.modulus ? termKey(term.modulus) : 'none'})`;
+        case 'ForAll':
+            return `ForAll(${term.param}|${termKey(term.domain)}|${termKey(term.body)})`;
+        case 'Exists':
+            return `Exists(${term.param}|${termKey(term.domain)}|${termKey(term.body)})`;
+    }
 }
