@@ -1,24 +1,9 @@
-import { exportAnnotatedLaTeX } from '../emitters/annotated-latex';
 import { renderTutorialPanel } from './tutorials';
 import { $, S } from './state';
 import { renderAxiomBudget, setRunCallback } from './render/axioms';
-import { initResizeHandles, renderKaTeXPreview, toggleDarkMode } from './layout-shell';
+import { initResizeHandles, toggleDarkMode } from './layout-shell';
 import { refreshBridgeStatus } from './lean-verify';
 import type { IdePipelineController } from './pipeline-run';
-
-function downloadAnnotatedLaTeX() {
-    if (!S.ir || !S.tc) return;
-    const annotated = exportAnnotatedLaTeX(S.source, S.ir, S.tc, S.lean4, S.report);
-    const blob = new Blob([annotated], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'annotated.tex';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
 
 function shareCurrentProof(): void {
     const source = S.source.trim();
@@ -62,20 +47,17 @@ function toggleTutorialPanel(): void {
 
 export function bindIdeEvents(
     controller: IdePipelineController,
-    runLeanVerify: () => Promise<void>,
 ): void {
     const ed = $<HTMLTextAreaElement>('editor');
     ed.addEventListener('input', () => {
         S.source = ed.value;
-        controller.debouncedRun();
-        renderKaTeXPreview(ed.value);
+        controller.setDraft();
     });
 
     $('btn-sample').addEventListener('click', () => controller.loadSample());
     $('btn-verify').addEventListener('click', () => { void controller.run(); });
+    $('btn-translate').addEventListener('click', () => { void controller.translateFromLatex(); });
     $('btn-download').addEventListener('click', () => controller.downloadOutput());
-    $('btn-lean').addEventListener('click', () => { void runLeanVerify(); });
-    $('btn-export-annotated').addEventListener('click', downloadAnnotatedLaTeX);
     $('btn-share').addEventListener('click', shareCurrentProof);
     $('btn-learn').addEventListener('click', toggleTutorialPanel);
     $('btn-dark').addEventListener('click', toggleDarkMode);
@@ -83,12 +65,8 @@ export function bindIdeEvents(
     window.addEventListener('tutorial-start', ((e: CustomEvent) => {
         const tutorial = e.detail?.tutorial;
         if (tutorial?.latexSource) {
-            const editor = $<HTMLTextAreaElement>('editor');
-            editor.value = tutorial.latexSource;
-            S.source = tutorial.latexSource;
-            void controller.run();
-            renderKaTeXPreview(tutorial.latexSource);
             $('tutorial-overlay').style.display = 'none';
+            void controller.translateFromLatex(tutorial.latexSource);
         }
     }) as EventListener);
 
@@ -102,7 +80,7 @@ export function bindIdeEvents(
             const text = reader.result as string;
             ed.value = text;
             S.source = text;
-            void controller.run();
+            controller.setDraft('Lean draft loaded from file. Run Kernel Verify to check.');
         };
         reader.readAsText(file);
         fileInput.value = '';
@@ -122,7 +100,7 @@ export function bindIdeEvents(
     });
 
     renderAxiomBudget();
-    setRunCallback(controller.run);
+    setRunCallback(() => { void controller.run(); });
     initResizeHandles();
 
     document.addEventListener('keydown', (e: KeyboardEvent) => {

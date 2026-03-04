@@ -21,14 +21,14 @@ export function apiDocsShell(): string {
   </nav>
 
   <header class="api-hero">
-    <div class="api-hero-badge">v0.2.0</div>
-    <h1 class="api-hero-title">Semantic Math API</h1>
+    <div class="api-hero-badge">v2.0.0</div>
+    <h1 class="api-hero-title">Formal Verification API</h1>
     <p class="api-hero-sub">
-      Parse LaTeX into structured IR, emit to Lean 4 / Coq / Isabelle,
-      and run QuickCheck-style analysis — in one HTTP call.
+      Kernel-truth verification for Lean 4 projects.
+      A proof is only verified when Lean accepts it with zero placeholders and no unresolved goals.
     </p>
     <div class="api-hero-base">
-      <code>https://theoremis.com/api/v1</code>
+      <code>https://theoremis.com/api/v2</code>
     </div>
   </header>
 
@@ -37,189 +37,128 @@ export function apiDocsShell(): string {
     <div class="api-code-block">
       <div class="api-code-header">
         <span class="api-code-method post">POST</span>
-        <span class="api-code-path">/api/v1/pipeline</span>
+        <span class="api-code-path">/api/v2/verify</span>
       </div>
-      <pre class="api-code-body"><code>curl -X POST https://theoremis.com/api/v1/pipeline \\
+      <pre class="api-code-body"><code>curl -X POST https://theoremis.com/api/v2/verify \\
   -H "Content-Type: application/json" \\
   -d '{
-    "latex": "\\\\begin{theorem}\\nFor all $x \\\\in \\\\mathbb{R}$, $x^2 \\\\geq 0$.\\n\\\\end{theorem}"
+    "project": {
+      "files": [{ "path": "Main.lean", "content": "theorem t : True := by trivial" }]
+    },
+    "entryFile": "Main.lean",
+    "timeoutMs": 30000,
+    "memoryMb": 256,
+    "profile": "strict"
   }'</code></pre>
     </div>
     <p class="api-note">
-      No API key required for the free tier (100 req/day).
-      For higher limits, include <code>Authorization: Bearer thm_...</code>
+      Verification is asynchronous. Submit to <code>/api/v2/verify</code>, then poll <code>/api/v2/jobs/:id</code>.
     </p>
   </section>
 
   <section class="api-endpoints">
-    <h2 class="api-section-title">Endpoints</h2>
+    <h2 class="api-section-title">Formal Endpoints (v2)</h2>
 
     ${endpointCard({
         method: 'POST',
-        path: '/api/v1/parse',
-        description: 'Parse LaTeX into a Math AST, compile to λΠω IR, and type-check.',
+        path: '/api/v2/verify',
+        description: 'Canonical verification endpoint. Schedules Lean kernel verification for a project bundle.',
         body: `{
-  "latex": "\\\\begin{theorem}...\\\\end{theorem}",
-  "axiomBundle": "ClassicalMath"
+  "project": {
+    "files": [{ "path": "Main.lean", "content": "theorem t : True := by trivial" }]
+  },
+  "entryFile": "Main.lean",
+  "timeoutMs": 30000,
+  "memoryMb": 256,
+  "profile": "strict"
 }`,
         bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'LaTeX document or fragment' },
-            { name: 'axiomBundle', type: 'string', required: false, desc: 'Axiom bundle name (default: ClassicalMath)' },
+            { name: 'project.files[]', type: 'Array<{path, content}>', required: true, desc: 'Lean source files for the verification job' },
+            { name: 'entryFile', type: 'string', required: true, desc: 'Entry Lean file that will be checked' },
+            { name: 'timeoutMs', type: 'number', required: false, desc: 'Hard wall-time cap (server-clamped)' },
+            { name: 'memoryMb', type: 'number', required: false, desc: 'Worker memory cap (server-clamped)' },
+            { name: 'profile', type: '"strict" | "default"', required: false, desc: 'Verification profile' },
         ],
         response: `{
   "ok": true,
-  "tier": "free",
-  "document": { "nodes": [...] },
-  "ir": { "declarations": [...], "axiomBudget": [...] },
-  "typeCheck": { "valid": true, "diagnostics": [] },
-  "elapsed": 2.34
+  "mode": "formal-verification",
+  "verified": false,
+  "job": { "id": "uuid", "status": "queued", "createdAt": "..." },
+  "queue": { "depth": 0, "active": 1, "jobs": 42 }
 }`,
     })}
 
     ${endpointCard({
-        method: 'POST',
-        path: '/api/v1/emit',
-        description: 'Transpile LaTeX to formal proof assistant code.',
-        body: `{
-  "latex": "\\\\begin{theorem}...\\\\end{theorem}",
-  "axiomBundle": "ClassicalMath",
-  "targets": ["lean4", "coq", "isabelle"]
-}`,
-        bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'LaTeX document or fragment' },
-            { name: 'axiomBundle', type: 'string', required: false, desc: 'Axiom bundle name' },
-            { name: 'targets', type: 'string[]', required: false, desc: 'Emit targets (default: all three)' },
-        ],
+        method: 'GET',
+        path: '/api/v2/jobs/:id',
+        description: 'Poll verification job status and final formal checker artifacts.',
+        body: '',
+        bodyFields: [],
         response: `{
   "ok": true,
-  "lean4": { "code": "theorem ...", "warnings": [] },
-  "coq":   { "code": "Theorem ...", "warnings": [] },
-  "isabelle": { "code": "theorem ...", "warnings": [] }
-}`,
-    })}
-
-    ${endpointCard({
-        method: 'POST',
-        path: '/api/v1/analyze',
-        description: 'Run QuickCheck-style random testing and mutation analysis on each theorem.',
-        body: `{
-  "latex": "\\\\begin{theorem}...\\\\end{theorem}",
-  "axiomBundle": "ClassicalMath",
-  "numTests": 1000
-}`,
-        bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'LaTeX document or fragment' },
-            { name: 'axiomBundle', type: 'string', required: false, desc: 'Axiom bundle name' },
-            { name: 'numTests', type: 'number', required: false, desc: 'Number of random tests per theorem (max: 10,000)' },
-        ],
-        response: `{
-  "ok": true,
-  "theorems": [{
-    "name": "thm_1",
-    "tag": "Theorem",
-    "statement": { ... },
-    "quickCheck": { "passed": 1000, "failed": 0, "status": "pass" },
-    "axioms": ["LEM", "choice"]
-  }],
-  "overall": {
-    "totalDeclarations": 1,
-    "theoremCount": 1,
-    "typeCheckValid": true
+  "mode": "formal-verification",
+  "job": {
+    "id": "uuid",
+    "status": "verified",
+    "result": {
+      "verified": true,
+      "status": "verified",
+      "diagnostics": [],
+      "obligations": { "sorryCount": 0, "admitCount": 0, "unsolvedGoals": 0 },
+      "checker": { "name": "lean4", "version": "Lean 4.x", "mathlib": "..." },
+      "timings": { "queuedMs": 4, "runMs": 41, "totalMs": 45 },
+      "artifacts": { "inputHash": "...", "outputHash": "...", "logHash": "...", "toolchainHash": "..." }
+    }
   }
 }`,
     })}
 
     ${endpointCard({
         method: 'POST',
-        path: '/api/v1/pipeline',
-        description: 'Full pipeline — parse, emit, and analyze in a single call.',
+        path: '/api/v2/translate/latex',
+        description: 'Generate draft Lean from LaTeX. Advisory only and never treated as verification.',
         body: `{
-  "latex": "\\\\begin{theorem}...\\\\end{theorem}",
-  "axiomBundle": "ClassicalMath"
+  "latex": "\\\\begin{theorem}For all $x$, $x=x$.\\\\end{theorem}"
 }`,
         bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'LaTeX document or fragment' },
-            { name: 'axiomBundle', type: 'string', required: false, desc: 'Axiom bundle name' },
+            { name: 'latex', type: 'string', required: true, desc: 'Input LaTeX source' },
         ],
         response: `{
   "ok": true,
-  "parse": { "document": {...}, "ir": {...}, "typeCheck": {...} },
-  "emit": { "lean4": {...}, "coq": {...}, "isabelle": {...} },
-  "analysis": { "theorems": [...], "overall": {...} }
-}`,
-    })}
-
-    ${endpointCard({
-        method: 'POST',
-        path: '/api/v1/grade',
-        description: 'Auto-grade a LaTeX submission with configurable rubric, QuickCheck, and structural comparison.',
-        body: `{
-  "latex": "\\\\begin{theorem}...\\\\end{theorem}",
-  "rubric": {
-    "axiomBundle": "ClassicalMath",
-    "expectedTheorems": ["fermat_little"],
-    "numTests": 500,
-    "maxPoints": 100,
-    "requireCleanEmission": false,
-    "referenceSolution": "\\\\begin{theorem}..."
-  },
-  "studentId": "student_42"
-}`,
-        bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'Student LaTeX submission' },
-            { name: 'rubric', type: 'object', required: false, desc: 'Grading rubric (all fields optional)' },
-            { name: 'rubric.expectedTheorems', type: 'string[]', required: false, desc: 'Expected theorem names' },
-            { name: 'rubric.axiomBundle', type: 'string', required: false, desc: 'Axiom bundle for type-checking' },
-            { name: 'rubric.numTests', type: 'number', required: false, desc: 'Number of QuickCheck tests (default 500)' },
-            { name: 'rubric.maxPoints', type: 'number', required: false, desc: 'Maximum score (default 100)' },
-            { name: 'rubric.requireCleanEmission', type: 'boolean', required: false, desc: 'Require clean Lean 4 emission' },
-            { name: 'rubric.referenceSolution', type: 'string', required: false, desc: 'Reference LaTeX for structure comparison' },
-            { name: 'studentId', type: 'string', required: false, desc: 'Student identifier for tracking' },
-        ],
-        response: `{
-  "ok": true,
-  "totalPoints": 87.5,
-  "maxPoints": 100,
-  "percentage": 87.5,
-  "letterGrade": "B+",
-  "theorems": [{ "name": "...", "quickCheckPassed": true, ... }],
-  "breakdown": { "parsing": {...}, "typeCheck": {...}, "quickCheck": {...}, ... },
-  "overallFeedback": ["Good submission. A few issues to address."]
+  "mode": "draft-translation",
+  "note": "Draft translation is advisory only and is not a formal verification result.",
+  "leanDraft": { "code": "theorem ...", "warnings": [] }
 }`,
     })}
 
     ${endpointCard({
         method: 'GET',
-        path: '/api/v1/health',
-        description: 'Health check and service metadata.',
+        path: '/api/v2/health',
+        description: 'Formal runtime health, queue metrics, and endpoint metadata.',
         body: '',
         bodyFields: [],
         response: `{
   "ok": true,
-  "service": "theoremis-api",
-  "version": "0.1.0",
-  "endpoints": { ... },
-  "targets": ["lean4", "coq", "isabelle"],
-  "axiomBundles": ["ClassicalMath", "Algebraic", ...]
+  "service": "theoremis-formal-api",
+  "version": "2.0.0",
+  "runtime": { "ok": true },
+  "queue": { "depth": 0, "active": 0, "jobs": 10 }
 }`,
     })}
   </section>
 
   <section class="api-bundles">
-    <h2 class="api-section-title">Axiom Bundles</h2>
+    <h2 class="api-section-title">Legacy Analysis (v1)</h2>
     <p class="api-bundles-desc">
-      Each bundle defines which axioms are available during type-checking and emission.
-      This controls what your formalization is allowed to assume.
+      v1 endpoints are still available for analysis and translation workflows.
+      They are marked legacy and do not provide formal verification truth.
     </p>
     <div class="api-bundles-grid">
-      ${bundleCard('ClassicalMath', 'Full classical logic: LEM, Choice, Funext, Propext', 'Default')}
-      ${bundleCard('Algebraic', 'Group, Ring, Field axioms with classical reasoning')}
-      ${bundleCard('NumberTheory', 'Peano axioms, prime factorization, modular arithmetic')}
-      ${bundleCard('Analysis', 'Real analysis: completeness, continuity, limits')}
-      ${bundleCard('Topology', 'Topological spaces, continuity, compactness')}
-      ${bundleCard('LinearAlgebra', 'Vector spaces, matrices, eigenvalues')}
-      ${bundleCard('SetTheory', 'ZFC-style set theory axioms')}
-      ${bundleCard('CategoryTheory', 'Categories, functors, natural transformations')}
+      ${bundleCard('/api/v1/parse', 'Legacy parse/typecheck endpoint', 'Legacy')}
+      ${bundleCard('/api/v1/emit', 'Legacy transpilation endpoint', 'Legacy')}
+      ${bundleCard('/api/v1/analyze', 'Legacy heuristic analysis endpoint', 'Legacy')}
+      ${bundleCard('/api/v1/pipeline', 'Legacy combined parse/emit/analyze endpoint', 'Legacy')}
+      ${bundleCard('/api/v1/grade', 'Legacy grading endpoint', 'Legacy')}
     </div>
   </section>
 
@@ -246,17 +185,18 @@ export function apiDocsShell(): string {
         <tr><th>Status</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>400</code></td><td>Bad request — missing or invalid <code>latex</code> field</td></tr>
+        <tr><td><code>400</code></td><td>Bad request — malformed verification payload</td></tr>
         <tr><td><code>401</code></td><td>Invalid API key</td></tr>
-        <tr><td><code>405</code></td><td>Wrong HTTP method (use POST)</td></tr>
-        <tr><td><code>413</code></td><td>Input too large (max 50,000 chars)</td></tr>
-        <tr><td><code>500</code></td><td>Internal error — parser or type-checker failure</td></tr>
+        <tr><td><code>405</code></td><td>Wrong HTTP method</td></tr>
+        <tr><td><code>413</code></td><td>Project bundle too large</td></tr>
+        <tr><td><code>429</code></td><td>Rate limit exceeded</td></tr>
+        <tr><td><code>503</code></td><td>Formal runtime unavailable or not configured</td></tr>
       </tbody>
     </table>
   </section>
 
   <footer class="landing-footer">
-    <span>Built on λΠω type theory</span>
+    <span>Lean kernel-truth verification</span>
     <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>

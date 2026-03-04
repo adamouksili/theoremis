@@ -2,6 +2,37 @@
 
 This document defines production security/runtime defaults introduced in the hardening release.
 
+## Formal Verification v2 Runtime
+
+Canonical formal endpoints:
+- `POST /api/v2/verify`
+- `GET /api/v2/jobs/:id`
+- `POST /api/v2/translate/latex`
+- `GET /api/v2/health`
+
+Formal verification is accepted only when the Lean checker reports success and obligations are zero:
+- `sorryCount = 0`
+- `admitCount = 0`
+- `unsolvedGoals = 0`
+
+Relevant env:
+- `THEOREMIS_V2_VERIFY_ENABLED` (default: enabled)
+- `THEOREMIS_V2_ALLOW_IN_MEMORY_QUEUE` (development helper; production should use external queue policy)
+- `THEOREMIS_V2_QUEUE_CONCURRENCY`
+- `THEOREMIS_V2_MAX_FILES`
+- `THEOREMIS_V2_MAX_FILE_BYTES`
+- `THEOREMIS_V2_MAX_TOTAL_BYTES`
+- `THEOREMIS_V2_MIN_TIMEOUT_MS`
+- `THEOREMIS_V2_MAX_TIMEOUT_MS`
+- `THEOREMIS_V2_MIN_MEMORY_MB`
+- `THEOREMIS_V2_MAX_MEMORY_MB`
+- `THEOREMIS_LEAN_PROJECT` (Lean + Lake project root used by checker invocation)
+
+Production behavior:
+- Fails closed if formal verification is disabled.
+- Fails closed if queue policy disallows in-memory mode and no external queue is configured.
+- Fails closed if Lean checker runtime dependencies are unavailable.
+
 ## Type-Check Modes
 
 Supported request field:
@@ -82,3 +113,15 @@ When limits trigger:
 
 Server execution:
 - CPU-heavy analyze/pipeline work runs inside a bounded worker-thread task.
+
+## Legacy API Policy
+
+Legacy analysis endpoints remain available during deprecation:
+- `POST /api/v1/analyze`
+- `POST /api/v1/pipeline`
+
+Both endpoints emit:
+- `X-Theoremis-Legacy: true`
+- additive response field `mode: "legacy-analysis"`
+
+These legacy endpoints do not represent formal verification truth.

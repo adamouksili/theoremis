@@ -1,108 +1,117 @@
-import { parseLatex, documentToIR } from '../parser/latex';
-import { resolveMultiFile, InMemoryFileProvider } from '../parser/multifile';
-import { refineDocWithLLM } from '../parser/llm-hypothesis';
-import { typeCheck } from '../core/typechecker';
-import { emitLean4 } from '../emitters/lean4';
-import { emitCoq } from '../emitters/coq';
-import { emitIsabelle } from '../emitters/isabelle';
-import { runCounterexampleEngine } from '../engine/counterexample';
-import { quickCheck, extractVariables } from '../engine/evaluator';
-import { GraphRenderer } from './graph';
-import type { Theorem } from '../core/ir';
-
 import { $, S } from './state';
-import { renderSummary } from './render/summary';
-import { renderCodeSection } from './render/code';
-import { renderInsights, renderRandomTests } from './render/insights';
-import { renderProofSteps } from './render/proof-steps';
-import { renderMathlibSearch } from './render/mathlib-search';
-import { getActiveAxioms, buildAxiomBundle, renderDepGraph } from './render/axioms';
-import { renderKaTeXPreview } from './layout-shell';
-import { iconCheck, iconWarn } from './icons';
 
 export type StatusMode = 'idle' | 'processing' | 'done';
+export type VerificationBadge = 'Draft' | 'Rejected' | 'Verified';
+
+interface JobStatusResponse {
+    ok: boolean;
+    job: {
+        id: string;
+        status: 'queued' | 'running' | 'verified' | 'rejected' | 'timeout' | 'error';
+        result?: {
+            verified: boolean;
+            status: 'verified' | 'rejected' | 'timeout' | 'error';
+            diagnostics: Array<{
+                file: string;
+                line: number;
+                column: number;
+                severity: 'error' | 'warning' | 'info';
+                message: string;
+            }>;
+            obligations: {
+                sorryCount: number;
+                admitCount: number;
+                unsolvedGoals: number;
+            };
+            checker: {
+                name: 'lean4';
+                command: string;
+                version: string | null;
+                mathlib: string | null;
+            };
+            timings: {
+                queuedMs: number;
+                runMs: number;
+                totalMs: number;
+            };
+            artifacts: {
+                inputHash: string;
+                outputHash: string;
+                logHash: string;
+                toolchainHash: string;
+            };
+        };
+        error?: {
+            code: string;
+            message: string;
+        };
+    };
+}
 
 export interface IdePipelineController {
     run: () => Promise<void>;
-    debouncedRun: () => void;
     setStatus: (mode: StatusMode, label: string) => void;
+    setDraft: (reason?: string) => void;
     clearResults: () => void;
     downloadOutput: () => void;
     loadSample: () => void;
+    translateFromLatex: (latexInput?: string) => Promise<void>;
 }
 
-let graphRenderer: GraphRenderer | null = null;
-
-function renderDependencyGraph() {
-    if (!S.ir) return;
-    const container = document.getElementById('graph-container');
-    if (!container) return;
-
-    const nodeMap = new Map<string, import('../parser/discourse').GraphNode>();
-    for (const decl of S.ir.declarations) {
-        const hasError = S.tc?.diagnostics.some(d => d.location === decl.name && d.severity === 'error');
-        const hasWarning = S.tc?.diagnostics.some(d => d.location === decl.name && d.severity === 'warning');
-        nodeMap.set(decl.name, {
-            id: decl.name,
-            label: decl.name,
-            kind: decl.tag === 'Theorem' ? 'theorem' : decl.tag === 'Lemma' ? 'lemma' : 'definition',
-            status: hasError ? 'unverified' : hasWarning ? 'partial' : 'verified',
-            line: 0,
-        });
-    }
-
-    const edges: import('../parser/ast').DependencyEdge[] = [];
-    for (const decl of S.ir.declarations) {
-        if (decl.tag === 'Theorem' && decl.metadata?.dependencies) {
-            for (const dep of decl.metadata.dependencies) {
-                edges.push({ from: decl.name, to: dep, kind: 'uses' });
-            }
-        }
-    }
-
-    if (!graphRenderer) {
-        container.innerHTML = '';
-        container.style.minHeight = '120px';
-        graphRenderer = new GraphRenderer(container);
-    }
-    graphRenderer.render({ nodes: nodeMap, edges });
+function verificationTone(badge: VerificationBadge): 'idle' | 'warn' | 'ok' {
+    if (badge === 'Verified') return 'ok';
+    if (badge === 'Rejected') return 'warn';
+    return 'idle';
 }
 
-function renderBottomPanels() {
-    $('bottom-panels').style.display = 'flex';
-    renderInsights();
-    renderRandomTests();
-    renderProofSteps();
-    renderMathlibSearch();
+function setVerificationBadge(badge: VerificationBadge, subtitle: string): void {
+    const icon = badge === 'Verified' ? '✓' : badge === 'Rejected' ? '!' : '∑';
+    const tone = verificationTone(badge);
+    const bar = $('summary-bar');
+    bar.innerHTML = `
+      <div class="summary-icon ${tone}">${icon}</div>
+      <div class="summary-text">
+        <div class="summary-title">${badge}</div>
+        <div class="summary-sub">${subtitle}</div>
+      </div>
+      <div class="summary-pills">
+        <div class="pill ${tone.toLowerCase()}">Lean Kernel</div>
+      </div>
+    `;
 }
 
-function renderAll(setStatus: (mode: StatusMode, label: string) => void) {
-    const dc = S.ir!.declarations.length;
-    if (dc === 0) {
-        renderSummary('warn', '—', 'No mathematical statements found', 'Add \\begin{theorem} or \\begin{definition} environments');
-        $('code-section').style.display = 'none';
-        $('bottom-panels').style.display = 'none';
-        setStatus('done', 'No statements');
-        $('s-stats').textContent = '';
-        renderDepGraph();
+function renderDiagnosticsPanel(payload: JobStatusResponse['job']['result'] | null, rejectionMessage?: string): void {
+    const codeSection = $('code-section');
+    const tabs = $('code-tabs');
+    const body = $('code-body');
+
+    codeSection.style.display = '';
+    tabs.innerHTML = '<button class="active">Verification Report</button>';
+
+    if (!payload) {
+        body.innerHTML = `<pre class="code-block">${rejectionMessage || 'No verification output available.'}</pre>`;
         return;
     }
 
-    const hasErrs = S.tc!.diagnostics.some(d => d.severity === 'error');
-    renderSummary(
-        hasErrs ? 'warn' : 'ok',
-        hasErrs ? iconWarn : iconCheck,
-        hasErrs ? 'Needs attention' : 'Successfully formalized',
-        `${dc} statement${dc > 1 ? 's' : ''} processed`,
-    );
+    const lines: string[] = [];
+    lines.push(`status: ${payload.status}`);
+    lines.push(`verified: ${payload.verified}`);
+    lines.push(`checker: ${payload.checker.version || 'Lean 4 (unknown version)'}`);
+    lines.push(`timings: queued=${payload.timings.queuedMs}ms run=${payload.timings.runMs}ms total=${payload.timings.totalMs}ms`);
+    lines.push(`obligations: sorry=${payload.obligations.sorryCount} admit=${payload.obligations.admitCount} unsolved=${payload.obligations.unsolvedGoals}`);
+    lines.push(`artifacts: input=${payload.artifacts.inputHash.slice(0, 12)} output=${payload.artifacts.outputHash.slice(0, 12)} toolchain=${payload.artifacts.toolchainHash.slice(0, 12)}`);
+    lines.push('');
 
-    renderCodeSection();
-    renderBottomPanels();
-    renderDepGraph();
+    if (payload.diagnostics.length === 0) {
+        lines.push('diagnostics: none');
+    } else {
+        lines.push('diagnostics:');
+        for (const diag of payload.diagnostics) {
+            lines.push(`- [${diag.severity}] ${diag.file}:${diag.line}:${diag.column} ${diag.message}`);
+        }
+    }
 
-    setStatus('done', 'Verified');
-    const h = S.tc!.holes.length;
-    $('s-stats').textContent = `${dc} result${dc > 1 ? 's' : ''} · ${h} hole${h !== 1 ? 's' : ''} · ${getActiveAxioms().length} axioms`;
+    body.innerHTML = `<pre class="code-block">${lines.join('\n')}</pre>`;
 }
 
 function setStatus(mode: StatusMode, label: string) {
@@ -111,170 +120,216 @@ function setStatus(mode: StatusMode, label: string) {
 }
 
 function clearResults() {
-    S.ir = null; S.tc = null; S.lean4 = null; S.coq = null; S.isabelle = null;
-    S.report = null; S.randomReport = null; S.status = 'idle';
-    renderSummary('idle', '∑', 'Ready', 'Write LaTeX on the left to begin');
+    S.ir = null;
+    S.tc = null;
+    S.lean4 = null;
+    S.coq = null;
+    S.isabelle = null;
+    S.report = null;
+    S.randomReport = null;
+    S.verification = null;
+    S.verificationBadge = 'Draft';
+
     $('code-section').style.display = 'none';
     $('bottom-panels').style.display = 'none';
-    setStatus('idle', 'Ready');
     $('s-stats').textContent = '';
-    $('dep-graph').innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">No declarations</div>';
+    $('dep-graph').innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">Formal mode: graph unavailable</div>';
+
+    setVerificationBadge('Draft', 'Edit Lean source, then run Kernel Verify');
+    setStatus('idle', 'Draft');
 }
 
 function downloadOutput() {
-    let content: string;
-    let filename: string;
-
-    if (S.tab === 'lean4' && S.lean4) {
-        content = S.lean4.code;
-        filename = 'output.lean';
-    } else if (S.tab === 'coq' && S.coq) {
-        content = S.coq.code;
-        filename = 'output.v';
-    } else if (S.tab === 'isabelle' && S.isabelle) {
-        content = S.isabelle.code;
-        filename = 'output.thy';
-    } else if (S.source.trim()) {
-        content = S.source;
-        filename = 'document.tex';
-    } else {
-        return;
-    }
+    const content = S.source.trim();
+    if (!content) return;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = 'Main.lean';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
 
-function loadSample(run: () => Promise<void>) {
-    const sample = `\\title{Elementary Number Theory}
-
-\\begin{definition}[Prime Number]
-A natural number $p > 1$ is \\emph{prime} if its only divisors are $1$ and $p$.
-\\end{definition}
-
-\\begin{theorem}[Fermat's Little Theorem]
-Let $p$ be a prime number and $a$ an integer coprime to $p$.
-Then $a^{p-1} \\equiv 1 \\pmod{p}$.
-\\end{theorem}
-
-\\begin{proof}
-We proceed by induction on $a$. Consider the set $\\{1, 2, \\ldots, p-1\\}$.
-Since $a$ is coprime to $p$, multiplication by $a$ modulo $p$ is a bijection
-on this set. Therefore the product of all elements is preserved, giving us
-$(p-1)! \\equiv a^{p-1} \\cdot (p-1)! \\pmod{p}$.
-By cancellation (using that $p$ is prime), we obtain $a^{p-1} \\equiv 1 \\pmod{p}$.
-\\end{proof}
-
-\\begin{lemma}[Squares are Non-negative]
-For all $x \\in \\mathbb{R}$, $x^2 \\geq 0$.
-\\end{lemma}
-
-\\begin{proof}
-By cases on the sign of $x$.
-\\end{proof}`;
+function loadSample() {
+    const sample = `theorem and_comm_demo (p q : Prop) : p ∧ q -> q ∧ p := by
+  intro h
+  exact And.intro h.right h.left`;
 
     const ed = $<HTMLTextAreaElement>('editor');
     ed.value = sample;
     S.source = sample;
-    void run();
+    setVerificationBadge('Draft', 'Lean sample loaded. Run Kernel Verify to check.');
+    setStatus('idle', 'Draft');
+}
+
+async function pollJob(id: string, timeoutMs: number): Promise<JobStatusResponse['job']> {
+    const started = Date.now();
+
+    while (true) {
+        const res = await fetch(`/api/v2/jobs/${encodeURIComponent(id)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+            const payload = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+            throw new Error(payload.error || `Unable to load verification job ${id}.`);
+        }
+
+        const payload = await res.json() as JobStatusResponse;
+        if (!payload.ok || !payload.job) {
+            throw new Error('Malformed job status response.');
+        }
+
+        if (payload.job.status !== 'queued' && payload.job.status !== 'running') {
+            return payload.job;
+        }
+
+        if (Date.now() - started > timeoutMs) {
+            throw new Error(`Verification job polling exceeded ${timeoutMs}ms.`);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 350));
+    }
+}
+
+async function runVerification(): Promise<void> {
+    const source = S.source.trim();
+    if (!source) {
+        clearResults();
+        return;
+    }
+
+    setStatus('processing', 'Submitting verification job…');
+    const verifyBtn = $('btn-verify');
+    verifyBtn.textContent = 'Verifying…';
+    verifyBtn.setAttribute('disabled', 'true');
+
+    try {
+        const request = {
+            project: {
+                files: [{ path: 'Main.lean', content: source }],
+            },
+            entryFile: 'Main.lean',
+            timeoutMs: 30_000,
+            memoryMb: 256,
+            profile: 'strict',
+        };
+
+        const res = await fetch('/api/v2/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(request),
+        });
+
+        if (!res.ok) {
+            const payload = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+            throw new Error(payload.error || 'Formal verification request failed.');
+        }
+
+        const payload = await res.json() as { job?: { id: string } };
+        if (!payload.job?.id) {
+            throw new Error('Verification API did not return a job id.');
+        }
+
+        setStatus('processing', 'Checking proof with Lean kernel…');
+        const job = await pollJob(payload.job.id, 60_000);
+
+        if (job.result) {
+            S.verification = job.result;
+            const badge: VerificationBadge = job.result.verified ? 'Verified' : 'Rejected';
+            S.verificationBadge = badge;
+
+            const subtitle = job.result.verified
+                ? `Lean accepted proof (${job.result.timings.totalMs}ms).`
+                : `Lean rejected proof (${job.result.obligations.sorryCount} sorry, ${job.result.obligations.unsolvedGoals} unsolved goals).`;
+
+            setVerificationBadge(badge, subtitle);
+            renderDiagnosticsPanel(job.result);
+            $('s-stats').textContent = `diagnostics: ${job.result.diagnostics.length} · status: ${job.result.status}`;
+            setStatus('done', badge);
+        } else {
+            const message = job.error?.message || `Verification ended with status '${job.status}'.`;
+            S.verification = null;
+            S.verificationBadge = 'Rejected';
+            setVerificationBadge('Rejected', message);
+            renderDiagnosticsPanel(null, message);
+            $('s-stats').textContent = `job status: ${job.status}`;
+            setStatus('idle', 'Rejected');
+        }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        S.verification = null;
+        S.verificationBadge = 'Rejected';
+        setVerificationBadge('Rejected', message);
+        renderDiagnosticsPanel(null, message);
+        $('s-stats').textContent = '';
+        setStatus('idle', 'Rejected');
+    } finally {
+        verifyBtn.textContent = 'Kernel Verify';
+        verifyBtn.removeAttribute('disabled');
+    }
+}
+
+async function translateFromLatex(latexInput?: string): Promise<void> {
+    const latexSource = typeof latexInput === 'string'
+        ? latexInput
+        : (window.prompt('Paste LaTeX to translate into Lean draft (non-verified):', S.source) ?? '');
+    if (!latexSource.trim()) return;
+
+    setStatus('processing', 'Generating Lean draft from LaTeX…');
+
+    try {
+        const res = await fetch('/api/v2/translate/latex', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latex: latexSource }),
+        });
+
+        if (!res.ok) {
+            const payload = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+            throw new Error(payload.error || 'Draft translation failed.');
+        }
+
+        const payload = await res.json() as { leanDraft?: { code?: string } };
+        const draft = String(payload.leanDraft?.code || '').trim();
+        if (!draft) {
+            throw new Error('Translator returned empty Lean draft.');
+        }
+
+        const ed = $<HTMLTextAreaElement>('editor');
+        ed.value = draft;
+        S.source = draft;
+        S.verification = null;
+        S.verificationBadge = 'Draft';
+        setVerificationBadge('Draft', 'Draft translation generated. Run Kernel Verify to formally check it.');
+        renderDiagnosticsPanel(null, 'Draft translation complete. No verification has been performed yet.');
+        setStatus('idle', 'Draft');
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setVerificationBadge('Rejected', message);
+        renderDiagnosticsPanel(null, message);
+        setStatus('idle', 'Rejected');
+    }
 }
 
 export function createPipelineController(): IdePipelineController {
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const run = async () => {
-        const src = S.source.trim();
-        if (!src || !src.includes('\\begin{')) {
-            clearResults();
-            return;
-        }
-
-        setStatus('processing', 'Compiling…');
-        const verifyBtn = $('btn-verify');
-        verifyBtn.innerHTML = '<span class="spinner"></span> Processing…';
-        verifyBtn.setAttribute('disabled', 'true');
-
-        try {
-            const resolved = await resolveMultiFile(S.source, new InMemoryFileProvider());
-            const doc = parseLatex(resolved.source);
-
-            if (doc.parseErrors && doc.parseErrors.length > 0) {
-                console.warn(`[Parser] ${doc.parseErrors.length} parse warning(s):`, doc.parseErrors.map(e => e.message));
-            }
-
-            const apiKey = sessionStorage.getItem('sigma-llm-key');
-            const { refined } = await refineDocWithLLM(doc, apiKey);
-            if (refined > 0) console.log(`[LLM] Refined ${refined} theorem(s) via LLM hypothesis parser`);
-
-            const axiomBundle = buildAxiomBundle();
-            S.ir = documentToIR(doc, axiomBundle);
-            S.tc = typeCheck(S.ir);
-            S.lean4 = emitLean4(S.ir);
-            S.coq = emitCoq(S.ir);
-            S.isabelle = emitIsabelle(S.ir);
-
-            const theorems = S.ir.declarations.filter(d => d.tag === 'Theorem') as Theorem[];
-            if (theorems.length > 0) {
-                const reports = await Promise.all(theorems.map(t => runCounterexampleEngine(t)));
-                S.report = reports[0];
-
-                if (reports.length > 1) {
-                    for (let i = 1; i < reports.length; i++) {
-                        S.report.results.push(...reports[i].results);
-                        S.report.summary += ' | ' + reports[i].summary;
-                    }
-                }
-
-                S.randomReport = null;
-                for (const thm of theorems) {
-                    const vars = extractVariables(thm.statement);
-                    if (vars.length > 0) {
-                        const rr = quickCheck(thm.statement, vars, 5000, thm.params);
-                        if (!S.randomReport || rr.failed > 0) {
-                            S.randomReport = rr;
-                        }
-                    }
-                }
-            } else {
-                S.report = null;
-                S.randomReport = null;
-            }
-
-            S.status = 'done';
-            renderDependencyGraph();
-            renderKaTeXPreview(S.source);
-            renderAll(setStatus);
-            verifyBtn.innerHTML = `${iconCheck} Verify`;
-            verifyBtn.removeAttribute('disabled');
-        } catch (e: unknown) {
-            S.ir = null; S.tc = null; S.lean4 = null; S.coq = null; S.isabelle = null;
-            S.report = null; S.randomReport = null;
-            renderSummary('warn', iconWarn, 'Could not parse input', 'Check your LaTeX syntax');
-            setStatus('idle', 'Parse error');
-            verifyBtn.innerHTML = `${iconCheck} Verify`;
-            verifyBtn.removeAttribute('disabled');
-            console.error(e);
-        }
-    };
-
-    const debouncedRun = () => {
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => void run(), 500);
-    };
-
     return {
-        run,
-        debouncedRun,
+        run: runVerification,
         setStatus,
+        setDraft: (reason = 'Draft updated. Run Kernel Verify to check.') => {
+            S.verification = null;
+            S.verificationBadge = 'Draft';
+            setVerificationBadge('Draft', reason);
+            setStatus('idle', 'Draft');
+        },
         clearResults,
         downloadOutput,
-        loadSample: () => loadSample(run),
+        loadSample,
+        translateFromLatex,
     };
 }

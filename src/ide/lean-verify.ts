@@ -9,10 +9,13 @@ export async function refreshBridgeStatus(): Promise<void> {
     const { available, version, mathlib } = await checkBridgeHealth();
     const dot = document.querySelector('#bridge-status .bridge-dot') as HTMLElement | null;
     const label = document.querySelector('#bridge-status .bridge-label') as HTMLElement | null;
+    const leanBtn = document.getElementById('btn-lean') as HTMLButtonElement | null;
     if (available) {
-        $('btn-lean').style.display = '';
         const mathlibTag = mathlib ? ' + Mathlib' : '';
-        $('btn-lean').title = `Lean 4 available: ${version || 'connected'}${mathlibTag}`;
+        if (leanBtn) {
+            leanBtn.style.display = '';
+            leanBtn.title = `Lean 4 available: ${version || 'connected'}${mathlibTag}`;
+        }
         if (dot) dot.className = 'bridge-dot online';
         if (label) label.textContent = mathlib ? 'Lean + Mathlib' : (version ? `Lean ${version}` : 'Connected');
         $('bridge-status').title = `Lean 4 Bridge: connected (${version || ''}${mathlibTag})`;
@@ -37,9 +40,11 @@ export async function runLeanVerify(
     }
 
     setStatus('processing', 'Verifying with Lean 4…');
-    const leanBtn = $('btn-lean');
-    leanBtn.innerHTML = `${iconShieldCheck} Compiling…`;
-    leanBtn.setAttribute('disabled', 'true');
+    const leanBtn = document.getElementById('btn-lean') as HTMLButtonElement | null;
+    if (leanBtn) {
+        leanBtn.innerHTML = `${iconShieldCheck} Compiling…`;
+        leanBtn.setAttribute('disabled', 'true');
+    }
 
     try {
         const result = await verifyLeanCode(S.lean4.code);
@@ -52,11 +57,11 @@ export async function runLeanVerify(
 
         if (result.success) {
             setStatus('done', `Lean 4: ✓ Verified (${result.elapsed.toFixed(0)}ms)`);
-            leanBtn.innerHTML = `${iconShieldCheck} ✓ Verified`;
+            if (leanBtn) leanBtn.innerHTML = `${iconShieldCheck} ✓ Verified`;
         } else {
             const errCount = result.errors.length;
             setStatus('idle', `Lean 4: ✗ ${errCount} error${errCount !== 1 ? 's' : ''}`);
-            leanBtn.innerHTML = `${iconShieldCheck} ✗ ${errCount} errors`;
+            if (leanBtn) leanBtn.innerHTML = `${iconShieldCheck} ✗ ${errCount} errors`;
         }
     } catch {
         setStatus('idle', 'Lean bridge not running');
@@ -67,8 +72,8 @@ export async function runLeanVerify(
       The bridge starts a local server on port 9473 that compiles Lean 4 code via the <code>lean</code> binary.
     </div>` + insightsBody.innerHTML;
         $('bottom-panels').style.display = '';
-        leanBtn.innerHTML = `${iconShieldCheck} Lean 4`;
+        if (leanBtn) leanBtn.innerHTML = `${iconShieldCheck} Lean 4`;
     }
 
-    leanBtn.removeAttribute('disabled');
+    if (leanBtn) leanBtn.removeAttribute('disabled');
 }

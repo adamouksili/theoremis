@@ -2,16 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
     const bindIdeEvents = vi.fn();
-    const runLeanVerify = vi.fn();
     const run = vi.fn(async () => {});
+    const translateFromLatex = vi.fn(async () => {});
     const loadSample = vi.fn();
     const controller = {
         run,
-        debouncedRun: vi.fn(),
         setStatus: vi.fn(),
+        setDraft: vi.fn(),
         clearResults: vi.fn(),
         downloadOutput: vi.fn(),
         loadSample,
+        translateFromLatex,
     };
     const shell = vi.fn(() => '<div id="shell">IDE</div>');
     const createPipelineController = vi.fn(() => controller);
@@ -19,8 +20,8 @@ const mocks = vi.hoisted(() => {
     const state = { source: '' };
     return {
         bindIdeEvents,
-        runLeanVerify,
         run,
+        translateFromLatex,
         loadSample,
         controller,
         shell,
@@ -33,7 +34,6 @@ const mocks = vi.hoisted(() => {
 vi.mock('../ide/layout-shell', () => ({ shell: mocks.shell }));
 vi.mock('../ide/pipeline-run', () => ({ createPipelineController: mocks.createPipelineController }));
 vi.mock('../ide/events', () => ({ bindIdeEvents: mocks.bindIdeEvents }));
-vi.mock('../ide/lean-verify', () => ({ runLeanVerify: mocks.runLeanVerify }));
 vi.mock('../ide/state', () => ({
     S: mocks.state,
     $: (id: string) => {
@@ -57,9 +57,9 @@ describe('ide bootstrap boundaries', () => {
         mocks.editor.value = '';
         mocks.state.source = '';
         mocks.run.mockClear();
+        mocks.translateFromLatex.mockClear();
         mocks.loadSample.mockClear();
         mocks.bindIdeEvents.mockClear();
-        mocks.runLeanVerify.mockClear();
         mocks.shell.mockClear();
         mocks.createPipelineController.mockClear();
     });

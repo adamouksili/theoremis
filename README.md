@@ -1,10 +1,10 @@
 # Theoremis
 
-**AI-powered proof IDE for Lean 4** — parse LaTeX, detect unnecessary hypotheses via mutation testing, emit Lean 4 / Coq / Isabelle scaffolding, and verify proofs through a live Lean bridge.
+**Lean-first formal verification IDE** — verify Lean 4 proofs with kernel-truth semantics, with LaTeX translation and heuristic analysis kept as advisory tooling.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white)
 ![CI](https://github.com/adamouksili/theoremis/actions/workflows/ci.yml/badge.svg)
-![Tests](https://img.shields.io/badge/Tests-451%20passing-brightgreen?logo=vitest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-467%20passing-brightgreen?logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Lean 4](https://img.shields.io/badge/Lean_4-Bridge-blue)
@@ -15,11 +15,11 @@
 
 ## What It Does
 
-Theoremis reads LaTeX theorem statements and does three things:
+Theoremis now has a formal-first product split:
 
-1. **Detects unnecessary hypotheses** via mutation testing — drop each hypothesis, search for counterexamples to the weakened statement
-2. **Emits proof scaffolding** for Lean 4, Coq, and Isabelle/HOL with proper imports and `sorry`/`admit` placeholders
-3. **Verifies proofs** against a live Lean 4 installation through the Lean bridge
+1. **Formal verification (`/api/v2/verify`)** via Lean kernel checks in isolated worker jobs
+2. **Draft translation (`/api/v2/translate/latex`)** for LaTeX to Lean generation (explicitly non-verified)
+3. **Legacy analysis (`/api/v1/*`)** for mutation/randomized heuristics, clearly labeled as non-formal
 
 ```
 Input:  \begin{theorem} Let $p$ be prime and $a$ coprime to $p$. Then $a^{p-1} ≡ 1 \pmod{p}$. \end{theorem}
@@ -31,26 +31,25 @@ Output: ● p prime — necessary (dropping breaks statement: a=2, p=4 → 2³ �
 ### Core Pipeline
 
 ```
-LaTeX → Parser → Math-AST → λΠω IR → Type-Checker
-                                          │
-                     ┌────────────────────┼────────────────────┐
-                     ▼                    ▼                    ▼
-              Mutation Engine       Proof Emitters        Lean 4 Bridge
-              (7 operators)        (Lean/Coq/Isabelle)   (live verification)
-                     │                    │                    │
-                     ▼                    ▼                    ▼
-              BigInt Evaluator      Axiom-Tracked Code    Diagnostics
-              (counterexample        with Mathlib          + Tactic
-               search)                imports              Suggestions
+Lean Source → /api/v2/verify → Queue/Worker Sandbox → lake env lean
+                                                 │
+                                                 ▼
+                                   Kernel diagnostics + obligations gate
+                                                 │
+                                                 ▼
+                                   verified=true only when all gates pass
+
+LaTeX Source → /api/v2/translate/latex → Lean draft (advisory only)
+LaTeX Source → /api/v1/*               → Legacy analysis (non-formal)
 ```
 
 ## Surfaces
 
 | Surface | URL / Command | Purpose |
 |---------|--------------|---------|
-| **Web IDE** | [theoremis.com/#ide](https://theoremis.com/#ide) | Full editor with axiom budget, proof steps, Lean bridge |
+| **Web IDE** | [theoremis.com/#ide](https://theoremis.com/#ide) | Lean-first editor with formal verification status badges |
 | **Playground** | [theoremis.com/#playground](https://theoremis.com/#playground) | Paste a theorem → see hypothesis analysis (no setup) |
-| **API** | [theoremis.com/#api](https://theoremis.com/#api) | REST endpoints: parse, emit, analyze, grade |
+| **API** | [theoremis.com/#api](https://theoremis.com/#api) | v2 formal verify/jobs/translation + legacy v1 analysis |
 | **Classroom** | [theoremis.com/#classroom](https://theoremis.com/#classroom) | Auto-grader for proof submissions |
 | **CLI** | `npx tsx cli/lint.ts paper.tex` | Hypothesis linter (text/json/github output) |
 | **VS Code Extension** | `vscode-extension/` | Verify, emit, analyze from the editor |
@@ -83,7 +82,7 @@ npm install
 
 npm run dev      # Dev server → http://localhost:5173
 npm run build    # Production build
-npm test         # Run all tests (451 currently)
+npm test         # Run all tests
 npm run bench    # Benchmark suite with precision/recall
 npm run perf     # Deterministic runtime harness (median-based)
 npm run size:check # Enforce bundle/dist size budgets
@@ -97,12 +96,13 @@ npx tsx cli/lint.ts *.tex --format json    # Machine-readable output
 npx tsx cli/lint.ts *.tex --format github  # GitHub Actions annotations
 ```
 
-### Lean 4 Bridge (optional)
+### Lean 4 Bridge (optional, legacy IDE helper)
 
 ```bash
 npm run bridge   # Starts verification server on port 9473
 ```
 
+This bridge is advisory tooling for local workflows. Formal verification truth is provided by `/api/v2/verify`.
 Requires a local Lean 4 + Mathlib installation. See [`docs/lean-bridge-setup.md`](docs/lean-bridge-setup.md).
 
 ## Performance & Size Budgets
@@ -127,7 +127,7 @@ npm run size:check
 Runtime and deployment settings are environment-driven:
 
 - `VITE_THEOREMIS_BRIDGE_URL` — default Lean bridge URL used by the web client
-- `THEOREMIS_API_KEYS` — comma-separated valid API keys for `/api/v1/*` endpoints (required in production)
+- `THEOREMIS_API_KEYS` — comma-separated valid API keys for API endpoints (required in production)
 - `THEOREMIS_ALLOWED_ORIGINS` — comma-separated CORS allowlist for API endpoints
 - `THEOREMIS_REDIS_URL` — Redis REST endpoint used for distributed sliding-window rate limits
 - `THEOREMIS_REDIS_TOKEN` — Redis auth token
@@ -135,6 +135,12 @@ Runtime and deployment settings are environment-driven:
 - `THEOREMIS_RATE_LIMIT_FREE` — free-tier request budget per window
 - `THEOREMIS_RATE_LIMIT_PRO` — pro-tier request budget per window
 - `THEOREMIS_LEAN_PROJECT` — path to local/sibling Lean + Mathlib Lake project
+- `THEOREMIS_V2_VERIFY_ENABLED` — enable/disable `/api/v2/verify`
+- `THEOREMIS_V2_ALLOW_IN_MEMORY_QUEUE` — allow in-memory formal queue runtime (must be explicit in production)
+- `THEOREMIS_V2_QUEUE_CONCURRENCY` — concurrent formal workers
+- `THEOREMIS_V2_MAX_FILES` / `THEOREMIS_V2_MAX_FILE_BYTES` / `THEOREMIS_V2_MAX_TOTAL_BYTES` — formal request size limits
+- `THEOREMIS_V2_MIN_TIMEOUT_MS` / `THEOREMIS_V2_MAX_TIMEOUT_MS` — formal timeout clamp
+- `THEOREMIS_V2_MIN_MEMORY_MB` / `THEOREMIS_V2_MAX_MEMORY_MB` — formal memory clamp
 
 API request bodies for `/api/v1/parse`, `/api/v1/analyze`, `/api/v1/pipeline`, and `/api/v1/grade` accept:
 - `typeCheckMode: "permissive" | "strict"`
@@ -146,11 +152,15 @@ Analyze responses now include additive metadata:
 - `truncated: boolean` (+ `truncationReason` when limits trigger)
 - `strictDiagnostics` when strict mode is active
 
+Legacy endpoints `/api/v1/analyze` and `/api/v1/pipeline` include:
+- `X-Theoremis-Legacy: true`
+- response `mode: "legacy-analysis"`
+
 Deployment details: see [`docs/api-hardening.md`](docs/api-hardening.md).
 
 ## Architecture
 
-~15,000 lines of TypeScript. 428 tests. Zero runtime dependencies beyond KaTeX.
+~15,000 lines of TypeScript. 467 tests. Zero runtime dependencies beyond KaTeX.
 
 | Module | Path | Lines | Purpose |
 |--------|------|------:|---------|
@@ -193,10 +203,11 @@ Deployment details: see [`docs/api-hardening.md`](docs/api-hardening.md).
 
 ## Limitations
 
-- **Heuristic, not a proof.** "No counterexample found" ≠ "hypothesis is necessary." The engine tests ~500 random inputs per mutation. False negatives are possible for highly constrained domains.
+- **Formal verification is Lean-only in v2.** Coq/Isabelle remain translation targets; they are not pass/fail backends.
+- **Heuristic analysis is non-sound by design.** "No counterexample found" ≠ "proof." Legacy analysis is advisory only.
 - **Parser covers a subset of LaTeX.** ~60+ commands, common environments. Custom macros and unusual formatting may fail.
 - **Numeric domains only.** Generators cover ℕ, ℤ, ℝ (float), Bool, Prime. Abstract algebra, topology, and measure theory are out of scope.
-- **The type-checker checks well-formedness, not proof validity.** It validates IR structure, not mathematical truth.
+- **Formal runtime dependencies are required.** Production verification fails closed if queue/checker runtime requirements are missing.
 
 ## Research Direction
 

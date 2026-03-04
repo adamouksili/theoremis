@@ -7,6 +7,9 @@ import type { EmitterResult } from '../emitters/lean4';
 import type { TypeCheckResult } from '../core/typechecker';
 import type { PathologyReport } from '../engine/counterexample';
 import type { RandomTestReport } from '../engine/evaluator';
+import type { VerificationResult } from '../formal/lean/types';
+
+export type VerificationBadge = 'Draft' | 'Rejected' | 'Verified';
 
 export interface AppState {
   source: string;
@@ -17,6 +20,8 @@ export interface AppState {
   isabelle: EmitterResult | null;
   report: PathologyReport | null;
   randomReport: RandomTestReport | null;
+  verification: VerificationResult | null;
+  verificationBadge: VerificationBadge;
   tab: 'lean4' | 'coq' | 'isabelle';
   status: 'idle' | 'processing' | 'done';
   axioms: Record<string, boolean>;
@@ -28,6 +33,7 @@ export const S: AppState = {
   source: '', ir: null, tc: null,
   lean4: null, coq: null, isabelle: null,
   report: null, randomReport: null,
+  verification: null, verificationBadge: 'Draft',
   tab: 'lean4', status: 'idle',
   axioms: { LEM: true, Choice: true, Funext: true, Propext: true, Quotient: false, Univalence: false },
   lensDecl: null,

@@ -2,14 +2,14 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
 import { $ } from './state';
-import { iconMoon, iconSun, iconCheck, iconShieldCheck } from './icons';
+import { iconMoon, iconSun, iconShieldCheck } from './icons';
 
 export function shell(): string {
     return `
 <nav class="nav">
   <div class="nav-brand">
     <div class="nav-logo"><span>θ</span>Theoremis</div>
-    <div class="nav-subtitle">Proof Verification IDE</div>
+    <div class="nav-subtitle">Lean Kernel Verification IDE</div>
   </div>
   <div class="nav-actions">
     <input type="password" id="llm-key" placeholder="API Key (OpenAI / Anthropic / GitHub)" style="width:160px; font-size:11px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text)" title="API key is stored in session memory only. Supports OpenAI (sk-...), Anthropic (sk-ant-...), and GitHub PAT (ghp_...)">
@@ -22,14 +22,13 @@ export function shell(): string {
     </select>
     <button class="btn icon-btn" id="btn-dark" title="Toggle dark mode">${iconMoon}</button>
     <div class="bridge-status" id="bridge-status" title="Lean 4 Bridge: checking..."><span class="bridge-dot offline"></span><span class="bridge-label">Bridge</span></div>
-    <label class="btn" id="btn-upload" title="Upload .tex file"><input type="file" id="file-input" accept=".tex,.txt,.latex" style="display:none">Upload .tex</label>
+    <label class="btn" id="btn-upload" title="Upload .lean file"><input type="file" id="file-input" accept=".lean,.txt" style="display:none">Upload .lean</label>
+    <button class="btn" id="btn-translate" title="Translate LaTeX to Lean draft">Draft from LaTeX</button>
     <button class="btn" id="btn-download" title="Download output">Download</button>
-    <button class="btn" id="btn-export-annotated" title="Export annotated LaTeX">Export ∇</button>
     <button class="btn" id="btn-sample">Try an example</button>
     <button class="btn" id="btn-learn" title="Interactive tutorials">📚 Learn</button>
-    <button class="btn" id="btn-lean" title="Verify with Lean 4" style="display:none">${iconShieldCheck} Lean 4</button>
     <button class="btn" id="btn-share" title="Copy shareable link">Share</button>
-    <button class="btn btn-primary" id="btn-verify">${iconCheck} Verify</button>
+    <button class="btn btn-primary" id="btn-verify">${iconShieldCheck} Kernel Verify</button>
   </div>
 </nav>
 <div class="workspace">
@@ -49,10 +48,10 @@ export function shell(): string {
     <div class="main-split">
       <div class="editor-pane">
         <div class="pane-header">
-          <div class="pane-title">Your mathematics <span style="font-weight:400;color:var(--text-muted);font-size:11px">— write naturally in LaTeX</span></div>
+          <div class="pane-title">Lean Source <span style="font-weight:400;color:var(--text-muted);font-size:11px">— kernel-checked verification only</span></div>
         </div>
         <textarea class="editor-textarea" id="editor" spellcheck="false"
-          placeholder="Write or paste your LaTeX here…"></textarea>
+          placeholder="Write or paste Lean 4 code here..."></textarea>
         <div class="katex-preview" id="katex-preview" style="display:none;padding:12px 16px;overflow-y:auto;max-height:120px;border-top:1px solid var(--border);font-size:14px;background:var(--bg-main)"></div>
       </div>
       <div class="resize-h" id="resize-editor"></div>
@@ -61,7 +60,7 @@ export function shell(): string {
           <div class="summary-icon idle">∑</div>
           <div class="summary-text">
             <div class="summary-title">Ready</div>
-            <div class="summary-sub">Write LaTeX on the left to begin</div>
+            <div class="summary-sub">Write Lean, then run Kernel Verify</div>
           </div>
         </div>
         <div class="code-section" id="code-section" style="display:none">

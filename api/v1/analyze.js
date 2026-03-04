@@ -3,6 +3,7 @@ import { runAnalyzeTaskInWorker } from './_analyze-runner.js';
 
 export default async function handler(req, res) {
     applyCors(req, res, ['POST', 'OPTIONS']);
+    res.setHeader('X-Theoremis-Legacy', 'true');
     if (handlePreflight(req, res)) return;
     if (!requireMethod(req, res, 'POST')) return;
 
@@ -91,6 +92,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             ok: true,
+            mode: 'legacy-analysis',
             tier: auth.tier,
             ...result,
         });
