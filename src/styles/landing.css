@@ -603,20 +603,172 @@
   margin-top: 20px;
 }
 
+/* ── Trust Badges ──────────────────────────────────────────── */
+
+.landing-trust {
+  position: relative;
+  z-index: 5;
+  padding: 48px 48px 0;
+}
+
+.landing-trust-badges {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.landing-trust-badge {
+  font-family: var(--l-font-mono);
+  font-size: 11px;
+  color: var(--l-text-faint);
+  padding: 6px 14px;
+  border: 1px solid var(--l-border);
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Waitlist ──────────────────────────────────────────────── */
+
+.landing-waitlist {
+  position: relative;
+  z-index: 5;
+  padding: 56px 48px;
+}
+
+.landing-waitlist-inner {
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 40px 36px;
+  border: 1px solid var(--l-border-strong);
+  border-radius: 12px;
+  background: var(--l-bg-surface);
+}
+
+.landing-waitlist-title {
+  font-family: var(--l-font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--l-text-strong);
+  margin-bottom: 8px;
+}
+
+.landing-waitlist-desc {
+  font-family: var(--l-font-sans);
+  font-size: 14px;
+  color: var(--l-text-muted);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.landing-waitlist-form {
+  display: flex;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto 12px;
+}
+
+.landing-waitlist-input {
+  flex: 1;
+  padding: 11px 14px;
+  font-family: var(--l-font-sans);
+  font-size: 13px;
+  border: 1px solid var(--l-border-strong);
+  border-radius: 6px;
+  background: var(--l-bg);
+  color: var(--l-text);
+  outline: none;
+  transition: border-color 200ms;
+}
+
+.landing-waitlist-input::placeholder {
+  color: var(--l-text-faint);
+}
+
+.landing-waitlist-input:focus {
+  border-color: var(--l-accent);
+}
+
+.landing-waitlist-btn {
+  padding: 11px 22px;
+  font-family: var(--l-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: var(--l-accent);
+  color: var(--l-bg);
+  cursor: pointer;
+  transition: opacity 200ms;
+  white-space: nowrap;
+}
+
+.landing-waitlist-btn:hover {
+  opacity: 0.88;
+}
+
+.landing-waitlist-note {
+  font-family: var(--l-font-mono);
+  font-size: 11px;
+  color: var(--l-text-faint);
+}
+
 /* ── Footer ────────────────────────────────────────────────── */
 
 .landing-footer {
   position: relative;
   z-index: 5;
+  padding: 48px 48px 24px;
+  border-top: 1px solid var(--l-border);
+}
+
+.landing-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+
+.landing-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-footer-heading {
+  font-family: var(--l-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--l-text-faint);
+  margin-bottom: 4px;
+}
+
+.landing-footer-link {
+  font-family: var(--l-font-sans);
+  font-size: 13px;
+  color: var(--l-text-muted);
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+a.landing-footer-link:hover {
+  color: var(--l-text);
+}
+
+.landing-footer-bottom {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 48px;
-  border-top: 1px solid var(--l-border);
+  gap: 8px;
   font-family: var(--l-font-mono);
   font-size: 11px;
   color: var(--l-text-faint);
-  gap: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--l-border);
 }
 
 .landing-footer a {

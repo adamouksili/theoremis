@@ -5,7 +5,7 @@
 import './styles/index.css';
 import './styles/landing.css';
 
-type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground';
+type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'pricing' | 'changelog';
 let currentView: View = 'landing';
 let routeToken = 0;
 
@@ -142,6 +142,54 @@ async function showPlayground(): Promise<void> {
     bindHamburger();
 }
 
+/** Show Pricing page */
+async function showPricing(): Promise<void> {
+    if (currentView === 'pricing') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'pricing';
+    if (!isSubdomain()) window.location.hash = 'pricing';
+
+    await import('./styles/pricing.css');
+    if (token !== routeToken) return;
+
+    const pricing = await import('./ide/pricing');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = pricing.pricingShell();
+    bindHamburger();
+}
+
+/** Show Changelog page */
+async function showChangelog(): Promise<void> {
+    if (currentView === 'changelog') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'changelog';
+    if (!isSubdomain()) window.location.hash = 'changelog';
+
+    await import('./styles/changelog.css');
+    if (token !== routeToken) return;
+
+    const changelog = await import('./ide/changelog');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = changelog.changelogShell();
+    bindHamburger();
+}
+
 /** Navigate to IDE with shared proof content */
 async function navigateToSharedProof(base64: string): Promise<void> {
     const token = ++routeToken;
@@ -184,6 +232,8 @@ async function route(): Promise<void> {
     if (hash === 'api') { await showApiDocs(); return; }
     if (hash === 'classroom') { await showClassroom(); return; }
     if (hash === 'playground') { await showPlayground(); return; }
+    if (hash === 'pricing') { await showPricing(); return; }
+    if (hash === 'changelog') { await showChangelog(); return; }
 
     await showLanding();
 }

@@ -66,8 +66,8 @@ export function landingShell(): string {
       <a class="landing-nav-link" href="#playground">Playground</a>
       <a class="landing-nav-link" href="#api">API</a>
       <a class="landing-nav-link" href="#classroom">Classroom</a>
-      <a class="landing-nav-link" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">Source</a>
-      <button class="landing-nav-link" data-scroll="features">Features</button>
+      <a class="landing-nav-link" href="#pricing">Pricing</a>
+      <a class="landing-nav-link" href="#changelog">Changelog</a>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
     <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
@@ -84,20 +84,11 @@ export function landingShell(): string {
         live Lean bridge — all from your browser.
       </p>
       <div class="landing-hero-actions">
-        <a class="landing-btn-primary" href="#playground">
-          Playground
-        </a>
         <a class="landing-btn-primary" href="#ide">
-          Full IDE
+          Start Free →
         </a>
-        <a class="landing-btn-primary" href="#api">
-          API Docs
-        </a>
-        <a class="landing-btn-primary" href="#classroom">
-          Classroom
-        </a>
-        <a class="landing-btn-secondary" href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">
-          View Source on GitHub
+        <a class="landing-btn-secondary" href="#pricing">
+          View Pricing
         </a>
       </div>
     </div>
@@ -220,11 +211,23 @@ export function landingShell(): string {
 
   <section class="landing-trust">
     <div class="landing-trust-badges">
-      <span class="landing-trust-badge">~15,000 Lines of TypeScript</span>
-      <span class="landing-trust-badge">428 Tests Passing</span>
-      <span class="landing-trust-badge">100% Hypothesis Detection F1</span>
-      <span class="landing-trust-badge">MIT Licensed</span>
-      <span class="landing-trust-badge"><a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a></span>
+      <span class="landing-trust-badge">15,000+ Lines of TypeScript</span>
+      <span class="landing-trust-badge">467 Tests Passing</span>
+      <span class="landing-trust-badge">100% Hypothesis F1</span>
+      <span class="landing-trust-badge">3 Proof Assistants</span>
+      <span class="landing-trust-badge">Open Source · MIT</span>
+    </div>
+  </section>
+
+  <section class="landing-waitlist">
+    <div class="landing-waitlist-inner">
+      <h2 class="landing-waitlist-title">Get early access to Pro features</h2>
+      <p class="landing-waitlist-desc">Join the waitlist for priority verification, AI tactic hints, and private proofs.</p>
+      <form class="landing-waitlist-form" action="https://formspree.io/f/placeholder" method="POST">
+        <input type="email" name="email" class="landing-waitlist-input" placeholder="you@university.edu" required />
+        <button type="submit" class="landing-waitlist-btn">Join Waitlist</button>
+      </form>
+      <p class="landing-waitlist-note">Free forever for open-source research. No spam.</p>
     </div>
   </section>
 
@@ -236,21 +239,36 @@ export function landingShell(): string {
       the gap between what mathematicians <em>write</em> and what proof assistants
       <em>accept</em> felt unnecessary — and no existing tool bridged it well.
     </p>
-    <p class="landing-founder-text">
-      Theoremis is ~15,000 lines of TypeScript with 428 tests, a real type-checker
-      built on λΠω type theory, 7 mutation operators for hypothesis testing, and
-      emitters for three proof assistants. It runs in the browser, as a CLI, as a
-      REST API, and as a VS Code extension.
-    </p>
     <p class="landing-founder-sign">— Adam Ouksili</p>
   </section>
 
   <footer class="landing-footer">
-    <span>Built on λΠω type theory</span>
-    <span>·</span>
-    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
-    <span>·</span>
-    <span>© ${new Date().getFullYear()} Theoremis</span>
+    <div class="landing-footer-grid">
+      <div class="landing-footer-col">
+        <div class="landing-footer-heading">Product</div>
+        <a href="#ide" class="landing-footer-link">IDE</a>
+        <a href="#playground" class="landing-footer-link">Playground</a>
+        <a href="#classroom" class="landing-footer-link">Classroom</a>
+        <a href="#api" class="landing-footer-link">API Docs</a>
+      </div>
+      <div class="landing-footer-col">
+        <div class="landing-footer-heading">Company</div>
+        <a href="#pricing" class="landing-footer-link">Pricing</a>
+        <a href="#changelog" class="landing-footer-link">Changelog</a>
+        <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
+      </div>
+      <div class="landing-footer-col">
+        <div class="landing-footer-heading">Stack</div>
+        <span class="landing-footer-link">λΠω type theory</span>
+        <span class="landing-footer-link">Lean 4 bridge</span>
+        <span class="landing-footer-link">TypeScript</span>
+      </div>
+    </div>
+    <div class="landing-footer-bottom">
+      <span>© ${new Date().getFullYear()} Theoremis</span>
+      <span>·</span>
+      <span>Built at Rutgers University</span>
+    </div>
   </footer>
 </div>`;
 }

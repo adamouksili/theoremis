@@ -1,8 +1,8 @@
 {
   "name": "theoremis",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Hypothesis necessity linter for mathematical proofs — mutation-based analysis of LaTeX theorem statements",
+  "description": "The AI-powered formal verification platform. Write proofs in LaTeX, verify with Lean 4, and ship machine-checked mathematics.",
   "engines": {
     "node": ">=20"
   },
