@@ -56,8 +56,10 @@ export function landingShell(): string {
 
   <nav class="landing-nav">
     <div class="landing-nav-brand">
-      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img" />
-      <div class="landing-nav-logo">Theoremis</div>
+      <a href="#" class="brand-link">
+        <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img" />
+        <span class="brand-name">Theoremis</span>
+      </a>
       <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
@@ -245,6 +247,8 @@ export function landingShell(): string {
 
   <footer class="landing-footer">
     <span>Built on λΠω type theory</span>
+    <span>·</span>
+    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
     <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>

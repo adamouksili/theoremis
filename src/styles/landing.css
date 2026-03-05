@@ -52,6 +52,35 @@
   gap: 12px;
 }
 
+/* ── Unified Brand Link (used across all pages) ────────────── */
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: opacity 200ms;
+}
+
+.brand-link:hover {
+  opacity: 0.8;
+}
+
+.brand-logo-img {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+.brand-name {
+  font-family: var(--l-font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--l-text-strong);
+  letter-spacing: -0.3px;
+}
+
 .landing-nav-logo-img {
   height: 24px;
   width: auto;
@@ -296,13 +325,34 @@
 }
 
 /* Lean/LaTeX syntax — muted academic palette */
-.landing-code-line .kw  { color: #c9a86c; }
-.landing-code-line .ty  { color: #7eb8c9; }
-.landing-code-line .op  { color: #8b8b8b; }
-.landing-code-line .cm  { color: #555555; font-style: italic; }
-.landing-code-line .str { color: #8fad7a; }
-.landing-code-line .fn  { color: #d4d4d4; }
-.landing-code-line .num { color: #c9a86c; }
+.landing-code-line .kw {
+  color: #c9a86c;
+}
+
+.landing-code-line .ty {
+  color: #7eb8c9;
+}
+
+.landing-code-line .op {
+  color: #8b8b8b;
+}
+
+.landing-code-line .cm {
+  color: #555555;
+  font-style: italic;
+}
+
+.landing-code-line .str {
+  color: #8fad7a;
+}
+
+.landing-code-line .fn {
+  color: #d4d4d4;
+}
+
+.landing-code-line .num {
+  color: #c9a86c;
+}
 
 /* Typing cursor */
 .typing-cursor {
@@ -316,8 +366,15 @@
 }
 
 @keyframes cursorBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Phase label */
@@ -498,6 +555,7 @@
   .landing-tech {
     padding: 48px 24px 0;
   }
+
   .landing-tech-grid {
     grid-template-columns: 1fr;
   }

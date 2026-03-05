@@ -5,6 +5,7 @@
 
 import type { Term, Theorem, Param } from '../core/ir';
 import { mk, Types } from '../core/ir';
+import { assertNever } from '../core/assert';
 
 export type MutationType =
     | 'drop_hypothesis' | 'weaken_condition' | 'swap_quantifier'
@@ -168,5 +169,7 @@ function termKey(term: Term): string {
             return `ForAll(${term.param}|${termKey(term.domain)}|${termKey(term.body)})`;
         case 'Exists':
             return `Exists(${term.param}|${termKey(term.domain)}|${termKey(term.body)})`;
+        default:
+            return assertNever(term);
     }
 }

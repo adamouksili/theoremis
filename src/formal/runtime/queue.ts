@@ -16,6 +16,9 @@ interface QueueState {
     maxConcurrency: number;
 }
 
+/** Completed jobs older than this are evicted to prevent unbounded memory growth. */
+const MAX_JOB_AGE_MS = 10 * 60 * 1000; // 10 minutes
+
 const state: QueueState = {
     jobs: new Map(),
     pending: [],
@@ -110,9 +113,11 @@ function runIsolated(request: VerificationRequest): Promise<VerificationResult> 
 
         worker.once('exit', (code) => {
             clearTimeout(timer);
-            if (!settled && code !== 0) {
-                done(() => reject(new Error(`Verification worker exited with code ${code}`)));
-            }
+            done(() => {
+                if (code !== 0) {
+                    reject(new Error(`Verification worker exited with code ${code}`));
+                }
+            });
         });
     });
 }
@@ -156,7 +161,19 @@ async function drainQueue(): Promise<void> {
         job.completedAt = new Date().toISOString();
     } finally {
         state.active -= 1;
+        evictStaleJobs();
         queueMicrotask(() => { void drainQueue(); });
+    }
+}
+
+/** Remove completed/errored jobs older than MAX_JOB_AGE_MS to bound memory usage. */
+function evictStaleJobs(): void {
+    const cutoff = Date.now() - MAX_JOB_AGE_MS;
+    for (const [id, job] of state.jobs) {
+        if (job.status === 'queued' || job.status === 'running') continue;
+        if (job.completedAt && Date.parse(job.completedAt) < cutoff) {
+            state.jobs.delete(id);
+        }
     }
 }
 

@@ -4,11 +4,13 @@
 // ─────────────────────────────────────────────────────────────
 
 export function apiDocsShell(): string {
-    return `<div class="landing api-docs">
+  return `<div class="landing api-docs">
   <nav class="landing-nav">
     <div class="landing-nav-brand">
-      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img">
-      <span class="landing-nav-title">Theoremis</span>
+      <a href="#" class="brand-link">
+        <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img">
+        <span class="brand-name">Theoremis</span>
+      </a>
     </div>
     <div class="landing-nav-links">
       <a href="#" class="landing-nav-link">Home</a>
@@ -60,10 +62,10 @@ export function apiDocsShell(): string {
     <h2 class="api-section-title">Formal Endpoints (v2)</h2>
 
     ${endpointCard({
-        method: 'POST',
-        path: '/api/v2/verify',
-        description: 'Canonical verification endpoint. Schedules Lean kernel verification for a project bundle.',
-        body: `{
+    method: 'POST',
+    path: '/api/v2/verify',
+    description: 'Canonical verification endpoint. Schedules Lean kernel verification for a project bundle.',
+    body: `{
   "project": {
     "files": [{ "path": "Main.lean", "content": "theorem t : True := by trivial" }]
   },
@@ -72,29 +74,29 @@ export function apiDocsShell(): string {
   "memoryMb": 256,
   "profile": "strict"
 }`,
-        bodyFields: [
-            { name: 'project.files[]', type: 'Array<{path, content}>', required: true, desc: 'Lean source files for the verification job' },
-            { name: 'entryFile', type: 'string', required: true, desc: 'Entry Lean file that will be checked' },
-            { name: 'timeoutMs', type: 'number', required: false, desc: 'Hard wall-time cap (server-clamped)' },
-            { name: 'memoryMb', type: 'number', required: false, desc: 'Worker memory cap (server-clamped)' },
-            { name: 'profile', type: '"strict" | "default"', required: false, desc: 'Verification profile' },
-        ],
-        response: `{
+    bodyFields: [
+      { name: 'project.files[]', type: 'Array<{path, content}>', required: true, desc: 'Lean source files for the verification job' },
+      { name: 'entryFile', type: 'string', required: true, desc: 'Entry Lean file that will be checked' },
+      { name: 'timeoutMs', type: 'number', required: false, desc: 'Hard wall-time cap (server-clamped)' },
+      { name: 'memoryMb', type: 'number', required: false, desc: 'Worker memory cap (server-clamped)' },
+      { name: 'profile', type: '"strict" | "default"', required: false, desc: 'Verification profile' },
+    ],
+    response: `{
   "ok": true,
   "mode": "formal-verification",
   "verified": false,
   "job": { "id": "uuid", "status": "queued", "createdAt": "..." },
   "queue": { "depth": 0, "active": 1, "jobs": 42 }
 }`,
-    })}
+  })}
 
     ${endpointCard({
-        method: 'GET',
-        path: '/api/v2/jobs/:id',
-        description: 'Poll verification job status and final formal checker artifacts.',
-        body: '',
-        bodyFields: [],
-        response: `{
+    method: 'GET',
+    path: '/api/v2/jobs/:id',
+    description: 'Poll verification job status and final formal checker artifacts.',
+    body: '',
+    bodyFields: [],
+    response: `{
   "ok": true,
   "mode": "formal-verification",
   "job": {
@@ -111,40 +113,40 @@ export function apiDocsShell(): string {
     }
   }
 }`,
-    })}
+  })}
 
     ${endpointCard({
-        method: 'POST',
-        path: '/api/v2/translate/latex',
-        description: 'Generate draft Lean from LaTeX. Advisory only and never treated as verification.',
-        body: `{
+    method: 'POST',
+    path: '/api/v2/translate/latex',
+    description: 'Generate draft Lean from LaTeX. Advisory only and never treated as verification.',
+    body: `{
   "latex": "\\\\begin{theorem}For all $x$, $x=x$.\\\\end{theorem}"
 }`,
-        bodyFields: [
-            { name: 'latex', type: 'string', required: true, desc: 'Input LaTeX source' },
-        ],
-        response: `{
+    bodyFields: [
+      { name: 'latex', type: 'string', required: true, desc: 'Input LaTeX source' },
+    ],
+    response: `{
   "ok": true,
   "mode": "draft-translation",
   "note": "Draft translation is advisory only and is not a formal verification result.",
   "leanDraft": { "code": "theorem ...", "warnings": [] }
 }`,
-    })}
+  })}
 
     ${endpointCard({
-        method: 'GET',
-        path: '/api/v2/health',
-        description: 'Formal runtime health, queue metrics, and endpoint metadata.',
-        body: '',
-        bodyFields: [],
-        response: `{
+    method: 'GET',
+    path: '/api/v2/health',
+    description: 'Formal runtime health, queue metrics, and endpoint metadata.',
+    body: '',
+    bodyFields: [],
+    response: `{
   "ok": true,
   "service": "theoremis-formal-api",
   "version": "2.0.0",
   "runtime": { "ok": true },
   "queue": { "depth": 0, "active": 0, "jobs": 10 }
 }`,
-    })}
+  })}
   </section>
 
   <section class="api-bundles">
@@ -196,7 +198,9 @@ export function apiDocsShell(): string {
   </section>
 
   <footer class="landing-footer">
-    <span>Lean kernel-truth verification</span>
+    <span>Built on λΠω type theory</span>
+    <span>·</span>
+    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
     <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>
@@ -206,37 +210,37 @@ export function apiDocsShell(): string {
 // ── Helpers ─────────────────────────────────────────────────
 
 interface FieldDoc {
-    name: string;
-    type: string;
-    required: boolean;
-    desc: string;
+  name: string;
+  type: string;
+  required: boolean;
+  desc: string;
 }
 
 interface EndpointConfig {
-    method: string;
-    path: string;
-    description: string;
-    body: string;
-    bodyFields: FieldDoc[];
-    response: string;
+  method: string;
+  path: string;
+  description: string;
+  body: string;
+  bodyFields: FieldDoc[];
+  response: string;
 }
 
 function endpointCard(cfg: EndpointConfig): string {
-    const fieldsHtml = cfg.bodyFields.length > 0
-        ? `<div class="api-endpoint-fields">
+  const fieldsHtml = cfg.bodyFields.length > 0
+    ? `<div class="api-endpoint-fields">
             <div class="api-field-header">Request Body</div>
             ${cfg.bodyFields.map(f =>
-            `<div class="api-field">
+      `<div class="api-field">
                 <code class="api-field-name">${f.name}</code>
                 <span class="api-field-type">${f.type}</span>
                 <span class="api-field-req">${f.required ? 'required' : 'optional'}</span>
                 <span class="api-field-desc">${f.desc}</span>
             </div>`
-        ).join('\n')}
+    ).join('\n')}
            </div>`
-        : '';
+    : '';
 
-    return `
+  return `
     <div class="api-endpoint">
       <div class="api-endpoint-header">
         <span class="api-code-method ${cfg.method.toLowerCase()}">${cfg.method}</span>
@@ -257,7 +261,7 @@ function endpointCard(cfg: EndpointConfig): string {
 }
 
 function bundleCard(name: string, desc: string, badge?: string): string {
-    return `<div class="api-bundle-card">
+  return `<div class="api-bundle-card">
       <div class="api-bundle-name">${name}${badge ? `<span class="api-bundle-badge">${badge}</span>` : ''}</div>
       <div class="api-bundle-desc">${desc}</div>
     </div>`;

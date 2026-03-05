@@ -171,19 +171,36 @@ body {
 
 .nav-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
 
-.nav-logo {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.5px;
+/* ── IDE Brand Link ────────────────────────────────────────── */
+
+.ide-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: opacity 200ms;
 }
 
-.nav-logo span {
-  color: var(--accent);
+.ide-brand-link:hover {
+  opacity: 0.75;
+}
+
+.ide-brand-logo {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+}
+
+.ide-brand-name {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.5px;
 }
 
 .nav-subtitle {
@@ -1202,7 +1219,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Trust badges (landing) ────────────────────────────────── */

@@ -18,7 +18,9 @@
     "bench": "npx tsx bench/run.ts",
     "perf": "npx tsx bench/perf.ts",
     "perf:ci": "npx tsx bench/perf.ts --ci",
-    "size:check": "npx tsx bench/size-check.ts"
+    "size:check": "npx tsx bench/size-check.ts",
+    "lint": "eslint src/",
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",

@@ -28,6 +28,8 @@ function shareCurrentProof(): void {
     }
 }
 
+let tutorialOverlayBound = false;
+
 function toggleTutorialPanel(): void {
     const overlay = $('tutorial-overlay');
     const panel = $('tutorial-panel');
@@ -40,9 +42,12 @@ function toggleTutorialPanel(): void {
         renderTutorialPanel(panel);
     }
 
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.style.display = 'none';
-    }, { once: true });
+    if (!tutorialOverlayBound) {
+        tutorialOverlayBound = true;
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.style.display = 'none';
+        });
+    }
 }
 
 export function bindIdeEvents(

@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Term, Param } from '../core/ir';
+import { assertNever } from '../core/assert';
 
 export type Value = number | boolean | string | null;
 
@@ -189,6 +190,9 @@ export function evaluate(term: Term, env: Record<string, Value>): Value {
         case 'Proj': {
             return null;
         }
+
+        default:
+            return assertNever(term);
     }
 }
 
@@ -630,6 +634,11 @@ function collectVars(term: Term, vars: Map<string, string>) {
             for (const ctor of term.constructors) {
                 collectVars(ctor.type, vars);
             }
+            break;
+        case 'Literal':
+        case 'Sort':
+        case 'Hole':
+        case 'AxiomRef':
             break;
     }
 }

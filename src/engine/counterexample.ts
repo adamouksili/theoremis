@@ -42,8 +42,8 @@ interface VarSpec {
 const GENERATORS: Record<string, () => Value> = {
     'Nat': randomNat,
     'Int': randomInt,
-    'Real': () => (Math.random() * 200) - 100,
-    'Bool': () => randomBool(),
+    'Real': (): Value => (Math.random() * 200) - 100,
+    'Bool': (): Value => randomBool(),
     'Prime': randomPrime,
 };
 

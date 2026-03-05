@@ -57,6 +57,12 @@ export function checkerRuntimeStatus(): { ok: boolean; reason?: string } {
 
 let cachedVersion: string | null = null;
 
+/** Reset module-level caches (used in tests to exercise cache-miss paths). */
+export function resetCheckerCache(): void {
+    checkerStatusCache = null;
+    cachedVersion = null;
+}
+
 async function readCheckerVersion(cwd: string): Promise<string | null> {
     if (cachedVersion) return cachedVersion;
     try {

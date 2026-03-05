@@ -4,11 +4,13 @@
 // ─────────────────────────────────────────────────────────────
 
 export function classroomShell(): string {
-    return `<div class="landing classroom">
+  return `<div class="landing classroom">
   <nav class="landing-nav">
     <div class="landing-nav-brand">
-      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img">
-      <span class="landing-nav-title">Theoremis</span>
+      <a href="#" class="brand-link">
+        <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img">
+        <span class="brand-name">Theoremis</span>
+      </a>
     </div>
     <div class="landing-nav-links">
       <a href="#" class="landing-nav-link">Home</a>
@@ -96,6 +98,8 @@ with the same sign is non-negative, we conclude $x^2 \\geq 0$.
   <footer class="landing-footer">
     <span>Built on λΠω type theory</span>
     <span>·</span>
+    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
+    <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>
 </div>`;
@@ -104,87 +108,87 @@ with the same sign is non-negative, we conclude $x^2 \\geq 0$.
 // ── Bind classroom events ───────────────────────────────────
 
 export function bindClassroom(): void {
-    const gradeBtn = document.getElementById('cr-grade-btn');
-    if (!gradeBtn) return;
+  const gradeBtn = document.getElementById('cr-grade-btn');
+  if (!gradeBtn) return;
 
-    gradeBtn.addEventListener('click', async () => {
-        const latexInput = document.getElementById('cr-latex-input') as HTMLTextAreaElement | null;
-        const bundleSelect = document.getElementById('cr-bundle-select') as HTMLSelectElement | null;
-        const outputPanel = document.getElementById('cr-output-panel');
-        const expectedThms = document.getElementById('cr-expected-thms') as HTMLInputElement | null;
-        const numTests = document.getElementById('cr-num-tests') as HTMLInputElement | null;
-        const maxPoints = document.getElementById('cr-max-points') as HTMLInputElement | null;
-        const requireEmission = document.getElementById('cr-require-emission') as HTMLInputElement | null;
-        const reference = document.getElementById('cr-reference') as HTMLTextAreaElement | null;
+  gradeBtn.addEventListener('click', async () => {
+    const latexInput = document.getElementById('cr-latex-input') as HTMLTextAreaElement | null;
+    const bundleSelect = document.getElementById('cr-bundle-select') as HTMLSelectElement | null;
+    const outputPanel = document.getElementById('cr-output-panel');
+    const expectedThms = document.getElementById('cr-expected-thms') as HTMLInputElement | null;
+    const numTests = document.getElementById('cr-num-tests') as HTMLInputElement | null;
+    const maxPoints = document.getElementById('cr-max-points') as HTMLInputElement | null;
+    const requireEmission = document.getElementById('cr-require-emission') as HTMLInputElement | null;
+    const reference = document.getElementById('cr-reference') as HTMLTextAreaElement | null;
 
-        if (!latexInput || !outputPanel) return;
+    if (!latexInput || !outputPanel) return;
 
-        const latex = latexInput.value.trim();
-        if (!latex) {
-            outputPanel.innerHTML = '<div class="cr-error">Please enter some LaTeX.</div>';
-            return;
-        }
+    const latex = latexInput.value.trim();
+    if (!latex) {
+      outputPanel.innerHTML = '<div class="cr-error">Please enter some LaTeX.</div>';
+      return;
+    }
 
-        // Build rubric
-        const rubric: Record<string, unknown> = {
-            axiomBundle: bundleSelect?.value ?? 'ClassicalMath',
-            numTests: parseInt(numTests?.value ?? '500', 10),
-            maxPoints: parseInt(maxPoints?.value ?? '100', 10),
-            requireCleanEmission: requireEmission?.checked ?? false,
-            requireTypeCheck: true,
-        };
+    // Build rubric
+    const rubric: Record<string, unknown> = {
+      axiomBundle: bundleSelect?.value ?? 'ClassicalMath',
+      numTests: parseInt(numTests?.value ?? '500', 10),
+      maxPoints: parseInt(maxPoints?.value ?? '100', 10),
+      requireCleanEmission: requireEmission?.checked ?? false,
+      requireTypeCheck: true,
+    };
 
-        const expectedStr = expectedThms?.value.trim();
-        if (expectedStr) {
-            rubric.expectedTheorems = expectedStr.split(',').map(s => s.trim()).filter(Boolean);
-        }
+    const expectedStr = expectedThms?.value.trim();
+    if (expectedStr) {
+      rubric.expectedTheorems = expectedStr.split(',').map(s => s.trim()).filter(Boolean);
+    }
 
-        const refStr = reference?.value.trim();
-        if (refStr) {
-            rubric.referenceSolution = refStr;
-        }
+    const refStr = reference?.value.trim();
+    if (refStr) {
+      rubric.referenceSolution = refStr;
+    }
 
-        // Show loading
-        outputPanel.innerHTML = '<div class="cr-loading"><div class="cr-spinner"></div> Grading...</div>';
-        gradeBtn.setAttribute('disabled', 'true');
+    // Show loading
+    outputPanel.innerHTML = '<div class="cr-loading"><div class="cr-spinner"></div> Grading...</div>';
+    gradeBtn.setAttribute('disabled', 'true');
 
-        try {
-            const res = await fetch('/api/v1/grade', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ latex, rubric }),
-            });
+    try {
+      const res = await fetch('/api/v1/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latex, rubric }),
+      });
 
-            const data = await res.json();
-            if (!res.ok || !data.ok) {
-                outputPanel.innerHTML = `<div class="cr-error">Error: ${data.error || 'Unknown error'}</div>`;
-                return;
-            }
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        outputPanel.innerHTML = `<div class="cr-error">Error: ${data.error || 'Unknown error'}</div>`;
+        return;
+      }
 
-            outputPanel.innerHTML = renderGradeReport(data);
-        } catch (err) {
-            outputPanel.innerHTML = `<div class="cr-error">Network error: ${err instanceof Error ? err.message : String(err)}</div>`;
-        } finally {
-            gradeBtn.removeAttribute('disabled');
-        }
-    });
+      outputPanel.innerHTML = renderGradeReport(data);
+    } catch (err) {
+      outputPanel.innerHTML = `<div class="cr-error">Network error: ${err instanceof Error ? err.message : String(err)}</div>`;
+    } finally {
+      gradeBtn.removeAttribute('disabled');
+    }
+  });
 }
 
 // ── Render grade report ─────────────────────────────────────
 
 function renderGradeReport(data: Record<string, unknown>): string {
-    const percentage = data.percentage as number;
-    const letter = data.letterGrade as string;
-    const total = data.totalPoints as number;
-    const max = data.maxPoints as number;
-    const breakdown = data.breakdown as Record<string, { earned: number; possible: number; detail: string }>;
-    const theorems = data.theorems as Array<Record<string, unknown>>;
-    const feedback = data.overallFeedback as string[];
-    const elapsed = data.elapsed as number;
+  const percentage = data.percentage as number;
+  const letter = data.letterGrade as string;
+  const total = data.totalPoints as number;
+  const max = data.maxPoints as number;
+  const breakdown = data.breakdown as Record<string, { earned: number; possible: number; detail: string }>;
+  const theorems = data.theorems as Array<Record<string, unknown>>;
+  const feedback = data.overallFeedback as string[];
+  const elapsed = data.elapsed as number;
 
-    const gradeColor = percentage >= 90 ? '#4ade80' : percentage >= 80 ? '#facc15' : percentage >= 70 ? '#fb923c' : '#f87171';
+  const gradeColor = percentage >= 90 ? '#4ade80' : percentage >= 80 ? '#facc15' : percentage >= 70 ? '#fb923c' : '#f87171';
 
-    let html = `
+  let html = `
     <div class="cr-report">
       <div class="cr-grade-header">
         <div class="cr-grade-circle" style="--grade-color: ${gradeColor}">
@@ -204,8 +208,8 @@ function renderGradeReport(data: Record<string, unknown>): string {
       <div class="cr-breakdown">
         <h3 class="cr-section-title">Breakdown</h3>
         ${Object.entries(breakdown).map(([category, info]) => {
-            const pct = info.possible > 0 ? (info.earned / info.possible) * 100 : 100;
-            return `<div class="cr-breakdown-row">
+    const pct = info.possible > 0 ? (info.earned / info.possible) * 100 : 100;
+    return `<div class="cr-breakdown-row">
               <span class="cr-breakdown-label">${capitalize(category)}</span>
               <div class="cr-breakdown-bar">
                 <div class="cr-breakdown-fill" style="width: ${pct}%"></div>
@@ -213,18 +217,18 @@ function renderGradeReport(data: Record<string, unknown>): string {
               <span class="cr-breakdown-score">${info.earned}/${info.possible}</span>
               <span class="cr-breakdown-detail">${info.detail}</span>
             </div>`;
-        }).join('')}
+  }).join('')}
       </div>`;
 
-    if (theorems.length > 0) {
-        html += `
+  if (theorems.length > 0) {
+    html += `
       <div class="cr-theorems">
         <h3 class="cr-section-title">Theorem Details</h3>
         ${theorems.map((thm: Record<string, unknown>) => {
-            const icon = (thm.quickCheckPassed as boolean) ? '✓' : '✗';
-            const iconClass = (thm.quickCheckPassed as boolean) ? 'pass' : 'fail';
-            const thmFeedback = thm.feedback as string[];
-            return `<div class="cr-theorem-card">
+      const icon = (thm.quickCheckPassed as boolean) ? '✓' : '✗';
+      const iconClass = (thm.quickCheckPassed as boolean) ? 'pass' : 'fail';
+      const thmFeedback = thm.feedback as string[];
+      return `<div class="cr-theorem-card">
               <div class="cr-theorem-header">
                 <span class="cr-theorem-icon ${iconClass}">${icon}</span>
                 <span class="cr-theorem-name">${thm.name}</span>
@@ -233,14 +237,14 @@ function renderGradeReport(data: Record<string, unknown>): string {
               </div>
               ${thmFeedback.map((f: string) => `<p class="cr-theorem-feedback">${f}</p>`).join('')}
             </div>`;
-        }).join('')}
+    }).join('')}
       </div>`;
-    }
+  }
 
-    html += `</div>`;
-    return html;
+  html += `</div>`;
+  return html;
 }
 
 function capitalize(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

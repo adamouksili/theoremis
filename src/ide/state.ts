@@ -29,16 +29,39 @@ export interface AppState {
   llmSuggestions: Record<string, string>;
 }
 
+const DEFAULT_AXIOMS: Record<string, boolean> = {
+  LEM: true, Choice: true, Funext: true, Propext: true, Quotient: false, Univalence: false,
+};
+
 export const S: AppState = {
   source: '', ir: null, tc: null,
   lean4: null, coq: null, isabelle: null,
   report: null, randomReport: null,
   verification: null, verificationBadge: 'Draft',
   tab: 'lean4', status: 'idle',
-  axioms: { LEM: true, Choice: true, Funext: true, Propext: true, Quotient: false, Univalence: false },
+  axioms: { ...DEFAULT_AXIOMS },
   lensDecl: null,
   llmSuggestions: {},
 };
+
+/** Reset `S` to its default state (useful for route transitions and testing). */
+export function resetState(): void {
+  S.source = '';
+  S.ir = null;
+  S.tc = null;
+  S.lean4 = null;
+  S.coq = null;
+  S.isabelle = null;
+  S.report = null;
+  S.randomReport = null;
+  S.verification = null;
+  S.verificationBadge = 'Draft';
+  S.tab = 'lean4';
+  S.status = 'idle';
+  S.axioms = { ...DEFAULT_AXIOMS };
+  S.lensDecl = null;
+  S.llmSuggestions = {};
+}
 
 // ── DOM helpers ─────────────────────────────────────────────
 

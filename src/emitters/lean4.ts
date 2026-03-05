@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Term, Tactic, Declaration, IRModule, Param, AxiomBundle } from '../core/ir';
+import { assertNever } from '../core/assert';
 
 // ── Main emitter entry ──────────────────────────────────────
 
@@ -107,6 +108,9 @@ function emitDeclaration(decl: Declaration, bundle: AxiomBundle): { code: string
                 warns,
             };
         }
+
+        default:
+            return assertNever(decl);
     }
 }
 
@@ -183,6 +187,9 @@ function emitTerm(term: Term): string {
 
         case 'Exists':
             return `∃ ${term.param} : ${emitTerm(term.domain)}, ${emitTerm(term.body)}`;
+
+        default:
+            return assertNever(term);
     }
 }
 
@@ -205,6 +212,9 @@ function emitTactic(tactic: Tactic, indent: number): string {
         case 'Exact': return `${pad}exact ${emitTerm(tactic.term)}`;
         case 'Ring': return `${pad}ring`;
         case 'LLMSuggest': return `${pad}-- AI suggestion: ${tactic.context}\n${pad}sorry`;
+
+        default:
+            return assertNever(tactic);
     }
 }
 

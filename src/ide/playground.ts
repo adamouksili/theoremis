@@ -21,8 +21,10 @@ export function playgroundShell(): string {
     return `<div class="pg">
   <nav class="landing-nav">
     <div class="landing-nav-brand">
-      <img src="/logo_transparent.png" alt="Theoremis" class="landing-nav-logo-img">
-      <span class="landing-nav-title">Theoremis</span>
+      <a href="#" class="brand-link">
+        <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img">
+        <span class="brand-name">Theoremis</span>
+      </a>
     </div>
     <div class="landing-nav-links">
       <a href="#" class="landing-nav-link">Home</a>
@@ -54,7 +56,7 @@ export function playgroundShell(): string {
   <footer class="landing-footer">
     <span>Built on λΠω type theory</span>
     <span>·</span>
-    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">View on GitHub →</a>
+    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
     <span>·</span>
     <span>© ${new Date().getFullYear()} Theoremis</span>
   </footer>

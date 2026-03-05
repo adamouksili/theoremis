@@ -5,10 +5,13 @@ import { $ } from './state';
 import { iconMoon, iconSun, iconShieldCheck } from './icons';
 
 export function shell(): string {
-    return `
+  return `
 <nav class="nav">
   <div class="nav-brand">
-    <div class="nav-logo"><span>θ</span>Theoremis</div>
+    <a href="#" class="brand-link ide-brand-link">
+      <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img ide-brand-logo" />
+      <span class="brand-name ide-brand-name">Theoremis</span>
+    </a>
     <div class="nav-subtitle">Lean Kernel Verification IDE</div>
   </div>
   <div class="nav-actions">
@@ -101,116 +104,116 @@ export function shell(): string {
 }
 
 export function toggleDarkMode() {
-    document.body.classList.toggle('dark');
-    const btn = $('btn-dark');
-    btn.innerHTML = document.body.classList.contains('dark') ? iconSun : iconMoon;
+  document.body.classList.toggle('dark');
+  const btn = $('btn-dark');
+  btn.innerHTML = document.body.classList.contains('dark') ? iconSun : iconMoon;
 }
 
 export function renderKaTeXPreview(source: string) {
-    const preview = $('katex-preview');
-    const mathBlocks = [...source.matchAll(/\$\$([^$]+)\$\$/g), ...source.matchAll(/\$([^$]+)\$/g)];
-    if (mathBlocks.length === 0) {
-        preview.style.display = 'none';
-        return;
+  const preview = $('katex-preview');
+  const mathBlocks = [...source.matchAll(/\$\$([^$]+)\$\$/g), ...source.matchAll(/\$([^$]+)\$/g)];
+  if (mathBlocks.length === 0) {
+    preview.style.display = 'none';
+    return;
+  }
+  preview.style.display = 'block';
+  let html = '';
+  for (const match of mathBlocks) {
+    try {
+      html += '<div style="margin:4px 0">' + katex.renderToString(match[1], {
+        throwOnError: false,
+        displayMode: match[0].startsWith('$$'),
+      }) + '</div>';
+    } catch {
+      html += `<div style="color:var(--danger);font-size:11px">Parse error: ${match[1].slice(0, 40)}…</div>`;
     }
-    preview.style.display = 'block';
-    let html = '';
-    for (const match of mathBlocks) {
-        try {
-            html += '<div style="margin:4px 0">' + katex.renderToString(match[1], {
-                throwOnError: false,
-                displayMode: match[0].startsWith('$$'),
-            }) + '</div>';
-        } catch {
-            html += `<div style="color:var(--danger);font-size:11px">Parse error: ${match[1].slice(0, 40)}…</div>`;
-        }
-    }
-    preview.innerHTML = html;
+  }
+  preview.innerHTML = html;
 }
 
 export function initResizeHandles() {
-    setupHResize('resize-sidebar', 'sidebar', null, 140, 400);
-    setupHResize('resize-editor', 'editor-pane-wrap', 'results-pane-wrap', 200, null);
-    setupVResize('resize-bottom', 'bottom-panels', 80, 500);
+  setupHResize('resize-sidebar', 'sidebar', null, 140, 400);
+  setupHResize('resize-editor', 'editor-pane-wrap', 'results-pane-wrap', 200, null);
+  setupVResize('resize-bottom', 'bottom-panels', 80, 500);
 }
 
 function setupHResize(handleId: string, leftSel: string, _rightSel: string | null, minW: number, maxW: number | null) {
-    const handle = document.getElementById(handleId);
-    if (!handle) return;
+  const handle = document.getElementById(handleId);
+  if (!handle) return;
 
-    let leftEl: HTMLElement | null = null;
+  let leftEl: HTMLElement | null = null;
 
-    if (leftSel === 'sidebar') {
-        leftEl = document.getElementById('sidebar');
-    } else {
-        leftEl = document.querySelector('.editor-pane') as HTMLElement;
-    }
-    if (!leftEl) return;
+  if (leftSel === 'sidebar') {
+    leftEl = document.getElementById('sidebar');
+  } else {
+    leftEl = document.querySelector('.editor-pane') as HTMLElement;
+  }
+  if (!leftEl) return;
 
-    let startX = 0;
-    let startW = 0;
+  let startX = 0;
+  let startW = 0;
 
-    const onPointerMove = (e: PointerEvent) => {
-        const delta = e.clientX - startX;
-        let newW = startW + delta;
-        if (newW < minW) newW = minW;
-        if (maxW && newW > maxW) newW = maxW;
-        leftEl!.style.flex = 'none';
-        leftEl!.style.width = newW + 'px';
-    };
+  const onPointerMove = (e: PointerEvent) => {
+    const delta = e.clientX - startX;
+    let newW = startW + delta;
+    if (newW < minW) newW = minW;
+    if (maxW && newW > maxW) newW = maxW;
+    leftEl!.style.flex = 'none';
+    leftEl!.style.width = newW + 'px';
+  };
 
-    const onPointerUp = () => {
-        handle.classList.remove('dragging');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
-    };
+  const onPointerUp = () => {
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+  };
 
-    handle.addEventListener('pointerdown', (e: PointerEvent) => {
-        e.preventDefault();
-        startX = e.clientX;
-        startW = leftEl!.getBoundingClientRect().width;
-        handle.classList.add('dragging');
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-        document.addEventListener('pointermove', onPointerMove);
-        document.addEventListener('pointerup', onPointerUp);
-    });
+  handle.addEventListener('pointerdown', (e: PointerEvent) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = leftEl!.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  });
 }
 
 function setupVResize(handleId: string, panelId: string, minH: number, maxH: number) {
-    const handle = document.getElementById(handleId);
-    const panel = document.getElementById(panelId);
-    if (!handle || !panel) return;
+  const handle = document.getElementById(handleId);
+  const panel = document.getElementById(panelId);
+  if (!handle || !panel) return;
 
-    let startY = 0;
-    let startH = 0;
+  let startY = 0;
+  let startH = 0;
 
-    const onPointerMove = (e: PointerEvent) => {
-        const delta = startY - e.clientY;
-        let newH = startH + delta;
-        if (newH < minH) newH = minH;
-        if (newH > maxH) newH = maxH;
-        panel.style.height = newH + 'px';
-    };
+  const onPointerMove = (e: PointerEvent) => {
+    const delta = startY - e.clientY;
+    let newH = startH + delta;
+    if (newH < minH) newH = minH;
+    if (newH > maxH) newH = maxH;
+    panel.style.height = newH + 'px';
+  };
 
-    const onPointerUp = () => {
-        handle.classList.remove('dragging');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
-    };
+  const onPointerUp = () => {
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+  };
 
-    handle.addEventListener('pointerdown', (e: PointerEvent) => {
-        e.preventDefault();
-        startY = e.clientY;
-        startH = panel.getBoundingClientRect().height;
-        handle.classList.add('dragging');
-        document.body.style.cursor = 'row-resize';
-        document.body.style.userSelect = 'none';
-        document.addEventListener('pointermove', onPointerMove);
-        document.addEventListener('pointerup', onPointerUp);
-    });
+  handle.addEventListener('pointerdown', (e: PointerEvent) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startH = panel.getBoundingClientRect().height;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  });
 }
