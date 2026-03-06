@@ -23,8 +23,7 @@ export function sharedNav(activePage?: string): string {
     <div class="landing-nav-links">
       ${link('#pricing', 'Services', 'pricing')}
       ${link('#api', 'API', 'api')}
-      ${link('#ide', 'Tooling', 'ide')}
-      ${link('#playground', 'Playground', 'playground')}
+      ${link('#ide', 'Client Portal', 'ide')}
       ${link('#changelog', 'Changelog', 'changelog')}
       <a href="mailto:adam@theoremis.com?subject=Theoremis%20Verification%20Engagement" class="landing-nav-cta">Book Call</a>
     </div>
@@ -43,8 +42,7 @@ export function sharedFooter(): string {
         <div class="landing-footer-heading">Services</div>
         <a href="#pricing" class="landing-footer-link">Engagement Models</a>
         <a href="#api" class="landing-footer-link">Verification API</a>
-        <a href="#playground" class="landing-footer-link">Playground</a>
-        <a href="#ide" class="landing-footer-link">Tooling</a>
+        <a href="#ide" class="landing-footer-link">Client Portal</a>
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>

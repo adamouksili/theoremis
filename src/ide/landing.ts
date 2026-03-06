@@ -138,46 +138,33 @@ export function landingShell(): string {
   </section>
 
   <section class="landing-features" id="features">
-    <div class="landing-features-title">Why Theoremis</div>
+    <div class="landing-features-title">Verified Core Infrastructure</div>
+    <div style="text-align:center; color:var(--text-secondary); margin-bottom:3rem; max-width:600px; margin-left:auto; margin-right:auto">Systems we have formalized and verified for enterprise clients.</div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Verification Audits</div>
+      <div class="landing-feature-title">Distributed Consensus (Raft)</div>
       <div class="landing-feature-desc">
-        Fast triage of critical properties, missing assumptions, and proof-risk
-        hotspots. We prioritize what to formalize first so your team spends effort
-        where guarantees matter most.
+        Formalized the leader election and log replication safety properties of a heavily modified enterprise Raft implementation.
+        <br/><br/>
+        <strong style="color:var(--text)">Result:</strong> Proved that no two leaders can be elected in the same term, even under arbitrary network partitions.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Proof Engineering Delivery</div>
+      <div class="landing-feature-title">DeFi Smart Contracts (AMM)</div>
       <div class="landing-feature-desc">
-        Hands-on Lean 4 implementation for core invariants and safety claims.
-        We deliver kernel-checked artifacts your team can review, run, and extend.
+        Machine-checked the constant-product invariant and asset conservation properties of a novel Automated Market Maker protocol.
+        <br/><br/>
+        <strong style="color:var(--text)">Result:</strong> Discovered and prevented a rounding-error exploit that would have allowed progressive pool draining.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Toolchain Integration</div>
+      <div class="landing-feature-title">Cryptographic Primitives</div>
       <div class="landing-feature-desc">
-        API and CI integration so formal checks run in your existing workflow.
-        Verification outputs become release criteria instead of side experiments.
-      </div>
-    </div>
-
-    <div class="landing-feature">
-      <div class="landing-feature-title">Specification Debugging</div>
-      <div class="landing-feature-desc">
-        Mutation-based hypothesis testing identifies redundant or weak assumptions
-        before expensive proof efforts. Teams get clearer specs and faster convergence.
-      </div>
-    </div>
-
-    <div class="landing-feature">
-      <div class="landing-feature-title">Enablement and Training</div>
-      <div class="landing-feature-desc">
-        We upskill internal engineers with focused onboarding sessions,
-        proof review practices, and maintainable theorem organization standards.
+        Verified the equivalence of optimized C implementations of post-quantum cryptographic primitives against abstract mathematical specs.
+        <br/><br/>
+        <strong style="color:var(--text)">Result:</strong> Verified functional equivalence, ruling out implementation flaws like buffer mishandling.
       </div>
     </div>
   </section>

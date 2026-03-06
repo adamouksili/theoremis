@@ -50,7 +50,7 @@ output [0] < 2.0`;
 // ── Shell ───────────────────────────────────────────────────
 
 export function nnVerifyShell(): string {
-    return `<div class="landing nn-verify">
+  return `<div class="landing nn-verify">
   ${sharedNav('nn-verify')}
 
   <main class="nnv-main">
@@ -60,6 +60,9 @@ export function nnVerifyShell(): string {
         Prove that a ReLU network's output stays within safe bounds
         for <strong>every possible input</strong> — using formal mathematics, not empirical testing.
       </p>
+      <div class="nnv-enterprise-badge" style="margin-top: 16px; font-size: 13px; color: var(--accent); background: var(--bg-hover); padding: 10px 14px; border-radius: 6px; border: 1px dashed var(--accent); display: inline-block;">
+        <strong>Browser Demonstration Mode:</strong> Enterprise engagements utilize our dedicated GPU verification clusters connecting Marabou and α-β-CROWN for networks with millions of parameters.
+      </div>
     </div>
 
     <div class="nnv-explainer">
@@ -104,85 +107,85 @@ export function nnVerifyShell(): string {
 // ── Bind ────────────────────────────────────────────────────
 
 export function bindNNVerify(): void {
-    const btn = document.getElementById('nnv-run') as HTMLButtonElement | null;
-    const networkInput = document.getElementById('nnv-network') as HTMLTextAreaElement | null;
-    const specInput = document.getElementById('nnv-spec') as HTMLTextAreaElement | null;
-    const output = document.getElementById('nnv-output') as HTMLDivElement | null;
+  const btn = document.getElementById('nnv-run') as HTMLButtonElement | null;
+  const networkInput = document.getElementById('nnv-network') as HTMLTextAreaElement | null;
+  const specInput = document.getElementById('nnv-spec') as HTMLTextAreaElement | null;
+  const output = document.getElementById('nnv-output') as HTMLDivElement | null;
 
-    if (!btn || !networkInput || !specInput || !output) return;
+  if (!btn || !networkInput || !specInput || !output) return;
 
-    btn.addEventListener('click', () => {
-        const networkJSON = networkInput.value.trim();
-        const specDSL = specInput.value.trim();
+  btn.addEventListener('click', () => {
+    const networkJSON = networkInput.value.trim();
+    const specDSL = specInput.value.trim();
 
-        if (!networkJSON) {
-            output.innerHTML = '<div class="nnv-error">Please provide a network definition.</div>';
-            return;
-        }
-        if (!specDSL) {
-            output.innerHTML = '<div class="nnv-error">Please provide a safety specification.</div>';
-            return;
-        }
+    if (!networkJSON) {
+      output.innerHTML = '<div class="nnv-error">Please provide a network definition.</div>';
+      return;
+    }
+    if (!specDSL) {
+      output.innerHTML = '<div class="nnv-error">Please provide a safety specification.</div>';
+      return;
+    }
 
-        btn.disabled = true;
-        btn.textContent = 'Verifying…';
-        output.innerHTML = '<div class="nnv-loading">Running formal verification…</div>';
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+    output.innerHTML = '<div class="nnv-loading">Running formal verification…</div>';
 
-        // Use requestAnimationFrame to let the UI update before heavy compute
-        requestAnimationFrame(() => {
-            try {
-                const model = parseNetworkJSON(networkJSON);
-                const spec = parseSafetySpec(specDSL, model.inputDim, model.outputDim);
-                const result = verifyNN(model, spec);
-                output.innerHTML = renderResult(result);
-            } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : String(err);
-                output.innerHTML = `<div class="nnv-error">Error: ${escHtml(msg)}</div>`;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Verify Safety';
-            }
-        });
+    // Use requestAnimationFrame to let the UI update before heavy compute
+    requestAnimationFrame(() => {
+      try {
+        const model = parseNetworkJSON(networkJSON);
+        const spec = parseSafetySpec(specDSL, model.inputDim, model.outputDim);
+        const result = verifyNN(model, spec);
+        output.innerHTML = renderResult(result);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        output.innerHTML = `<div class="nnv-error">Error: ${escHtml(msg)}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Verify Safety';
+      }
     });
+  });
 
-    // Auto-run with the default example
-    btn.click();
+  // Auto-run with the default example
+  btn.click();
 }
 
 // ── Result Rendering ────────────────────────────────────────
 
 function renderResult(result: VerificationResult): string {
-    const statusClass =
-        result.status === 'safe' ? 'nnv-safe' :
-            result.status === 'unsafe' ? 'nnv-unsafe' :
-                'nnv-inconclusive';
+  const statusClass =
+    result.status === 'safe' ? 'nnv-safe' :
+      result.status === 'unsafe' ? 'nnv-unsafe' :
+        'nnv-inconclusive';
 
-    const statusIcon =
-        result.status === 'safe' ? '✓' :
-            result.status === 'unsafe' ? '✗' :
-                '?';
+  const statusIcon =
+    result.status === 'safe' ? '✓' :
+      result.status === 'unsafe' ? '✗' :
+        '?';
 
-    const statusLabel =
-        result.status === 'safe' ? 'PROVEN SAFE' :
-            result.status === 'unsafe' ? 'UNSAFE — VIOLATION FOUND' :
-                'INCONCLUSIVE';
+  const statusLabel =
+    result.status === 'safe' ? 'PROVEN SAFE' :
+      result.status === 'unsafe' ? 'UNSAFE — VIOLATION FOUND' :
+        'INCONCLUSIVE';
 
-    let html = `<div class="nnv-result ${statusClass}">`;
+  let html = `<div class="nnv-result ${statusClass}">`;
 
-    // Status badge
-    html += `<div class="nnv-status-badge">
+  // Status badge
+  html += `<div class="nnv-status-badge">
     <span class="nnv-status-icon">${statusIcon}</span>
     <span class="nnv-status-label">${statusLabel}</span>
     <span class="nnv-status-time">${result.timeMs.toFixed(1)}ms</span>
   </div>`;
 
-    // Summary
-    html += `<div class="nnv-summary">${escHtml(result.summary)}</div>`;
+  // Summary
+  html += `<div class="nnv-summary">${escHtml(result.summary)}</div>`;
 
-    // Counterexample details
-    if (result.counterexample) {
-        const cex = result.counterexample;
-        html += `<div class="nnv-section">
+  // Counterexample details
+  if (result.counterexample) {
+    const cex = result.counterexample;
+    html += `<div class="nnv-section">
       <div class="nnv-section-title">Counterexample</div>
       <div class="nnv-cex">
         <div class="nnv-cex-row">
@@ -199,45 +202,45 @@ function renderResult(result: VerificationResult): string {
         </div>
       </div>
     </div>`;
-    }
+  }
 
-    // Proof certificate (bounds table)
-    if (result.certificate) {
-        const cert = result.certificate;
-        html += `<div class="nnv-section">
+  // Proof certificate (bounds table)
+  if (result.certificate) {
+    const cert = result.certificate;
+    html += `<div class="nnv-section">
       <div class="nnv-section-title">Proof Certificate — Layer Bounds</div>
       <div class="nnv-bounds-table">`;
 
-        for (let l = 0; l < cert.layerBounds.length; l++) {
-            const layerName = l === cert.layerBounds.length - 1 ? 'Output' : `Hidden ${l + 1}`;
-            html += `<div class="nnv-bounds-layer">
+    for (let l = 0; l < cert.layerBounds.length; l++) {
+      const layerName = l === cert.layerBounds.length - 1 ? 'Output' : `Hidden ${l + 1}`;
+      html += `<div class="nnv-bounds-layer">
         <div class="nnv-bounds-layer-name">${layerName}</div>`;
-            for (let n = 0; n < cert.layerBounds[l].length; n++) {
-                const iv = cert.layerBounds[l][n];
-                html += `<div class="nnv-bounds-row">
+      for (let n = 0; n < cert.layerBounds[l].length; n++) {
+        const iv = cert.layerBounds[l][n];
+        html += `<div class="nnv-bounds-row">
           <span class="nnv-bounds-neuron">neuron[${n}]</span>
           <span class="nnv-bounds-interval">∈ ${formatInterval(iv)}</span>
         </div>`;
-            }
-            html += `</div>`;
-        }
-
-        html += `</div>`;
-
-        if (cert.verifiedConstraints.length > 0) {
-            html += `<div class="nnv-verified-list">
-        <div class="nnv-section-title">Verified Constraints</div>`;
-            for (const c of cert.verifiedConstraints) {
-                html += `<div class="nnv-verified-item">✓ ${escHtml(c)}</div>`;
-            }
-            html += `</div>`;
-        }
+      }
+      html += `</div>`;
     }
 
     html += `</div>`;
-    return html;
+
+    if (cert.verifiedConstraints.length > 0) {
+      html += `<div class="nnv-verified-list">
+        <div class="nnv-section-title">Verified Constraints</div>`;
+      for (const c of cert.verifiedConstraints) {
+        html += `<div class="nnv-verified-item">✓ ${escHtml(c)}</div>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
 }
 
 function escHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
