@@ -8,9 +8,9 @@ export function shell(): string {
   return `
 <nav class="nav">
   <div class="nav-brand">
-    <a href="#" class="brand-link ide-brand-link">
-      <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img ide-brand-logo" />
-      <span class="brand-name ide-brand-name">Theoremis</span>
+    <a href="#" class="ide-brand-link">
+      <img src="/logo_transparent.png" alt="Theoremis" class="ide-brand-logo" />
+      <span class="ide-brand-name">Theoremis</span>
     </a>
     <div class="nav-subtitle">AI-Powered Proof IDE</div>
   </div>
