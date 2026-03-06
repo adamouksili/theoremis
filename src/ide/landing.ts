@@ -64,6 +64,7 @@ export function landingShell(): string {
     </div>
     <div class="landing-nav-links">
       <a class="landing-nav-link" href="#playground">Playground</a>
+      <a class="landing-nav-link" href="#nn-verify">NN Verify</a>
       <a class="landing-nav-link" href="#api">API</a>
       <a class="landing-nav-link" href="#classroom">Classroom</a>
       <a class="landing-nav-link" href="#pricing">Pricing</a>
@@ -177,6 +178,16 @@ export function landingShell(): string {
         Hypothesis-aware filtering avoids false negatives on constrained theorems.
       </div>
     </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature-title">Neural Network Safety</div>
+      <div class="landing-feature-desc">
+        Prove that ReLU networks stay within safe output bounds for
+        <strong>every possible input</strong>. Formal verification via
+        interval bound propagation and constraint satisfaction —
+        not just empirical testing.
+      </div>
+    </div>
   </section>
 
   <section class="landing-tech" id="tech">
@@ -248,6 +259,7 @@ export function landingShell(): string {
         <div class="landing-footer-heading">Product</div>
         <a href="#ide" class="landing-footer-link">IDE</a>
         <a href="#playground" class="landing-footer-link">Playground</a>
+        <a href="#nn-verify" class="landing-footer-link">NN Verify</a>
         <a href="#classroom" class="landing-footer-link">Classroom</a>
         <a href="#api" class="landing-footer-link">API Docs</a>
       </div>

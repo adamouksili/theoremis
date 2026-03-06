@@ -5,7 +5,7 @@
 import './styles/index.css';
 import './styles/landing.css';
 
-type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'pricing' | 'changelog';
+type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'pricing' | 'changelog' | 'nn-verify';
 let currentView: View = 'landing';
 let routeToken = 0;
 
@@ -190,6 +190,31 @@ async function showChangelog(): Promise<void> {
     bindHamburger();
 }
 
+/** Show NN Verify page */
+async function showNNVerify(): Promise<void> {
+    if (currentView === 'nn-verify') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'nn-verify';
+    if (!isSubdomain()) window.location.hash = 'nn-verify';
+
+    await import('./styles/nn-verify.css');
+    if (token !== routeToken) return;
+
+    const nnVerify = await import('./ide/nn-verify');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = nnVerify.nnVerifyShell();
+    nnVerify.bindNNVerify();
+    bindHamburger();
+}
+
 /** Navigate to IDE with shared proof content */
 async function navigateToSharedProof(base64: string): Promise<void> {
     const token = ++routeToken;
@@ -234,6 +259,7 @@ async function route(): Promise<void> {
     if (hash === 'playground') { await showPlayground(); return; }
     if (hash === 'pricing') { await showPricing(); return; }
     if (hash === 'changelog') { await showChangelog(); return; }
+    if (hash === 'nn-verify') { await showNNVerify(); return; }
 
     await showLanding();
 }
