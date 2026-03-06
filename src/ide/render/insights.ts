@@ -39,7 +39,7 @@ export function renderRandomTests(): void {
   const pct = qualifyingTests > 0 ? Math.round((r.passed / qualifyingTests) * 100) : 0;
   const color = pct === 100 ? 'var(--success)' : pct > 90 ? 'var(--warning)' : 'var(--error)';
   const classLabel = classificationLabel(r.classification);
-  const preSkip = (r as any).preconditionSkipped ?? 0;
+  const preSkip = (r as { preconditionSkipped?: number }).preconditionSkipped ?? 0;
 
   let html = `
     <div class="confidence-line" style="border:none;padding:8px 0">
