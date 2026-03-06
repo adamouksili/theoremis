@@ -2,7 +2,7 @@
   "name": "theoremis",
   "version": "1.0.0",
   "type": "module",
-  "description": "The AI-powered formal verification platform. Write proofs in LaTeX, verify with Lean 4, and ship machine-checked mathematics.",
+  "description": "Formal verification services, accelerated by Lean 4 tooling. We help teams formalize critical guarantees and ship machine-checked results faster.",
   "engines": {
     "node": ">=20"
   },

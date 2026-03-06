@@ -5,16 +5,16 @@
 <h1 align="center">Theoremis</h1>
 
 <p align="center">
-  <strong>The AI-powered formal verification platform.</strong><br/>
-  Write proofs in LaTeX. Verify with Lean 4. Ship machine-checked mathematics.
+  <strong>Formal verification services, accelerated by tooling.</strong><br/>
+  We help teams formalize critical guarantees and ship machine-checked results faster.
 </p>
 
 <p align="center">
   <a href="https://theoremis.com">Website</a> ·
+  <a href="https://theoremis.com/#pricing">Services</a> ·
   <a href="https://theoremis.com/#ide">IDE</a> ·
   <a href="https://theoremis.com/#playground">Playground</a> ·
   <a href="https://theoremis.com/#api">API</a> ·
-  <a href="https://theoremis.com/#pricing">Pricing</a> ·
   <a href="https://theoremis.com/#changelog">Changelog</a>
 </p>
 
@@ -30,30 +30,30 @@
 
 ## What is Theoremis?
 
-Theoremis is the bridge between informal mathematics and machine-checked proofs. It parses LaTeX, performs mutation-based hypothesis testing, emits Lean 4 / Coq / Isabelle code, and verifies proofs through a live Lean bridge — all from your browser.
+Theoremis is a formal verification startup. We deliver services that help teams scope verification work, formalize specifications, and implement Lean 4 proofs with production-ready workflows.
+
+This repository contains the open-source acceleration stack we use in those engagements: LaTeX parsing, mutation-based hypothesis testing, code emission, and Lean 4 verification orchestration.
 
 ```
-LaTeX theorem → Parse → Type-check → Mutate → Emit Lean 4 → Verify via kernel
+Scope high-risk properties → Formalize specs → Prove in Lean 4 → Integrate into CI
 ```
 
 ### Key Features
 
-- **🔬 Formal Verification** — Lean 4 kernel-truth verification via isolated worker sandbox
-- **🤖 AI Tactic Hints** — Multi-provider LLM suggestions (OpenAI, Anthropic, Gemini)
-- **📊 Hypothesis Testing** — QuickCheck-style mutation analysis with 7 operators
-- **⚖️ Axiom Budget** — Track LEM, Choice, Funext per declaration
-- **📐 Multi-Target Emission** — Lean 4 (Mathlib-aware), Coq, Isabelle/HOL
-- **🎓 Classroom Auto-Grading** — Rubric-based proof assessment
+- **Verification Delivery** — Scoped formal verification audits and implementation sprints
+- **Lean 4 Kernel Truth** — Machine-checked verification with obligation accounting
+- **Hypothesis Testing** — QuickCheck-style mutation analysis with 7 operators
+- **Workflow Integration** — API and CI-friendly verification pipeline
+- **Open Tooling** — Parser, emitters, and bridge infrastructure under MIT license
 
 ## Surfaces
 
 | Surface | URL | Purpose |
 |---------|-----|---------|
+| **Services** | [theoremis.com/#pricing](https://theoremis.com/#pricing) | Engagement models for audit, sprint, and embedded verification |
 | **Web IDE** | [theoremis.com/#ide](https://theoremis.com/#ide) | Full editor with verification, axiom tracking, dependency graph |
 | **Playground** | [theoremis.com/#playground](https://theoremis.com/#playground) | Quick theorem analysis — no setup |
 | **API** | [theoremis.com/#api](https://theoremis.com/#api) | REST endpoints for verification + translation |
-| **Classroom** | [theoremis.com/#classroom](https://theoremis.com/#classroom) | Auto-grader for proof submissions |
-| **Pricing** | [theoremis.com/#pricing](https://theoremis.com/#pricing) | Free / Pro / Team / Enterprise tiers |
 | **CLI** | `npx tsx cli/lint.ts` | Hypothesis linter for `.tex` files |
 | **VS Code** | `vscode-extension/` | Editor integration |
 | **GitHub Action** | `github-action/` | CI gate for `.tex` PRs |
@@ -70,20 +70,19 @@ npm test         # 467 tests
 npm run bench    # Benchmark suite with precision/recall
 ```
 
-## Open-Core Model
+## Operating Model
 
-Theoremis is **open source** (MIT) at its core. The cloud platform at [theoremis.com](https://theoremis.com) adds managed infrastructure on top.
+Theoremis runs as a services-first company. Client engagements drive roadmap priorities, while this MIT-licensed codebase remains the reusable core used to accelerate delivery.
 
-| Open Source (MIT) | Cloud (theoremis.com) |
+| Open Source Core (MIT) | Services Layer (Theoremis) |
 |---|---|
-| Parser, type-checker, IR | Managed Lean verification fleet |
-| Emitters (Lean 4 / Coq / Isabelle) | User accounts + proof persistence |
-| Mutation engine + evaluator | Team workspaces + classroom analytics |
-| CLI + VS Code extension | Priority queue + caching |
-| Core API handlers | AI model fine-tuning |
-| Landing, IDE, Playground | Billing, SSO, audit logs |
+| Parser, type-checker, IR | Verification audits and planning |
+| Lean bridge + verification queue | Proof engineering implementation |
+| Emitters (Lean 4 / Coq / Isabelle) | CI integration and release gates |
+| Mutation engine + evaluator | Team enablement and onboarding |
+| CLI + VS Code extension | Ongoing embedded verification support |
 
-> **Free forever for open-source research.** The core engine is MIT-licensed and always will be.
+> Contact: **adam@theoremis.com**
 
 ## Architecture
 
@@ -127,5 +126,5 @@ Found a vulnerability? Please email **adam@theoremis.com** instead of opening a 
 ---
 
 <p align="center">
-  Built by <a href="https://github.com/adamouksili">Adam Ouksili</a> at Rutgers University
+  Built by <a href="https://github.com/adamouksili">Adam Ouksili</a> · Theoremis Formal Verification Services
 </p>

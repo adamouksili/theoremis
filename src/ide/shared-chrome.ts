@@ -21,13 +21,12 @@ export function sharedNav(activePage?: string): string {
       </a>
     </div>
     <div class="landing-nav-links">
-      ${link('#playground', 'Playground', 'playground')}
-      ${link('#nn-verify', 'NN Verify', 'nn-verify')}
+      ${link('#pricing', 'Services', 'pricing')}
       ${link('#api', 'API', 'api')}
-      ${link('#classroom', 'Classroom', 'classroom')}
-      ${link('#pricing', 'Pricing', 'pricing')}
+      ${link('#ide', 'Tooling', 'ide')}
+      ${link('#playground', 'Playground', 'playground')}
       ${link('#changelog', 'Changelog', 'changelog')}
-      <a href="#ide" class="landing-nav-cta">Open IDE</a>
+      <a href="mailto:adam@theoremis.com?subject=Theoremis%20Verification%20Engagement" class="landing-nav-cta">Book Call</a>
     </div>
     <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
   </nav>`;
@@ -41,17 +40,17 @@ export function sharedFooter(): string {
   return `<footer class="landing-footer">
     <div class="landing-footer-grid">
       <div class="landing-footer-col">
-        <div class="landing-footer-heading">Product</div>
-        <a href="#ide" class="landing-footer-link">IDE</a>
+        <div class="landing-footer-heading">Services</div>
+        <a href="#pricing" class="landing-footer-link">Engagement Models</a>
+        <a href="#api" class="landing-footer-link">Verification API</a>
         <a href="#playground" class="landing-footer-link">Playground</a>
-        <a href="#nn-verify" class="landing-footer-link">NN Verify</a>
-        <a href="#classroom" class="landing-footer-link">Classroom</a>
-        <a href="#api" class="landing-footer-link">API Docs</a>
+        <a href="#ide" class="landing-footer-link">Tooling</a>
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-        <a href="#pricing" class="landing-footer-link">Pricing</a>
+        <a href="#pricing" class="landing-footer-link">Services</a>
         <a href="#changelog" class="landing-footer-link">Changelog</a>
+        <a href="mailto:adam@theoremis.com" class="landing-footer-link">Contact</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">
@@ -64,7 +63,7 @@ export function sharedFooter(): string {
     <div class="landing-footer-bottom">
       <span>© ${year} Theoremis</span>
       <span>·</span>
-      <span>Built at Rutgers University</span>
+      <span>Formal Verification Services</span>
     </div>
   </footer>`;
 }
