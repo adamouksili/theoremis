@@ -5,7 +5,7 @@
 import './styles/index.css';
 import './styles/landing.css';
 
-type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'pricing' | 'changelog' | 'nn-verify';
+type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'changelog' | 'nn-verify';
 let currentView: View = 'landing';
 let routeToken = 0;
 
@@ -142,29 +142,7 @@ async function showPlayground(): Promise<void> {
     bindHamburger();
 }
 
-/** Show Pricing page */
-async function showPricing(): Promise<void> {
-    if (currentView === 'pricing') return;
 
-    const token = ++routeToken;
-    await stopLandingTyping();
-    if (token !== routeToken) return;
-
-    currentView = 'pricing';
-    if (!isSubdomain()) window.location.hash = 'pricing';
-
-    await import('./styles/pricing.css');
-    if (token !== routeToken) return;
-
-    const pricing = await import('./ide/pricing');
-    if (token !== routeToken) return;
-
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = pricing.pricingShell();
-    bindHamburger();
-}
 
 /** Show Changelog page */
 async function showChangelog(): Promise<void> {
@@ -257,7 +235,7 @@ async function route(): Promise<void> {
     if (hash === 'api') { await showApiDocs(); return; }
     if (hash === 'classroom') { await showClassroom(); return; }
     if (hash === 'playground') { await showPlayground(); return; }
-    if (hash === 'pricing') { await showPricing(); return; }
+
     if (hash === 'changelog') { await showChangelog(); return; }
     if (hash === 'nn-verify') { await showNNVerify(); return; }
 

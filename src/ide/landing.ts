@@ -67,7 +67,7 @@ export function landingShell(): string {
       <a class="landing-nav-link" href="#nn-verify">NN Verify</a>
       <a class="landing-nav-link" href="#api">API</a>
       <a class="landing-nav-link" href="#classroom">Classroom</a>
-      <a class="landing-nav-link" href="#pricing">Pricing</a>
+
       <a class="landing-nav-link" href="#changelog">Changelog</a>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
@@ -88,9 +88,7 @@ export function landingShell(): string {
         <a class="landing-btn-primary" href="#ide">
           Start Free →
         </a>
-        <a class="landing-btn-secondary" href="#pricing">
-          View Pricing
-        </a>
+
       </div>
     </div>
 
@@ -265,7 +263,7 @@ export function landingShell(): string {
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-        <a href="#pricing" class="landing-footer-link">Pricing</a>
+
         <a href="#changelog" class="landing-footer-link">Changelog</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>

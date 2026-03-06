@@ -25,7 +25,7 @@ export function sharedNav(activePage?: string): string {
       ${link('#nn-verify', 'NN Verify', 'nn-verify')}
       ${link('#api', 'API', 'api')}
       ${link('#classroom', 'Classroom', 'classroom')}
-      ${link('#pricing', 'Pricing', 'pricing')}
+
       ${link('#changelog', 'Changelog', 'changelog')}
       <a href="#ide" class="landing-nav-cta">Open IDE</a>
     </div>
@@ -50,7 +50,7 @@ export function sharedFooter(): string {
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-        <a href="#pricing" class="landing-footer-link">Pricing</a>
+
         <a href="#changelog" class="landing-footer-link">Changelog</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
