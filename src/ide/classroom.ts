@@ -3,24 +3,11 @@
 // Interactive auto-grader for math proof submissions
 // ─────────────────────────────────────────────────────────────
 
+import { sharedNav, sharedFooter } from './shared-chrome';
+
 export function classroomShell(): string {
   return `<div class="landing classroom">
-  <nav class="landing-nav">
-    <div class="landing-nav-brand">
-      <a href="#" class="brand-link">
-        <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img">
-        <span class="brand-name">Theoremis</span>
-      </a>
-    </div>
-    <div class="landing-nav-links">
-      <a href="#" class="landing-nav-link">Home</a>
-      <a href="#playground" class="landing-nav-link">Playground</a>
-      <a href="#api" class="landing-nav-link">API</a>
-      <a href="#classroom" class="landing-nav-link" style="color:var(--l-accent)">Classroom</a>
-      <a href="#ide" class="landing-nav-link">IDE</a>
-    </div>
-    <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
-  </nav>
+  ${sharedNav('classroom')}
 
   <header class="cr-hero">
     <div class="cr-hero-badge">Beta</div>
@@ -95,13 +82,7 @@ with the same sign is non-negative, we conclude $x^2 \\geq 0$.
     </div>
   </section>
 
-  <footer class="landing-footer">
-    <span>Built on λΠω type theory</span>
-    <span>·</span>
-    <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener">GitHub</a>
-    <span>·</span>
-    <span>© ${new Date().getFullYear()} Theoremis</span>
-  </footer>
+  ${sharedFooter()}
 </div>`;
 }
 
