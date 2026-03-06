@@ -229,5 +229,5 @@ localStorage.setItem('theoremis-bridge-url', 'https://lean.theoremis.com')
 
 For the `/api/v1/*` serverless endpoints, configure:
 
-- `THEOREMIS_API_KEYS` — comma-separated accepted bearer tokens for pro access
+- `THEOREMIS_API_KEYS` — comma-separated accepted bearer tokens for API access
 - `THEOREMIS_ALLOWED_ORIGINS` — comma-separated CORS allowlist (for example `https://theoremis.com,https://www.theoremis.com`)

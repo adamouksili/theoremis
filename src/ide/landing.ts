@@ -228,17 +228,7 @@ export function landingShell(): string {
     </div>
   </section>
 
-  <section class="landing-waitlist">
-    <div class="landing-waitlist-inner">
-      <h2 class="landing-waitlist-title">Get early access to Pro features</h2>
-      <p class="landing-waitlist-desc">Join the waitlist for priority verification, AI tactic hints, and private proofs.</p>
-      <form class="landing-waitlist-form" action="https://formspree.io/f/placeholder" method="POST">
-        <input type="email" name="email" class="landing-waitlist-input" placeholder="you@university.edu" required />
-        <button type="submit" class="landing-waitlist-btn">Join Waitlist</button>
-      </form>
-      <p class="landing-waitlist-note">Free forever for open-source research. No spam.</p>
-    </div>
-  </section>
+
 
   <section class="landing-founder">
     <div class="landing-founder-rule"></div>

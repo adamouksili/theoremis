@@ -27,7 +27,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'LLM-assisted tactic suggestions (OpenAI, Anthropic, GitHub)',
       'Classroom auto-grader with rubric-based scoring',
       'VS Code extension and GitHub Action for CI/CD',
-      'REST API with free and pro tier rate limiting',
+      'REST API rate limiting',
     ],
   },
   {
@@ -135,14 +135,7 @@ export function changelogShell(): string {
     `).join('')}
   </section>
 
-  <section class="cl-subscribe">
-    <h2 class="cl-subscribe-title">Stay in the loop</h2>
-    <p class="cl-subscribe-desc">Get notified when we ship new features.</p>
-    <form class="cl-subscribe-form" action="https://formspree.io/f/placeholder" method="POST">
-      <input type="email" name="email" class="cl-subscribe-input" placeholder="you@university.edu" required />
-      <button type="submit" class="cl-subscribe-btn">Subscribe</button>
-    </form>
-  </section>
+
 
   ${sharedFooter()}
 </div>`;
