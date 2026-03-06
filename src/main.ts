@@ -61,7 +61,7 @@ async function navigateToIDE(): Promise<void> {
 
     currentView = 'ide';
     if (!isSubdomain()) window.location.hash = 'ide';
-    document.body.classList.remove('dark');
+    document.body.classList.add('dark');
 
     const ide = await import('./ide/app');
     if (token !== routeToken) return;
@@ -197,7 +197,7 @@ async function navigateToSharedProof(base64: string): Promise<void> {
     if (token !== routeToken) return;
 
     currentView = 'ide';
-    document.body.classList.remove('dark');
+    document.body.classList.add('dark');
 
     const ide = await import('./ide/app');
     if (token !== routeToken) return;
