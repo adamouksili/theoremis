@@ -20,7 +20,7 @@ Then $a^{p-1} \\equiv 1 \\pmod{p}$.
 \\end{theorem}`;
 
 export function playgroundShell(): string {
-  return `<div class="pg">
+  return `<div class="landing pg">
   ${sharedNav('playground')}
 
   <main class="pg-main">
