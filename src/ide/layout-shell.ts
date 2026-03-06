@@ -12,7 +12,7 @@ export function shell(): string {
       <img src="/logo_transparent.png" alt="Theoremis" class="ide-brand-logo" />
       <span class="ide-brand-name">Theoremis</span>
     </a>
-    <div class="nav-subtitle">Formal Verification Tooling</div>
+    <div class="nav-subtitle">AI-Powered Proof IDE</div>
   </div>
   <div class="nav-actions">
     <input type="password" id="llm-key" placeholder="API Key (OpenAI / Anthropic / GitHub)" style="width:160px; font-size:11px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text)" title="API key is stored in session memory only. Supports OpenAI (sk-...), Anthropic (sk-ant-...), and GitHub PAT (ghp_...)">

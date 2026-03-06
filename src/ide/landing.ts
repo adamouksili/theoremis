@@ -60,15 +60,16 @@ export function landingShell(): string {
         <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img" />
         <span class="brand-name">Theoremis</span>
       </a>
-      <div class="landing-nav-tag">Formal Verification Services</div>
+      <div class="landing-nav-tag">AI-Powered Proof IDE</div>
     </div>
     <div class="landing-nav-links">
-      <a class="landing-nav-link" href="#pricing">Services</a>
-      <a class="landing-nav-link" href="#api">API</a>
-      <a class="landing-nav-link" href="#ide">Tooling</a>
       <a class="landing-nav-link" href="#playground">Playground</a>
+      <a class="landing-nav-link" href="#nn-verify">NN Verify</a>
+      <a class="landing-nav-link" href="#api">API</a>
+      <a class="landing-nav-link" href="#classroom">Classroom</a>
+      <a class="landing-nav-link" href="#pricing">Pricing</a>
       <a class="landing-nav-link" href="#changelog">Changelog</a>
-      <a class="landing-nav-cta" href="mailto:adam@theoremis.com?subject=Theoremis%20Verification%20Engagement">Book Call</a>
+      <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
     <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
   </nav>
@@ -76,19 +77,19 @@ export function landingShell(): string {
   <section class="landing-hero">
     <div class="landing-hero-content">
       <h1 class="landing-hero-title">
-        Formal verification,<br/>delivered faster.
+        Write math.<br/>Get proofs working in <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
-        Theoremis helps teams scope, implement, and ship machine-checked
-        guarantees. We combine Lean 4 proof engineering, mutation-driven
-        specification debugging, and custom workflow integration.
+        Parse LaTeX theorems, detect unnecessary hypotheses via mutation testing,
+        emit Lean 4 / Coq / Isabelle scaffolding, and verify proofs through a
+        live Lean bridge — all from your browser.
       </p>
       <div class="landing-hero-actions">
-        <a class="landing-btn-primary" href="mailto:adam@theoremis.com?subject=Theoremis%20Intro%20Call">
-          Book Intro Call →
+        <a class="landing-btn-primary" href="#ide">
+          Start Free →
         </a>
         <a class="landing-btn-secondary" href="#pricing">
-          Explore Services
+          View Pricing
         </a>
       </div>
     </div>
@@ -113,64 +114,84 @@ export function landingShell(): string {
   </section>
 
   <section class="landing-pipeline">
-    <div class="landing-pipeline-title">How We Accelerate Formal Verification</div>
+    <div class="landing-pipeline-title">How It Works</div>
     <div class="landing-pipeline-steps">
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Scope</div>
-        <div class="landing-pipeline-step-desc">Risk + specification audit</div>
+        <div class="landing-pipeline-step-label">Write</div>
+        <div class="landing-pipeline-step-desc">LaTeX or Lean 4</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Formalize</div>
-        <div class="landing-pipeline-step-desc">Lean 4 model and invariants</div>
+        <div class="landing-pipeline-step-label">Analyze</div>
+        <div class="landing-pipeline-step-desc">λΠω type theory IR</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Prove</div>
-        <div class="landing-pipeline-step-desc">Kernel-checked obligations</div>
+        <div class="landing-pipeline-step-label">Suggest</div>
+        <div class="landing-pipeline-step-desc">AI tactic hints</div>
       </div>
       <div class="landing-pipeline-arrow">→</div>
       <div class="landing-pipeline-step">
-        <div class="landing-pipeline-step-label">Integrate</div>
-        <div class="landing-pipeline-step-desc">CI gates + reporting</div>
+        <div class="landing-pipeline-step-label">Verify</div>
+        <div class="landing-pipeline-step-desc">Lean 4 bridge</div>
       </div>
     </div>
   </section>
 
   <section class="landing-features" id="features">
-    <div class="landing-features-title">Verified Core Infrastructure</div>
-    <div style="text-align:center; color:var(--text-secondary); margin-bottom:3rem; max-width:600px; margin-left:auto; margin-right:auto">Systems we have formalized and verified for enterprise clients.</div>
+    <div class="landing-features-title">Why Theoremis</div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Distributed Consensus (Raft)</div>
+      <div class="landing-feature-title">Lean 4 First</div>
       <div class="landing-feature-desc">
-        Formalized the leader election and log replication safety properties of a heavily modified enterprise Raft implementation.
-        <br/><br/>
-        <strong style="color:var(--text)">Result:</strong> Proved that no two leaders can be elected in the same term, even under arbitrary network partitions.
+        Deep integration with <strong>Lean 4</strong> and <strong>Mathlib</strong>.
+        Auto-generated imports, Mathlib-aware type signatures, and
+        real verification feedback through the Lean bridge — not just
+        syntax highlighting.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">DeFi Smart Contracts (AMM)</div>
+      <div class="landing-feature-title">AI-Assisted Proof Writing</div>
       <div class="landing-feature-desc">
-        Machine-checked the constant-product invariant and asset conservation properties of a novel Automated Market Maker protocol.
-        <br/><br/>
-        <strong style="color:var(--text)">Result:</strong> Discovered and prevented a rounding-error exploit that would have allowed progressive pool draining.
+        LLM-powered tactic suggestions that understand your proof state.
+        Multi-provider support (OpenAI, Anthropic, Gemini) with explicit
+        confidence scores — so you always know what was AI-suggested
+        vs. machine-verified.
       </div>
     </div>
 
     <div class="landing-feature">
-      <div class="landing-feature-title">Cryptographic Primitives</div>
+      <div class="landing-feature-title">Axiom Budget Tracking</div>
       <div class="landing-feature-desc">
-        Verified the equivalence of optimized C implementations of post-quantum cryptographic primitives against abstract mathematical specs.
-        <br/><br/>
-        <strong style="color:var(--text)">Result:</strong> Verified functional equivalence, ruling out implementation flaws like buffer mishandling.
+        Toggle LEM, Choice, Funext, and more. Every emitted declaration
+        tracks which axioms it needs — so you know exactly what your
+        formalization assumes.
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature-title">Hypothesis Testing</div>
+      <div class="landing-feature-desc">
+        QuickCheck-style random testing checks whether your hypotheses
+        are necessary. Mutation analysis validates theorem structure.
+        Hypothesis-aware filtering avoids false negatives on constrained theorems.
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature-title">Neural Network Safety</div>
+      <div class="landing-feature-desc">
+        Prove that ReLU networks stay within safe output bounds for
+        <strong>every possible input</strong>. Formal verification via
+        interval bound propagation and constraint satisfaction —
+        not just empirical testing.
       </div>
     </div>
   </section>
 
   <section class="landing-tech" id="tech">
-    <div class="landing-tech-title">Acceleration Stack</div>
+    <div class="landing-tech-title">Under the Hood</div>
     <div class="landing-tech-grid">
       <div class="landing-tech-item">
         <div class="landing-tech-label">IR</div>
@@ -190,7 +211,7 @@ export function landingShell(): string {
       </div>
       <div class="landing-tech-item">
         <div class="landing-tech-label">Emitters</div>
-        <div class="landing-tech-value">Lean 4 (Mathlib-aware), Coq, Isabelle/HOL scaffolding for migration planning</div>
+        <div class="landing-tech-value">Lean 4 (Mathlib-aware), Coq, Isabelle/HOL — with sorry/admit placeholders</div>
       </div>
       <div class="landing-tech-item">
         <div class="landing-tech-label">Benchmark</div>
@@ -201,54 +222,51 @@ export function landingShell(): string {
 
   <section class="landing-trust">
     <div class="landing-trust-badges">
-      <span class="landing-trust-badge">15,000+ Lines of Verification Tooling</span>
+      <span class="landing-trust-badge">15,000+ Lines of TypeScript</span>
       <span class="landing-trust-badge">467 Tests Passing</span>
       <span class="landing-trust-badge">100% Hypothesis F1</span>
-      <span class="landing-trust-badge">Lean 4 Core Focus</span>
+      <span class="landing-trust-badge">3 Proof Assistants</span>
       <span class="landing-trust-badge">Open Source · MIT</span>
     </div>
   </section>
 
   <section class="landing-waitlist">
     <div class="landing-waitlist-inner">
-      <h2 class="landing-waitlist-title">Start a formal verification engagement</h2>
-      <p class="landing-waitlist-desc">Share your system, guarantees, and timeline. We will respond with scope and execution options.</p>
-      <div class="landing-hero-actions">
-        <a class="landing-btn-primary" href="mailto:adam@theoremis.com?subject=Theoremis%20Verification%20Scope">
-          Request Scope
-        </a>
-        <a class="landing-btn-secondary" href="#ide">
-          Try the Platform
-        </a>
-      </div>
-      <p class="landing-waitlist-note">Direct line: adam@theoremis.com</p>
+      <h2 class="landing-waitlist-title">Get early access to Pro features</h2>
+      <p class="landing-waitlist-desc">Join the waitlist for priority verification, AI tactic hints, and private proofs.</p>
+      <form class="landing-waitlist-form" action="https://formspree.io/f/placeholder" method="POST">
+        <input type="email" name="email" class="landing-waitlist-input" placeholder="you@university.edu" required />
+        <button type="submit" class="landing-waitlist-btn">Join Waitlist</button>
+      </form>
+      <p class="landing-waitlist-note">Free forever for open-source research. No spam.</p>
     </div>
   </section>
 
   <section class="landing-founder">
     <div class="landing-founder-rule"></div>
     <p class="landing-founder-text">
-      Theoremis was founded by <strong>Adam Ouksili</strong> to make formal
-      verification practical for teams shipping real systems. We focus on one
-      mission: accelerate machine-checked guarantees from idea to production.
+      I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics
+      student at <strong>Rutgers University</strong>. I built Theoremis because
+      the gap between what mathematicians <em>write</em> and what proof assistants
+      <em>accept</em> felt unnecessary — and no existing tool bridged it well.
     </p>
-    <p class="landing-founder-sign">— Adam Ouksili, Founder</p>
+    <p class="landing-founder-sign">— Adam Ouksili</p>
   </section>
 
   <footer class="landing-footer">
     <div class="landing-footer-grid">
       <div class="landing-footer-col">
-        <div class="landing-footer-heading">Services</div>
-        <a href="#pricing" class="landing-footer-link">Engagement Models</a>
-        <a href="#api" class="landing-footer-link">Verification API</a>
+        <div class="landing-footer-heading">Product</div>
+        <a href="#ide" class="landing-footer-link">IDE</a>
         <a href="#playground" class="landing-footer-link">Playground</a>
-        <a href="#ide" class="landing-footer-link">Tooling</a>
+        <a href="#nn-verify" class="landing-footer-link">NN Verify</a>
+        <a href="#classroom" class="landing-footer-link">Classroom</a>
+        <a href="#api" class="landing-footer-link">API Docs</a>
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-        <a href="#pricing" class="landing-footer-link">Services</a>
+        <a href="#pricing" class="landing-footer-link">Pricing</a>
         <a href="#changelog" class="landing-footer-link">Changelog</a>
-        <a href="mailto:adam@theoremis.com" class="landing-footer-link">Contact</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">
@@ -261,7 +279,7 @@ export function landingShell(): string {
     <div class="landing-footer-bottom">
       <span>© ${new Date().getFullYear()} Theoremis</span>
       <span>·</span>
-      <span>Formal Verification Services</span>
+      <span>Built at Rutgers University</span>
     </div>
   </footer>
 </div>`;

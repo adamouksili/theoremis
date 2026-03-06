@@ -5,14 +5,16 @@
 import './styles/index.css';
 import './styles/landing.css';
 
-type View = 'landing' | 'ide' | 'api' | 'pricing' | 'changelog' | 'nn-verify';
+type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'pricing' | 'changelog' | 'nn-verify';
 let currentView: View = 'landing';
 let routeToken = 0;
 
 /** Check if we're on a subdomain (not the main site) */
 function isSubdomain(): boolean {
     const host = window.location.hostname;
-    return host === 'api.theoremis.com'
+    return host === 'playground.theoremis.com'
+        || host === 'api.theoremis.com'
+        || host === 'classroom.theoremis.com'
         || host === 'ide.theoremis.com';
 }
 
@@ -87,6 +89,56 @@ async function showApiDocs(): Promise<void> {
     const app = document.getElementById('app');
     if (!app) return;
     app.innerHTML = apiDocs.apiDocsShell();
+    bindHamburger();
+}
+
+/** Show Classroom / Grader */
+async function showClassroom(): Promise<void> {
+    if (currentView === 'classroom') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'classroom';
+    if (!isSubdomain()) window.location.hash = 'classroom';
+
+    await import('./styles/classroom.css');
+    if (token !== routeToken) return;
+
+    const classroom = await import('./ide/classroom');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = classroom.classroomShell();
+    classroom.bindClassroom();
+    bindHamburger();
+}
+
+/** Show Playground (minimal hypothesis linter) */
+async function showPlayground(): Promise<void> {
+    if (currentView === 'playground') return;
+
+    const token = ++routeToken;
+    await stopLandingTyping();
+    if (token !== routeToken) return;
+
+    currentView = 'playground';
+    if (!isSubdomain()) window.location.hash = 'playground';
+
+    await import('./styles/playground.css');
+    if (token !== routeToken) return;
+
+    const playground = await import('./ide/playground');
+    if (token !== routeToken) return;
+
+    document.body.classList.add('dark');
+    const app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = playground.playgroundShell();
+    playground.bindPlayground();
     bindHamburger();
 }
 
@@ -185,7 +237,9 @@ async function route(): Promise<void> {
     const host = window.location.hostname;
 
     // Subdomain routing takes priority over hash routing.
+    if (host === 'playground.theoremis.com') { await showPlayground(); return; }
     if (host === 'api.theoremis.com') { await showApiDocs(); return; }
+    if (host === 'classroom.theoremis.com') { await showClassroom(); return; }
     if (host === 'ide.theoremis.com') { await navigateToIDE(); return; }
 
     if (hash.startsWith('p/')) {
@@ -201,6 +255,8 @@ async function route(): Promise<void> {
 
     if (hash === 'ide') { await navigateToIDE(); return; }
     if (hash === 'api') { await showApiDocs(); return; }
+    if (hash === 'classroom') { await showClassroom(); return; }
+    if (hash === 'playground') { await showPlayground(); return; }
     if (hash === 'pricing') { await showPricing(); return; }
     if (hash === 'changelog') { await showChangelog(); return; }
     if (hash === 'nn-verify') { await showNNVerify(); return; }

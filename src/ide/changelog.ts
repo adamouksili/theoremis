@@ -136,12 +136,12 @@ export function changelogShell(): string {
   </section>
 
   <section class="cl-subscribe">
-    <h2 class="cl-subscribe-title">Follow Delivery Updates</h2>
-    <p class="cl-subscribe-desc">For client delivery updates or release alerts, contact us directly.</p>
-    <div class="cl-subscribe-form">
-      <a href="mailto:adam@theoremis.com?subject=Theoremis%20Release%20Updates" class="cl-subscribe-btn">Email Theoremis</a>
-      <a href="https://github.com/adamouksili/theoremis/releases" target="_blank" rel="noopener" class="cl-subscribe-btn">GitHub Releases</a>
-    </div>
+    <h2 class="cl-subscribe-title">Stay in the loop</h2>
+    <p class="cl-subscribe-desc">Get notified when we ship new features.</p>
+    <form class="cl-subscribe-form" action="https://formspree.io/f/placeholder" method="POST">
+      <input type="email" name="email" class="cl-subscribe-input" placeholder="you@university.edu" required />
+      <button type="submit" class="cl-subscribe-btn">Subscribe</button>
+    </form>
   </section>
 
   ${sharedFooter()}
