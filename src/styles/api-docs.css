@@ -1,7 +1,26 @@
 /* ─────────────────────────────────────────────────────────────
    Theoremis · API Documentation Styles
-   Developer-focused, clean reference page
+   Developer-focused, clean reference page with motion
    ───────────────────────────────────────────────────────────── */
+
+/* ── Entrance animations ──────────────────────────────────── */
+
+@keyframes apiFadeUp {
+    from { opacity: 0; transform: translateY(30px); filter: blur(3px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes apiReveal {
+    from { opacity: 0; transform: translateY(40px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.api-hero { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+.api-quickstart { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+.api-endpoints { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+.api-bundles { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both; }
+.api-auth { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
+.api-errors { animation: apiFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.65s both; }
 
 /* ── Hero ──────────────────────────────────────────────────── */
 
@@ -9,6 +28,7 @@
     text-align: center;
     padding: 80px 48px 48px;
     border-bottom: 1px solid var(--l-border);
+    position: relative;
 }
 
 .api-hero-badge {
@@ -22,6 +42,7 @@
     padding: 4px 14px;
     margin-bottom: 20px;
     letter-spacing: 0.04em;
+    animation: apiFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
 .api-hero-title {
@@ -48,9 +69,15 @@
     color: var(--l-accent);
     background: var(--l-bg-code);
     border: 1px solid var(--l-border-strong);
-    border-radius: 8px;
-    padding: 10px 24px;
+    border-radius: 10px;
+    padding: 12px 28px;
     display: inline-block;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.api-hero-base:hover {
+    border-color: rgba(201, 168, 108, 0.3);
+    box-shadow: 0 0 30px rgba(201, 168, 108, 0.06);
 }
 
 /* ── Section titles ────────────────────────────────────────── */
@@ -92,8 +119,14 @@
 .api-code-block {
     background: var(--l-bg-code);
     border: 1px solid var(--l-border-strong);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.api-code-block:hover {
+    border-color: rgba(74, 222, 128, 0.15);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 .api-code-header {
@@ -161,6 +194,14 @@
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
+    transition: border-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease;
+}
+
+.api-endpoint:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
 .api-endpoint-header {
@@ -251,19 +292,25 @@
     font-weight: 500;
     color: var(--l-text-muted);
     cursor: pointer;
-    padding: 6px 0;
+    padding: 8px 0;
     user-select: none;
+    transition: color 0.2s ease;
 }
 
 .api-endpoint-example summary:hover {
     color: var(--l-accent);
 }
 
+.api-endpoint-example summary::marker {
+    color: var(--l-accent);
+}
+
 .api-endpoint-example .api-code-body {
     background: var(--l-bg-code);
     border: 1px solid var(--l-border);
-    border-radius: 8px;
+    border-radius: 10px;
     margin-top: 8px;
+    animation: apiReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ── Axiom bundles ─────────────────────────────────────────── */
@@ -291,8 +338,16 @@
 .api-bundle-card {
     background: var(--l-bg-surface);
     border: 1px solid var(--l-border-strong);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 16px;
+    transition: border-color 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease;
+}
+
+.api-bundle-card:hover {
+    border-color: rgba(201, 168, 108, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .api-bundle-name {
@@ -342,13 +397,25 @@
 .api-auth-tier {
     background: var(--l-bg-surface);
     border: 1px solid var(--l-border-strong);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 24px;
     text-align: center;
+    transition: border-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease;
+}
+
+.api-auth-tier:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .api-auth-tier.authenticated {
     border-color: rgba(201, 168, 108, 0.3);
+}
+
+.api-auth-tier.authenticated:hover {
+    border-color: rgba(201, 168, 108, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 168, 108, 0.06);
 }
 
 .api-auth-tier-name {
@@ -410,6 +477,11 @@
     padding: 10px 12px;
     border-bottom: 1px solid var(--l-border);
     color: var(--l-text);
+    transition: background 0.2s ease;
+}
+
+.api-error-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .api-error-table code {

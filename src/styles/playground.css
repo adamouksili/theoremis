@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────────
    Theoremis  ·  Playground Styles
-   Minimal, fast-loading, dark theme
+   Minimal, fast-loading, dark theme with motion
    ───────────────────────────────────────────────────────────── */
 
 .pg {
-  --pg-bg: #0a0a0f;
-  --pg-surface: #12121a;
+  --pg-bg: #0a0a0a;
+  --pg-surface: #141414;
   --pg-border: rgba(255, 255, 255, 0.08);
   --pg-text: #e0ddd4;
   --pg-dim: #8a8780;
@@ -15,6 +15,8 @@
   --pg-yellow: #fbbf24;
   --pg-mono: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
   --pg-sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --pg-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pg-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 
   min-height: 100vh;
   background: var(--pg-bg);
@@ -24,6 +26,17 @@
   flex-direction: column;
 }
 
+/* ── Entrance animations ──────────────────────────────────── */
+
+@keyframes pgFadeUp {
+  from { opacity: 0; transform: translateY(30px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.pg-hero { animation: pgFadeUp 0.8s var(--pg-smooth) 0.1s both; }
+.pg-input-section { animation: pgFadeUp 0.8s var(--pg-smooth) 0.25s both; }
+.pg-output { animation: pgFadeUp 0.8s var(--pg-smooth) 0.4s both; }
+
 /* ── Hero ────────────────────────────────────────────────── */
 
 .pg-hero {
@@ -32,7 +45,7 @@
 }
 
 .pg-hero-title {
-  font-family: 'EB Garamond', Garamond, 'Times New Roman', serif;
+  font-family: 'Libre Baskerville', Garamond, 'Times New Roman', serif;
   font-size: 2rem;
   font-weight: 700;
   color: var(--pg-accent);
@@ -76,7 +89,7 @@
   width: 100%;
   background: var(--pg-surface);
   border: 1px solid var(--pg-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--pg-text);
   font-family: var(--pg-mono);
   font-size: 14px;
@@ -84,29 +97,53 @@
   padding: 16px;
   resize: vertical;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   box-sizing: border-box;
 }
 
 .pg-textarea:focus {
   border-color: var(--pg-accent);
+  box-shadow: 0 0 0 3px rgba(201, 168, 108, 0.1), 0 0 30px rgba(201, 168, 108, 0.05);
 }
 
 .pg-btn {
   margin-top: 12px;
   background: var(--pg-accent);
-  color: #0a0a0f;
+  color: #0a0a0a;
   border: none;
-  border-radius: 6px;
-  padding: 10px 24px;
+  border-radius: 8px;
+  padding: 12px 28px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--pg-spring), box-shadow 0.3s ease;
 }
 
-.pg-btn:hover { opacity: 0.85; }
-.pg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pg-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  animation: pgBtnShimmer 3s ease-in-out infinite;
+}
+
+@keyframes pgBtnShimmer {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+.pg-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(201, 168, 108, 0.25);
+}
+
+.pg-btn:active { transform: translateY(0); }
+.pg-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ── Output ─────────────────────────────────────────────── */
 
@@ -141,12 +178,25 @@
 
 /* ── Theorem card ───────────────────────────────────────── */
 
+@keyframes pgCardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .pg-theorem {
   background: var(--pg-surface);
   border: 1px solid var(--pg-border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 24px;
   margin-bottom: 16px;
+  animation: pgCardIn 0.5s var(--pg-smooth) both;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s var(--pg-spring);
+}
+
+.pg-theorem:hover {
+  border-color: rgba(201, 168, 108, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
 }
 
 .pg-thm-name {
@@ -183,10 +233,17 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 6px 0;
+  padding: 8px 8px;
   font-size: 14px;
   line-height: 1.5;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.pg-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+  transform: translateX(4px);
 }
 
 .pg-row:last-child { border-bottom: none; }

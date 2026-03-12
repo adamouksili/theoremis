@@ -8,12 +8,12 @@
  * @param activePage - The current page ID to highlight (e.g. 'playground', 'changelog')
  */
 export function sharedNav(activePage?: string): string {
-  const link = (href: string, label: string, id: string) => {
-    const style = id === activePage ? ' style="color:var(--l-accent)"' : '';
-    return `<a href="${href}" class="landing-nav-link"${style}>${label}</a>`;
-  };
+    const link = (href: string, label: string, id: string) => {
+        const style = id === activePage ? ' style="color:var(--l-accent)"' : '';
+        return `<a href="${href}" class="landing-nav-link"${style}>${label}</a>`;
+    };
 
-  return `<nav class="landing-nav">
+    return `<nav class="landing-nav">
     <div class="landing-nav-brand">
       <a href="#" class="brand-link">
         <img src="/logo_transparent.png" alt="Theoremis" class="brand-logo-img">
@@ -33,8 +33,8 @@ export function sharedNav(activePage?: string): string {
  * Render the unified 3-column footer.
  */
 export function sharedFooter(): string {
-  const year = new Date().getFullYear();
-  return `<footer class="landing-footer">
+    const year = new Date().getFullYear();
+    return `<footer class="landing-footer">
     <div class="landing-footer-grid">
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Product</div>
@@ -43,7 +43,7 @@ export function sharedFooter(): string {
         <a href="#api" class="landing-footer-link">API Docs</a>
       </div>
       <div class="landing-footer-col">
-        <div class="landing-footer-heading">Company</div>
+        <div class="landing-footer-heading">Open Source</div>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">

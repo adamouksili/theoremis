@@ -634,16 +634,26 @@ function initHeroCharReveal(): void {
     const title = document.getElementById('hero-title');
     if (!title) return;
 
-    const html = title.innerHTML;
+    const html = title.innerHTML.trim();
     let charIndex = 0;
-    const wrapped = html.replace(/(<[^>]+>)|([^<])/g, (_match, tag: string | undefined, char: string | undefined) => {
-        if (tag) return tag;
-        if (char === undefined) return '';
-        if (char === ' ') return ' ';
-        const delay = charIndex * 25;
-        charIndex++;
-        return `<span class="hero-char" style="animation-delay:${delay}ms">${char}</span>`;
-    });
+    const wrapped = html.replace(
+        /(<[^>]+>)|(&[a-zA-Z]+;|&#\d+;)|(\s)|([^<&\s])/g,
+        (
+            _match,
+            tag: string | undefined,
+            entity: string | undefined,
+            ws: string | undefined,
+            char: string | undefined,
+        ) => {
+            if (tag) return tag;
+            if (ws) return ws;
+            const text = entity ?? char ?? '';
+            if (!text) return '';
+            const delay = charIndex * 20;
+            charIndex++;
+            return `<span class="hero-char" style="animation-delay:${delay}ms">${text}</span>`;
+        },
+    );
     title.innerHTML = wrapped;
 }
 
