@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Term, Param } from '../core/ir';
-import { assertNever } from '../core/assert';
+import { assertNever, invariant } from '../core/assert';
 
 export type Value = number | boolean | string | null;
 
@@ -217,8 +217,8 @@ function evalBigIntModular(term: Term, env: Record<string, Value>, mod: bigint):
             return ((BigInt(term.value) % mod) + mod) % mod;
         case 'Var': {
             const v = env[term.name];
-            if (typeof v === 'number') return ((BigInt(Math.round(v)) % mod) + mod) % mod;
-            throw new Error('non-numeric');
+            invariant(typeof v === 'number', `expected numeric value for '${term.name}' in BigInt modular evaluation`);
+            return ((BigInt(Math.round(v)) % mod) + mod) % mod;
         }
         case 'BinOp': {
             const l = evalBigIntModular(term.left, env, mod);
@@ -228,8 +228,7 @@ function evalBigIntModular(term: Term, env: Record<string, Value>, mod: bigint):
                 case '-': return ((l - r) % mod + mod) % mod;
                 case '*': return (l * r) % mod;
                 case '^': {
-                    // Use modPow for efficient modular exponentiation
-                    const base = evalBigIntModular(term.left, env, mod);
+                    const base = l;
                     // For exponent, we need the actual value not mod-reduced
                     const expVal = env[term.right.tag === 'Var' ? term.right.name : ''];
                     let exp: bigint;
@@ -260,8 +259,8 @@ function evalBigIntPlain(term: Term, env: Record<string, Value>): bigint {
         case 'Literal': return BigInt(term.value);
         case 'Var': {
             const v = env[term.name];
-            if (typeof v === 'number') return BigInt(Math.round(v));
-            throw new Error('non-numeric');
+            invariant(typeof v === 'number', `expected numeric value for '${term.name}' in BigInt evaluation`);
+            return BigInt(Math.round(v));
         }
         case 'BinOp': {
             const l = evalBigIntPlain(term.left, env);
@@ -343,7 +342,7 @@ function randomRealWith(rng: RNG): number {
 
 function randomPrimeWith(rng: RNG): number {
     const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
-    return primes[Math.floor(rng() * primes.length)];
+    return primes[Math.floor(rng() * primes.length)]!;
 }
 
 function randomBoolWith(rng: RNG): boolean {
@@ -476,7 +475,7 @@ function compileEvaluator(term: Term): EvalFn {
 function compilePreconditionChecks(params: Param[]): EvalFn[] {
     const runtimeCheckable: EvalFn[] = [];
     for (let i = 0; i < params.length; i++) {
-        const ty = params[i].type;
+        const ty = params[i]!.type;
         // Simple type labels (ℕ, ℤ, ...) are domain declarations, not runtime predicate checks.
         if (ty.tag !== 'Var') runtimeCheckable.push(compileEvaluator(ty));
     }
@@ -485,7 +484,7 @@ function compilePreconditionChecks(params: Param[]): EvalFn[] {
 
 function checkCompiledPreconditions(preconditions: EvalFn[], env: Record<string, Value>): boolean | null {
     for (let i = 0; i < preconditions.length; i++) {
-        const result = preconditions[i](env);
+        const result = preconditions[i]!(env);
         if (result === null) continue;
         if (result === false) return false;
     }
@@ -506,7 +505,7 @@ export function quickCheck(
     const timeoutMs = options.timeoutMs;
 
     const variableNames = variables.map(v => v.name);
-    const variableGens = variables.map(v => (DOMAINS[v.domain] ?? DOMAINS['Int']).generator);
+    const variableGens = variables.map(v => (DOMAINS[v.domain] ?? DOMAINS['Int']!).generator);
     const evalTerm = compileEvaluator(term);
     const compiledPreconditions = preconditions.length > 0 ? compilePreconditionChecks(preconditions) : [];
     const env: Record<string, Value> = {};
@@ -518,7 +517,7 @@ export function quickCheck(
 
     const runSingle = () => {
         for (let j = 0; j < variableNames.length; j++) {
-            env[variableNames[j]] = variableGens[j](rng);
+            env[variableNames[j]!] = variableGens[j]!(rng);
         }
 
         if (compiledPreconditions.length > 0) {

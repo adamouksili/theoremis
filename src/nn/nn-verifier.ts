@@ -28,9 +28,9 @@ export function forwardPass(model: NNModel, input: number[]): number[] {
 function applyLayer(layer: NNLayer, input: number[]): number[] {
     const out: number[] = [];
     for (let i = 0; i < layer.weights.length; i++) {
-        let sum = layer.biases[i];
+        let sum = layer.biases[i]!;
         for (let j = 0; j < input.length; j++) {
-            sum += layer.weights[i][j] * input[j];
+            sum += layer.weights[i]![j]! * input[j]!;
         }
         out.push(layer.activation === 'relu' ? Math.max(0, sum) : sum);
     }
@@ -48,13 +48,13 @@ function propagateLayerBounds(layer: NNLayer, inputBounds: Interval[]): Interval
     const outputBounds: Interval[] = [];
 
     for (let i = 0; i < layer.weights.length; i++) {
-        let lo = layer.biases[i];
-        let hi = layer.biases[i];
+        let lo = layer.biases[i]!;
+        let hi = layer.biases[i]!;
 
         for (let j = 0; j < inputBounds.length; j++) {
-            const w = layer.weights[i][j];
-            const xlo = inputBounds[j].lo;
-            const xhi = inputBounds[j].hi;
+            const w = layer.weights[i]![j]!;
+            const xlo = inputBounds[j]!.lo;
+            const xhi = inputBounds[j]!.hi;
 
             if (w >= 0) {
                 lo += w * xlo;
@@ -110,10 +110,10 @@ function checkConstraintWithBounds(
     let maxVal = 0;
 
     for (let i = 0; i < constraint.coeffs.length; i++) {
-        const c = constraint.coeffs[i];
+        const c = constraint.coeffs[i]!;
         if (i >= outputBounds.length) break;
 
-        const bound = outputBounds[i];
+        const bound = outputBounds[i]!;
         // Maximize c * x_i
         if (c >= 0) {
             maxVal += c * bound.hi;
@@ -159,7 +159,7 @@ function searchCounterexample(
         for (const constraint of outputConstraints) {
             let val = 0;
             for (let i = 0; i < constraint.coeffs.length; i++) {
-                val += constraint.coeffs[i] * (output[i] ?? 0);
+                val += constraint.coeffs[i]! * (output[i] ?? 0);
             }
             if (val > constraint.rhs) {
                 return { input, output, violatedConstraint: constraint.label };
@@ -203,11 +203,11 @@ function exactVerification(
     const reluNeurons: ReLUNeuron[] = [];
 
     for (let l = 0; l < model.layers.length; l++) {
-        if (model.layers[l].activation === 'relu') {
+        if (model.layers[l]!.activation === 'relu') {
             // We need pre-activation bounds. Recompute without ReLU clipping.
             const preActBounds = computePreActivationBounds(model, spec.inputBounds, l);
-            for (let n = 0; n < model.layers[l].weights.length; n++) {
-                const bound = preActBounds[n];
+            for (let n = 0; n < model.layers[l]!.weights.length; n++) {
+                const bound = preActBounds[n]!;
                 // Only ambiguous neurons need case splitting
                 if (bound.lo < 0 && bound.hi > 0) {
                     reluNeurons.push({ layerIdx: l, neuronIdx: n, lo: bound.lo, hi: bound.hi });
@@ -228,7 +228,7 @@ function exactVerification(
         // Build activation pattern: true = active (identity), false = inactive (zero)
         const activationMap = new Map<string, boolean>();
         for (let i = 0; i < numAmbiguous; i++) {
-            const neuron = reluNeurons[i];
+            const neuron = reluNeurons[i]!;
             const active = ((pattern >> i) & 1) === 1;
             activationMap.set(`${neuron.layerIdx}:${neuron.neuronIdx}`, active);
         }
@@ -252,17 +252,17 @@ function computePreActivationBounds(
     let currentBounds = inputBounds;
 
     for (let l = 0; l <= targetLayer; l++) {
-        const layer = model.layers[l];
+        const layer = model.layers[l]!;
         const newBounds: Interval[] = [];
 
         for (let i = 0; i < layer.weights.length; i++) {
-            let lo = layer.biases[i];
-            let hi = layer.biases[i];
+            let lo = layer.biases[i]!;
+            let hi = layer.biases[i]!;
 
             for (let j = 0; j < currentBounds.length; j++) {
-                const w = layer.weights[i][j];
-                const xlo = currentBounds[j].lo;
-                const xhi = currentBounds[j].hi;
+                const w = layer.weights[i]![j]!;
+                const xlo = currentBounds[j]!.lo;
+                const xhi = currentBounds[j]!.hi;
 
                 if (w >= 0) { lo += w * xlo; hi += w * xhi; }
                 else { lo += w * xhi; hi += w * xlo; }
@@ -306,7 +306,7 @@ function checkLinearRegion(
         for (const constraint of outputConstraints) {
             let val = 0;
             for (let i = 0; i < constraint.coeffs.length; i++) {
-                val += constraint.coeffs[i] * (output[i] ?? 0);
+                val += constraint.coeffs[i]! * (output[i] ?? 0);
             }
             if (val > constraint.rhs + 1e-10) {
                 return { counterexample: { input, output, violatedConstraint: constraint.label } };
@@ -325,12 +325,12 @@ function forwardPassWithPattern(
 ): number[] {
     let x = input;
     for (let l = 0; l < model.layers.length; l++) {
-        const layer = model.layers[l];
+        const layer = model.layers[l]!;
         const out: number[] = [];
         for (let i = 0; i < layer.weights.length; i++) {
-            let sum = layer.biases[i];
+            let sum = layer.biases[i]!;
             for (let j = 0; j < x.length; j++) {
-                sum += layer.weights[i][j] * x[j];
+                sum += layer.weights[i]![j]! * x[j]!;
             }
             if (layer.activation === 'relu') {
                 const key = `${l}:${i}`;
@@ -376,7 +376,7 @@ export function verifyNN(model: NNModel, spec: SafetySpec): VerificationResult {
 
     // Step 1: Interval Bound Propagation
     const layerBounds = intervalBoundPropagation(model, spec.inputBounds);
-    const outputBounds = layerBounds[layerBounds.length - 1];
+    const outputBounds = layerBounds[layerBounds.length - 1]!;
 
     const verifiedConstraints: string[] = [];
     const unverified: LinearConstraint[] = [];
@@ -465,10 +465,10 @@ export function formatBoundsTable(model: NNModel, layerBounds: Interval[][]): st
     const rows: string[] = [];
     for (let l = 0; l < layerBounds.length; l++) {
         const layerName = l === layerBounds.length - 1 ? 'Output' : `Hidden ${l + 1}`;
-        const activation = model.layers[l].activation;
+        const activation = model.layers[l]!.activation;
         rows.push(`${layerName} (${activation}):`);
-        for (let n = 0; n < layerBounds[l].length; n++) {
-            rows.push(`  neuron[${n}] ∈ ${formatInterval(layerBounds[l][n])}`);
+        for (let n = 0; n < layerBounds[l]!.length; n++) {
+            rows.push(`  neuron[${n}] ∈ ${formatInterval(layerBounds[l]![n]!)}`);
         }
     }
     return rows.join('\n');

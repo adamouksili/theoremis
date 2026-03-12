@@ -54,16 +54,16 @@ export function analyzeDiscourse(source: string): DiscourseBlock[] {
     while (i < lines.length) {
         let matched = false;
         for (const { pattern, role, endPattern } of envPatterns) {
-            if (pattern.test(lines[i])) {
+            if (pattern.test(lines[i]!)) {
                 const startLine = i;
                 const contentLines: string[] = [];
                 i++;
-                while (i < lines.length && !endPattern.test(lines[i])) {
-                    contentLines.push(lines[i]);
+                while (i < lines.length && !endPattern.test(lines[i]!)) {
+                    contentLines.push(lines[i]!);
                     i++;
                 }
                 const content = contentLines.join('\n');
-                const nameMatch = lines[startLine].match(/\[([^\]]+)\]/) || content.match(/\\label\{([^}]+)\}/);
+                const nameMatch = lines[startLine]!.match(/\[([^\]]+)\]/) || content.match(/\\label\{([^}]+)\}/);
                 const references = extractAllReferences(content);
 
                 blocks.push({
@@ -136,7 +136,7 @@ function extractAllReferences(text: string): string[] {
 
     for (const pattern of patterns) {
         for (const match of text.matchAll(pattern)) {
-            refs.push(match[1]);
+            refs.push(match[1]!);
         }
     }
 

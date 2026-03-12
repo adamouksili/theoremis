@@ -120,12 +120,12 @@ export function renderKaTeXPreview(source: string) {
   let html = '';
   for (const match of mathBlocks) {
     try {
-      html += '<div style="margin:4px 0">' + katex.renderToString(match[1], {
+      html += '<div style="margin:4px 0">' + katex.renderToString(match[1]!, {
         throwOnError: false,
         displayMode: match[0].startsWith('$$'),
       }) + '</div>';
     } catch {
-      html += `<div style="color:var(--danger);font-size:11px">Parse error: ${match[1].slice(0, 40)}…</div>`;
+      html += `<div style="color:var(--danger);font-size:11px">Parse error: ${match[1]!.slice(0, 40)}…</div>`;
     }
   }
   preview.innerHTML = html;

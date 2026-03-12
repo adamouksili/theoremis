@@ -20,11 +20,11 @@ export function normalizeLeanDiagnostics(output: string): NormalizedDiagnostic[]
         if (!match) continue;
 
         const diag: NormalizedDiagnostic = {
-            file: match[1],
-            line: Number.parseInt(match[2], 10),
-            column: Number.parseInt(match[3], 10),
-            severity: severityMap(match[4]),
-            message: match[5].trim(),
+            file: match[1]!,
+            line: Number.parseInt(match[2]!, 10),
+            column: Number.parseInt(match[3]!, 10),
+            severity: severityMap(match[4]!),
+            message: match[5]!.trim(),
         };
 
         const key = `${diag.severity}:${diag.file}:${diag.line}:${diag.column}:${diag.message}`;

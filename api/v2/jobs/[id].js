@@ -10,10 +10,12 @@ import {
 import { getVerificationJob, queueMetrics, runtimeReadyForFormalVerify } from '../../../src/formal/runtime/queue.js';
 
 function resolveJobId(req) {
-    if (req.query?.id) return String(req.query.id);
+    const sanitize = (raw) => String(raw).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (req.query?.id) return sanitize(req.query.id);
     const url = String(req.url || '');
-    const parts = url.split('/').filter(Boolean);
-    return parts[parts.length - 1] || '';
+    const pathname = url.split('?')[0];
+    const parts = pathname.split('/').filter(Boolean);
+    return sanitize(parts[parts.length - 1] || '');
 }
 
 export default async function handler(req, res) {
@@ -44,7 +46,7 @@ export default async function handler(req, res) {
 
     const job = getVerificationJob(id);
     if (!job) {
-        return sendError(res, 404, `Verification job '${id}' not found.`);
+        return sendError(res, 404, 'Verification job not found.');
     }
 
     return res.status(200).json({

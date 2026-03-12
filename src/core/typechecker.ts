@@ -108,6 +108,7 @@ export function freeVars(term: Term): Set<string> {
         case 'Ind': {
             const s = freeVars(term.type);
             for (const c of term.constructors) for (const v of freeVars(c.type)) s.add(v);
+            s.delete(term.name);
             return s;
         }
     }
@@ -267,11 +268,23 @@ function subst(term: Term, name: string, replacement: Term, replFV: Set<string>,
             return {
                 tag: 'Match',
                 scrutinee: subst(term.scrutinee, name, replacement, replFV, counter),
-                cases: term.cases.map(c => ({
-                    pattern: c.pattern,
-                    bindings: c.bindings,
-                    body: c.bindings.includes(name) ? c.body : subst(c.body, name, replacement, replFV, counter),
-                })),
+                cases: term.cases.map(c => {
+                    if (c.bindings.includes(name)) return c;
+                    const captured = c.bindings.filter(b => replFV.has(b));
+                    if (captured.length === 0) {
+                        return { pattern: c.pattern, bindings: c.bindings, body: subst(c.body, name, replacement, replFV, counter) };
+                    }
+                    let body = c.body;
+                    let bindings = [...c.bindings];
+                    const allVars = union(replFV, union(freeVars(c.body), new Set([name])));
+                    for (const b of captured) {
+                        const nb = fresh(b, allVars, counter);
+                        allVars.add(nb);
+                        body = subst(body, b, { tag: 'Var', name: nb }, new Set([nb]), counter);
+                        bindings = bindings.map(x => x === b ? nb : x);
+                    }
+                    return { pattern: c.pattern, bindings, body: subst(body, name, replacement, replFV, counter) };
+                }),
             };
 
         case 'Ind':
@@ -295,27 +308,29 @@ function subst(term: Term, name: string, replacement: Term, replFV: Set<string>,
 
 // ── Weak-head normal form (WHNF) ───────────────────────────
 
-export function normalize(term: Term, ctx: TypeContext): Term {
+const MAX_NORMALIZE_FUEL = 1000;
+
+export function normalize(term: Term, ctx: TypeContext, fuel: number = MAX_NORMALIZE_FUEL): Term {
+    if (fuel <= 0) return term;
     switch (term.tag) {
         case 'App': {
-            const fn = normalize(term.func, ctx);
+            const fn = normalize(term.func, ctx, fuel - 1);
             if (fn.tag === 'Lam') {
-                return normalize(substitute(fn.body, fn.param, term.arg), ctx);
+                return normalize(substitute(fn.body, fn.param, term.arg), ctx, fuel - 1);
             }
-            return { tag: 'App', func: fn, arg: normalize(term.arg, ctx) };
+            return { tag: 'App', func: fn, arg: normalize(term.arg, ctx, fuel - 1) };
         }
         case 'LetIn': {
-            return normalize(substitute(term.body, term.name, term.value), ctx);
+            return normalize(substitute(term.body, term.name, term.value), ctx, fuel - 1);
         }
         case 'Proj': {
-            const inner = normalize(term.term, ctx);
+            const inner = normalize(term.term, ctx, fuel - 1);
             if (inner.tag === 'Pair') {
-                return normalize(term.index === 1 ? inner.fst : inner.snd, ctx);
+                return normalize(term.index === 1 ? inner.fst : inner.snd, ctx, fuel - 1);
             }
             return { tag: 'Proj', term: inner, index: term.index };
         }
         case 'Var': {
-            // Look up definitions (for let-bound variables we could expand)
             return term;
         }
         case 'Lam':
@@ -356,40 +371,40 @@ export function termsEqual(a: Term, b: Term, ctx?: TypeContext): boolean {
         }
         case 'Lam': {
             const lb = nb as typeof na;
-            return termsEqual(na.paramType, lb.paramType) && termsEqual(na.body, substitute(lb.body, lb.param, { tag: 'Var', name: na.param }));
+            return termsEqual(na.paramType, lb.paramType, ctx) && termsEqual(na.body, substitute(lb.body, lb.param, { tag: 'Var', name: na.param }), ctx);
         }
         case 'Pi': {
             const pb = nb as typeof na;
-            return termsEqual(na.paramType, pb.paramType) && termsEqual(na.body, substitute(pb.body, pb.param, { tag: 'Var', name: na.param }));
+            return termsEqual(na.paramType, pb.paramType, ctx) && termsEqual(na.body, substitute(pb.body, pb.param, { tag: 'Var', name: na.param }), ctx);
         }
         case 'Sigma': {
             const sb = nb as typeof na;
-            return termsEqual(na.paramType, sb.paramType) && termsEqual(na.body, substitute(sb.body, sb.param, { tag: 'Var', name: na.param }));
+            return termsEqual(na.paramType, sb.paramType, ctx) && termsEqual(na.body, substitute(sb.body, sb.param, { tag: 'Var', name: na.param }), ctx);
         }
         case 'App': {
             const ab = nb as typeof na;
-            return termsEqual(na.func, ab.func) && termsEqual(na.arg, ab.arg);
+            return termsEqual(na.func, ab.func, ctx) && termsEqual(na.arg, ab.arg, ctx);
         }
         case 'BinOp': {
             const bb = nb as typeof na;
-            return na.op === bb.op && termsEqual(na.left, bb.left) && termsEqual(na.right, bb.right);
+            return na.op === bb.op && termsEqual(na.left, bb.left, ctx) && termsEqual(na.right, bb.right, ctx);
         }
         case 'UnaryOp': {
             const ub = nb as typeof na;
-            return na.op === ub.op && termsEqual(na.operand, ub.operand);
+            return na.op === ub.op && termsEqual(na.operand, ub.operand, ctx);
         }
         case 'Equiv': {
             const eb = nb as typeof na;
-            return termsEqual(na.left, eb.left) && termsEqual(na.right, eb.right) &&
-                (na.modulus && eb.modulus ? termsEqual(na.modulus, eb.modulus) : !na.modulus && !eb.modulus);
+            return termsEqual(na.left, eb.left, ctx) && termsEqual(na.right, eb.right, ctx) &&
+                (na.modulus && eb.modulus ? termsEqual(na.modulus, eb.modulus, ctx) : !na.modulus && !eb.modulus);
         }
         case 'ForAll': {
             const fb = nb as typeof na;
-            return termsEqual(na.domain, fb.domain) && termsEqual(na.body, substitute(fb.body, fb.param, { tag: 'Var', name: na.param }));
+            return termsEqual(na.domain, fb.domain, ctx) && termsEqual(na.body, substitute(fb.body, fb.param, { tag: 'Var', name: na.param }), ctx);
         }
         case 'Exists': {
             const eb = nb as typeof na;
-            return termsEqual(na.domain, eb.domain) && termsEqual(na.body, substitute(eb.body, eb.param, { tag: 'Var', name: na.param }));
+            return termsEqual(na.domain, eb.domain, ctx) && termsEqual(na.body, substitute(eb.body, eb.param, { tag: 'Var', name: na.param }), ctx);
         }
         case 'Hole': {
             const hb = nb as typeof na;
@@ -401,28 +416,28 @@ export function termsEqual(a: Term, b: Term, ctx?: TypeContext): boolean {
         }
         case 'Pair': {
             const pb = nb as typeof na;
-            return termsEqual(na.fst, pb.fst) && termsEqual(na.snd, pb.snd);
+            return termsEqual(na.fst, pb.fst, ctx) && termsEqual(na.snd, pb.snd, ctx);
         }
         case 'Proj': {
             const pb = nb as typeof na;
-            return na.index === pb.index && termsEqual(na.term, pb.term);
+            return na.index === pb.index && termsEqual(na.term, pb.term, ctx);
         }
         case 'LetIn': {
             const lb = nb as typeof na;
-            return termsEqual(na.type, lb.type) && termsEqual(na.value, lb.value) && termsEqual(na.body, substitute(lb.body, lb.name, { tag: 'Var', name: na.name }));
+            return termsEqual(na.type, lb.type, ctx) && termsEqual(na.value, lb.value, ctx) && termsEqual(na.body, substitute(lb.body, lb.name, { tag: 'Var', name: na.name }), ctx);
         }
         case 'Ind': {
             const ib = nb as typeof na;
             if (na.name !== ib.name) return false;
-            if (!termsEqual(na.type, ib.type)) return false;
+            if (!termsEqual(na.type, ib.type, ctx)) return false;
             if (na.constructors.length !== ib.constructors.length) return false;
-            return na.constructors.every((c, i) => c.name === ib.constructors[i].name && termsEqual(c.type, ib.constructors[i].type));
+            return na.constructors.every((c, i) => c.name === ib.constructors[i]!.name && termsEqual(c.type, ib.constructors[i]!.type, ctx));
         }
         case 'Match': {
             const mb = nb as typeof na;
-            if (!termsEqual(na.scrutinee, mb.scrutinee)) return false;
+            if (!termsEqual(na.scrutinee, mb.scrutinee, ctx)) return false;
             if (na.cases.length !== mb.cases.length) return false;
-            return na.cases.every((c, i) => c.pattern === mb.cases[i].pattern && termsEqual(c.body, mb.cases[i].body));
+            return na.cases.every((c, i) => c.pattern === mb.cases[i]!.pattern && termsEqual(c.body, mb.cases[i]!.body, ctx));
         }
     }
     return false;
@@ -488,7 +503,7 @@ function strictFail(
 
 export function typeCheck(module: IRModule, options: TypeCheckOptions = {}): TypeCheckResult {
     const mode: TypeCheckMode = options.mode ?? 'permissive';
-    const ctx = makeStdContext(emptyContext(module.axiomBundle));
+    let ctx = makeStdContext(emptyContext(module.axiomBundle));
     const diagnostics: Diagnostic[] = [];
     const inferredTypes = new Map<string, Term>();
     const holes: HoleInfo[] = [];
@@ -496,7 +511,14 @@ export function typeCheck(module: IRModule, options: TypeCheckOptions = {}): Typ
     const strict = newStrictDiagnostics();
 
     for (const decl of module.declarations) {
-        checkDeclaration(ctx, decl, diagnostics, inferredTypes, holes, axiomUsage, mode, strict);
+        const declAxiomUsage = new Set<string>();
+        checkDeclaration(ctx, decl, diagnostics, inferredTypes, holes, declAxiomUsage, mode, strict);
+        for (const a of declAxiomUsage) axiomUsage.add(a);
+        if (decl.tag === 'Definition') {
+            ctx = extendContext(ctx, decl.name, decl.returnType);
+        } else {
+            ctx = extendContext(ctx, decl.name, decl.statement);
+        }
     }
 
     return {
@@ -531,7 +553,7 @@ function checkDeclaration(
                 // Check body type against declared return type
                 const declaredNorm = normalize(decl.returnType, paramCtx);
                 const inferredNorm = normalize(bodyType, paramCtx);
-                if (!termsEqual(declaredNorm, inferredNorm) && declaredNorm.tag !== 'Sort') {
+                if (!termsEqual(declaredNorm, inferredNorm, paramCtx)) {
                     diagnostics.push({
                         severity: mode === 'strict' ? 'error' : 'warning',
                         message: `Definition '${decl.name}': declared return type may not match inferred type`,
@@ -685,6 +707,7 @@ export function inferType(
                 case 'Int': return { tag: 'Var', name: 'ℤ' };
                 case 'Bool': return { tag: 'Var', name: 'Bool' };
                 case 'String': return { tag: 'Var', name: 'String' };
+                default: return null;
             }
         }
 
@@ -824,7 +847,11 @@ export function inferType(
             const bodyCtx = extendContext(ctx, term.param, term.paramType);
             const bodyType = inferType(bodyCtx, term.body, holes, axiomUsage, diagnostics, mode, strict);
             if (paramTypeType && bodyType) {
-                return TYPE0;
+                const paramSort = normalize(paramTypeType, ctx);
+                const bodySort = normalize(bodyType, ctx);
+                const paramLevel = paramSort.tag === 'Sort' && paramSort.universe.tag === 'Type' ? paramSort.universe.level : 0;
+                const bodyLevel = bodySort.tag === 'Sort' && bodySort.universe.tag === 'Type' ? bodySort.universe.level : 0;
+                return { tag: 'Sort', universe: { tag: 'Type', level: Math.max(paramLevel, bodyLevel) } };
             }
             if (mode === 'strict') {
                 return strictFail(
@@ -880,7 +907,7 @@ export function inferType(
                     const numHierarchy = ['ℕ', 'ℤ', 'ℝ', 'ℂ'];
                     const li = numHierarchy.indexOf(leftNorm.name);
                     const ri = numHierarchy.indexOf(rightNorm.name);
-                    if (li >= 0 && ri >= 0) return { tag: 'Var', name: numHierarchy[Math.max(li, ri)] };
+                    if (li >= 0 && ri >= 0) return { tag: 'Var', name: numHierarchy[Math.max(li, ri)]! };
                 }
                 return leftNorm;
             }
@@ -943,7 +970,8 @@ export function inferType(
             if (pairType) {
                 const norm = normalize(pairType, ctx);
                 if (norm.tag === 'Sigma') {
-                    return term.index === 1 ? norm.paramType : norm.body;
+                    if (term.index === 1) return norm.paramType;
+                    return substitute(norm.body, norm.param, { tag: 'Proj', term: term.term, index: 1 });
                 }
             }
             if (mode === 'strict') {
@@ -1011,7 +1039,7 @@ export function inferType(
 function containsSorry(t: import('./ir').Tactic): boolean {
     if (t.tag === 'Sorry') return true;
     if (t.tag === 'Seq') return t.tactics.some(containsSorry);
-    if (t.tag === 'Alt') return t.tactics.some(containsSorry);
+    if (t.tag === 'Alt') return t.tactics.every(containsSorry);
     return false;
 }
 

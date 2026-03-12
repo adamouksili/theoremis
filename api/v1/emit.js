@@ -39,8 +39,11 @@ export default async function handler(req, res) {
         }
 
         // Validate targets
-        if (targets && Array.isArray(targets)) {
-            const invalid = targets.filter((t) => !VALID_TARGETS.includes(t));
+        if (targets !== undefined) {
+            if (!Array.isArray(targets)) {
+                return sendError(res, 400, 'Field "targets" must be an array of strings.');
+            }
+            const invalid = targets.filter((t) => typeof t !== 'string' || !VALID_TARGETS.includes(t));
             if (invalid.length) {
                 return sendError(res, 400, `Invalid targets: ${invalid.join(', ')}. Valid: ${VALID_TARGETS.join(', ')}`);
             }
@@ -54,7 +57,7 @@ export default async function handler(req, res) {
             ...result,
         });
     } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return sendError(res, 500, message);
+        console.error('[emit] Internal error:', err);
+        return sendError(res, 500, 'Internal server error.');
     }
 }

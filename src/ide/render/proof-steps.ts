@@ -190,7 +190,7 @@ function bindAskAIButtons(thms: ProofDecl[]): void {
 
         // Also store first suggestion in legacy format
         if (suggestions.length > 0) {
-          S.llmSuggestions[declName] = suggestions[0].tactic;
+          S.llmSuggestions[declName] = suggestions[0]!.tactic;
         }
         renderProofSteps();
       } catch (e: unknown) {

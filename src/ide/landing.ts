@@ -310,11 +310,12 @@ export function startTypingAnimation(): void {
   }
 
   function tick(): void {
-    const phase = CODE_PHASES[phaseIdx];
+    const phase = CODE_PHASES[phaseIdx]!;
 
     // Pause between phases
     if (pauseCounter > 0) {
       pauseCounter--;
+      if (pauseCounter === 0) isDeleting = true;
       animationFrameId = setTimeout(tick, 50);
       return;
     }
@@ -331,7 +332,7 @@ export function startTypingAnimation(): void {
         phaseIdx = (phaseIdx + 1) % CODE_PHASES.length;
         lineIdx = 0;
         charIdx = 0;
-        const nextPhase = CODE_PHASES[phaseIdx];
+        const nextPhase = CODE_PHASES[phaseIdx]!;
         if (filenameEl) filenameEl.textContent = nextPhase.filename;
         if (phaseLabel) phaseLabel.textContent = nextPhase.label;
         animationFrameId = setTimeout(tick, 300);
@@ -341,7 +342,7 @@ export function startTypingAnimation(): void {
 
     // Typing current line char by char
     if (lineIdx < phase.lines.length) {
-      const fullLine = phase.lines[lineIdx];
+      const fullLine = phase.lines[lineIdx]!;
       // We type based on visible text length but insert HTML spans whole
       // For simplicity, reveal the full HTML line incrementally by text content
       const plainText = fullLine.replace(/<[^>]+>/g, '');
@@ -359,19 +360,16 @@ export function startTypingAnimation(): void {
           renderedLines.push('');
           animationFrameId = setTimeout(tick, LINE_DELAY);
         } else {
-          // Phase complete, pause then delete
           pauseCounter = Math.round(PHASE_PAUSE / 50);
           animationFrameId = setTimeout(tick, 50);
-          // After pause, start deleting
-          setTimeout(() => { isDeleting = true; }, PHASE_PAUSE);
         }
       }
     }
   }
 
   // Init first phase
-  if (filenameEl) filenameEl.textContent = CODE_PHASES[0].filename;
-  if (phaseLabel) phaseLabel.textContent = CODE_PHASES[0].label;
+  if (filenameEl) filenameEl.textContent = CODE_PHASES[0]!.filename;
+  if (phaseLabel) phaseLabel.textContent = CODE_PHASES[0]!.label;
   renderedLines = [''];
   tick();
 }

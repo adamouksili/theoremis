@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { NNModel, NNLayer, SafetySpec, Interval, LinearConstraint } from './nn-types';
+import { invariant } from '../core/assert';
 
 // ── Network JSON Parser ─────────────────────────────────────
 
@@ -47,22 +48,22 @@ export function parseNetworkJSON(json: string): NNModel {
     let prevDim: number | null = null;
 
     for (let i = 0; i < raw.layers.length; i++) {
-        const rl = raw.layers[i];
+        const rl = raw.layers[i]!;
 
         if (!Array.isArray(rl.weights) || !Array.isArray(rl.biases)) {
             throw new Error(`Layer ${i}: missing weights or biases.`);
         }
 
         const outputDim = rl.weights.length;
-        if (outputDim === 0) throw new Error(`Layer ${i}: empty weight matrix.`);
+        invariant(outputDim > 0, `Layer ${i}: empty weight matrix`);
 
-        const inputDim = rl.weights[0].length;
-        if (inputDim === 0) throw new Error(`Layer ${i}: zero input dimension.`);
+        const inputDim = rl.weights[0]!.length;
+        invariant(inputDim > 0, `Layer ${i}: zero input dimension`);
 
         // Validate all rows have the same width
         for (let r = 0; r < outputDim; r++) {
-            if (rl.weights[r].length !== inputDim) {
-                throw new Error(`Layer ${i}, row ${r}: expected ${inputDim} columns, got ${rl.weights[r].length}.`);
+            if (rl.weights[r]!.length !== inputDim) {
+                throw new Error(`Layer ${i}, row ${r}: expected ${inputDim} columns, got ${rl.weights[r]!.length}.`);
             }
         }
 
@@ -81,8 +82,8 @@ export function parseNetworkJSON(json: string): NNModel {
         prevDim = outputDim;
     }
 
-    const inputDim = layers[0].weights[0].length;
-    const outputDim = layers[layers.length - 1].weights.length;
+    const inputDim = layers[0]!.weights[0]!.length;
+    const outputDim = layers[layers.length - 1]!.weights.length;
 
     return {
         name: raw.name ?? 'network',
@@ -123,11 +124,11 @@ export function parseSafetySpec(dsl: string, inputDim: number, outputDim: number
             const intervalRe = /\[([^\]]+)\]/g;
             let match;
             while ((match = intervalRe.exec(rest)) !== null) {
-                const parts = match[1].split(',').map(s => parseFloat(s.trim()));
-                if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
-                    throw new Error(`Invalid input bound: [${match[1]}]`);
+                const parts = match[1]!.split(',').map(s => parseFloat(s.trim()));
+                if (parts.length !== 2 || isNaN(parts[0]!) || isNaN(parts[1]!)) {
+                    throw new Error(`Invalid input bound: [${match[1]!}]`);
                 }
-                inputBounds.push({ lo: parts[0], hi: parts[1] });
+                inputBounds.push({ lo: parts[0]!, hi: parts[1]! });
             }
         } else if (line.startsWith('output')) {
             const rest = line.slice(6).trim();
@@ -162,9 +163,9 @@ function parseOutputConstraint(s: string, outputDim: number): LinearConstraint {
     const simpleRe = /^\[(\d+)\]\s*(>|<|>=|<=)\s*([+-]?\d+\.?\d*)$/;
     const simpleMatch = simpleRe.exec(s);
     if (simpleMatch) {
-        const idx = parseInt(simpleMatch[1]);
-        const op = simpleMatch[2];
-        const val = parseFloat(simpleMatch[3]);
+        const idx = parseInt(simpleMatch[1]!);
+        const op = simpleMatch[2]!;
+        const val = parseFloat(simpleMatch[3]!);
 
         if (idx >= outputDim) throw new Error(`Output index [${idx}] out of range (dim=${outputDim}).`);
 
@@ -186,10 +187,10 @@ function parseOutputConstraint(s: string, outputDim: number): LinearConstraint {
     const diffRe = /^\[(\d+)\]\s*-\s*\[(\d+)\]\s*(>|<|>=|<=)\s*([+-]?\d+\.?\d*)$/;
     const diffMatch = diffRe.exec(s);
     if (diffMatch) {
-        const i = parseInt(diffMatch[1]);
-        const j = parseInt(diffMatch[2]);
-        const op = diffMatch[3];
-        const val = parseFloat(diffMatch[4]);
+        const i = parseInt(diffMatch[1]!);
+        const j = parseInt(diffMatch[2]!);
+        const op = diffMatch[3]!;
+        const val = parseFloat(diffMatch[4]!);
 
         if (i >= outputDim || j >= outputDim) throw new Error(`Output index out of range.`);
 

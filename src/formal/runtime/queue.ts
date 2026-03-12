@@ -114,9 +114,11 @@ function runIsolated(request: VerificationRequest): Promise<VerificationResult> 
         worker.once('exit', (code) => {
             clearTimeout(timer);
             done(() => {
-                if (code !== 0) {
-                    reject(new Error(`Verification worker exited with code ${code}`));
-                }
+                reject(new Error(
+                    code !== 0
+                        ? `Verification worker exited with code ${code}`
+                        : 'Verification worker exited without producing a result'
+                ));
             });
         });
     });

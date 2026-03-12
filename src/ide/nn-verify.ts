@@ -212,8 +212,8 @@ function renderResult(result: VerificationResult): string {
             const layerName = l === cert.layerBounds.length - 1 ? 'Output' : `Hidden ${l + 1}`;
             html += `<div class="nnv-bounds-layer">
         <div class="nnv-bounds-layer-name">${layerName}</div>`;
-            for (let n = 0; n < cert.layerBounds[l].length; n++) {
-                const iv = cert.layerBounds[l][n];
+            for (let n = 0; n < cert.layerBounds[l]!.length; n++) {
+                const iv = cert.layerBounds[l]![n]!;
                 html += `<div class="nnv-bounds-row">
           <span class="nnv-bounds-neuron">neuron[${n}]</span>
           <span class="nnv-bounds-interval">∈ ${formatInterval(iv)}</span>

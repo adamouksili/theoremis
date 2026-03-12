@@ -68,7 +68,7 @@ export function bindPlayground(): void {
       output.innerHTML = result;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      output.innerHTML = `<div class="pg-error">Error: ${msg}</div>`;
+      output.innerHTML = `<div class="pg-error">Error: ${escHtml(msg)}</div>`;
     } finally {
       btn.disabled = false;
       btn.textContent = 'Analyze Hypotheses';

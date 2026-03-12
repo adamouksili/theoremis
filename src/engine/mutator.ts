@@ -41,7 +41,7 @@ export function generateMutations(theorem: Theorem): Mutation[] {
 
     // Drop each hypothesis
     for (let i = 0; i < theorem.params.length; i++) {
-        const param = theorem.params[i];
+        const param = theorem.params[i]!;
         addMutation({
             type: 'drop_hypothesis',
             description: `Drop hypothesis: ${param.name}`,

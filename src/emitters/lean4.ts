@@ -282,7 +282,7 @@ function isGarbageBody(body: string): boolean {
     // Single uppercase letter — almost certainly a parser artifact from English prose
     if (/^[A-Z]$/.test(trimmed)) return true;
     // Don't catch legitimate Lean 4 syntax keywords
-    const firstWord = trimmed.split(/\s/)[0].toLowerCase();
+    const firstWord = trimmed.split(/\s/)[0]!.toLowerCase();
     const LEAN_KEYWORDS = new Set(['match', 'fun', 'let', 'if', 'inductive', 'structure', 'class', 'instance', 'where', 'do', 'return']);
     if (LEAN_KEYWORDS.has(firstWord)) return false;
     // Common English words mistakenly extracted as variable names

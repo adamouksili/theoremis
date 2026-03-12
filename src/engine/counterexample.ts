@@ -51,7 +51,7 @@ const COMPOSITES = [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 
 const FACTORS = [2, 3, 5, 7];
 
 function getGenerator(domain: string): () => Value {
-    return GENERATORS[domain] || GENERATORS['Int'];
+    return GENERATORS[domain] ?? GENERATORS['Int']!;
 }
 
 // ── Run the counterexample engine ───────────────────────────
@@ -64,7 +64,7 @@ export async function runCounterexampleEngine(theorem: Theorem): Promise<Patholo
         .map(v => ({ name: v.name, generator: getGenerator(v.domain) }));
 
     for (let i = 0; i < mutations.length; i++) {
-        const result = await searchCounterexample(mutations[i], varSpecs, theorem);
+        const result = await searchCounterexample(mutations[i]!, varSpecs, theorem);
         results.push(result);
     }
 
@@ -153,7 +153,7 @@ function evaluateByRandomTesting(
 
     for (let i = 0; i < numTests; i++) {
         for (let j = 0; j < varNames.length; j++) {
-            env[varNames[j]] = generators[j]();
+            env[varNames[j]!] = generators[j]!();
         }
         if (mutateEnv) mutateEnv(env);
 
@@ -225,7 +225,7 @@ function makeDropHypothesisOverride(param?: Param): ((env: Record<string, Value>
         const argName = t.arg.tag === 'Var' ? t.arg.name : inferVarName(t.func.name);
         if (t.func.name === 'Prime') {
             return (env) => {
-                env[argName] = COMPOSITES[Math.floor(Math.random() * COMPOSITES.length)];
+                env[argName] = COMPOSITES[Math.floor(Math.random() * COMPOSITES.length)]!;
             };
         }
         if (t.func.name === 'Even') {
@@ -250,7 +250,7 @@ function makeDropHypothesisOverride(param?: Param): ((env: Record<string, Value>
         const arg1 = t.func.arg.tag === 'Var' ? t.func.arg.name : 'a';
         const arg2 = t.arg.tag === 'Var' ? t.arg.name : 'b';
         return (env) => {
-            const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
+            const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)]!;
             env[arg1] = factor * (Math.floor(Math.random() * 10) + 1);
             env[arg2] = factor * (Math.floor(Math.random() * 10) + 1);
         };

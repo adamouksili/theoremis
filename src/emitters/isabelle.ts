@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Term, Tactic, Declaration, IRModule, Param } from '../core/ir';
+import { assertNever } from '../core/assert';
 import type { EmitterResult } from './lean4';
 
 // ── Main emitter entry ──────────────────────────────────────
@@ -85,6 +86,7 @@ function emitDeclaration(decl: Declaration): { code: string; warns: string[] } {
                 warns,
             };
         }
+        default: return assertNever(decl);
     }
 }
 
@@ -93,7 +95,9 @@ function emitDeclaration(decl: Declaration): { code: string; warns: string[] } {
 function emitTerm(term: Term): string {
     switch (term.tag) {
         case 'Var': return mapVar(term.name);
-        case 'Literal': return term.value;
+        case 'Literal':
+            if (term.kind === 'Bool') return term.value === 'true' ? 'True' : 'False';
+            return term.value;
 
         case 'Lam':
             return `(\\<lambda>${term.param}. ${emitTerm(term.body)})`;
@@ -105,8 +109,7 @@ function emitTerm(term: Term): string {
             if (term.param === '_') {
                 return `${emitTerm(term.paramType)} \\<Rightarrow> ${emitTerm(term.body)}`;
             }
-            // Erase dependent product to universal quantifier
-            return `\\<forall>${term.param}. ${emitTerm(term.body)}`;
+            return `\\<forall>(${term.param} :: ${emitTerm(term.paramType)}). ${emitTerm(term.body)}`;
 
         case 'Sigma':
             // Erase dependent sum to existential
@@ -126,7 +129,7 @@ function emitTerm(term: Term): string {
 
         case 'Ind':
             return `datatype ${term.name} =\n` +
-                term.constructors.map((c, i) => `  ${i > 0 ? '| ' : '  '}${c.name}`).join('\n');
+                term.constructors.map((c, i) => `  ${i > 0 ? '| ' : '  '}${c.name} ${emitTerm(c.type)}`).join('\n');
 
         case 'Match':
             return `(case ${emitTerm(term.scrutinee)} of\n` +
@@ -155,10 +158,11 @@ function emitTerm(term: Term): string {
             return `(${emitTerm(term.left)} = ${emitTerm(term.right)})`;
 
         case 'ForAll':
-            return `\\<forall>${term.param} \\<in> ${emitTerm(term.domain)}. ${emitTerm(term.body)}`;
+            return `\\<forall>(${term.param} :: ${emitTerm(term.domain)}). ${emitTerm(term.body)}`;
 
         case 'Exists':
-            return `\\<exists>${term.param} \\<in> ${emitTerm(term.domain)}. ${emitTerm(term.body)}`;
+            return `\\<exists>(${term.param} :: ${emitTerm(term.domain)}). ${emitTerm(term.body)}`;
+        default: return assertNever(term);
     }
 }
 
@@ -181,11 +185,14 @@ function emitTactic(tactic: Tactic, indent: number): string {
         case 'Exact': return `${pad}by (rule ${emitTerm(tactic.term)})`;
         case 'Ring': return `${pad}by algebra`;
         case 'LLMSuggest': return `${pad}(* AI suggestion: ${tactic.context} *)\n${pad}sorry`;
+        default: return assertNever(tactic);
     }
 }
 
 function emitParam(param: Param): string {
-    return `(${param.name} :: ${emitTerm(param.type)})`;
+    const open = param.implicit ? '{' : '(';
+    const close = param.implicit ? '}' : ')';
+    return `${open}${param.name} :: ${emitTerm(param.type)}${close}`;
 }
 
 // ── Statement extraction with assumption splitting ──────────
@@ -273,7 +280,7 @@ function isIsabelleGarbageBody(body: string): boolean {
     if (!trimmed || trimmed === 'undefined') return true;
     if (/^[A-Z]$/.test(trimmed)) return true;
     // Don't catch legitimate Isabelle syntax
-    const firstWord = trimmed.split(/\s/)[0].toLowerCase();
+    const firstWord = trimmed.split(/\s/)[0]!.toLowerCase();
     const ISA_KEYWORDS = new Set(['datatype', 'case', 'let', 'if', 'fun', 'primrec', 'record', 'inductive']);
     if (ISA_KEYWORDS.has(firstWord)) return false;
     if (GARBAGE_WORDS.has(trimmed.toLowerCase())) return true;

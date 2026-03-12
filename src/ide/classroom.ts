@@ -142,13 +142,13 @@ export function bindClassroom(): void {
 
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        outputPanel.innerHTML = `<div class="cr-error">Error: ${data.error || 'Unknown error'}</div>`;
+        outputPanel.innerHTML = `<div class="cr-error">Error: ${escHtml(String(data.error || 'Unknown error'))}</div>`;
         return;
       }
 
       outputPanel.innerHTML = renderGradeReport(data);
     } catch (err) {
-      outputPanel.innerHTML = `<div class="cr-error">Network error: ${err instanceof Error ? err.message : String(err)}</div>`;
+      outputPanel.innerHTML = `<div class="cr-error">Network error: ${escHtml(err instanceof Error ? err.message : String(err))}</div>`;
     } finally {
       gradeBtn.removeAttribute('disabled');
     }
@@ -157,15 +157,19 @@ export function bindClassroom(): void {
 
 // ── Render grade report ─────────────────────────────────────
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderGradeReport(data: Record<string, unknown>): string {
-  const percentage = data.percentage as number;
-  const letter = data.letterGrade as string;
-  const total = data.totalPoints as number;
-  const max = data.maxPoints as number;
-  const breakdown = data.breakdown as Record<string, { earned: number; possible: number; detail: string }>;
-  const theorems = data.theorems as Array<Record<string, unknown>>;
-  const feedback = data.overallFeedback as string[];
-  const elapsed = data.elapsed as number;
+  const percentage = typeof data.percentage === 'number' ? data.percentage : 0;
+  const letter = typeof data.letterGrade === 'string' ? data.letterGrade : '?';
+  const total = typeof data.totalPoints === 'number' ? data.totalPoints : 0;
+  const max = typeof data.maxPoints === 'number' ? data.maxPoints : 0;
+  const breakdown = (data.breakdown as Record<string, { earned: number; possible: number; detail: string }> | undefined) ?? {};
+  const theorems = (data.theorems as Array<Record<string, unknown>> | undefined) ?? [];
+  const feedback = (data.overallFeedback as string[] | undefined) ?? [];
+  const elapsed = typeof data.elapsed === 'number' ? data.elapsed : 0;
 
   const gradeColor = percentage >= 90 ? '#4ade80' : percentage >= 80 ? '#facc15' : percentage >= 70 ? '#fb923c' : '#f87171';
 
@@ -173,7 +177,7 @@ function renderGradeReport(data: Record<string, unknown>): string {
     <div class="cr-report">
       <div class="cr-grade-header">
         <div class="cr-grade-circle" style="--grade-color: ${gradeColor}">
-          <span class="cr-grade-letter">${letter}</span>
+          <span class="cr-grade-letter">${escHtml(String(letter))}</span>
           <span class="cr-grade-pct">${percentage}%</span>
         </div>
         <div class="cr-grade-meta">
@@ -183,7 +187,7 @@ function renderGradeReport(data: Record<string, unknown>): string {
       </div>
 
       <div class="cr-feedback">
-        ${feedback.map((f: string) => `<p class="cr-feedback-item">${f}</p>`).join('')}
+        ${feedback.map((f: string) => `<p class="cr-feedback-item">${escHtml(f)}</p>`).join('')}
       </div>
 
       <div class="cr-breakdown">
@@ -196,7 +200,7 @@ function renderGradeReport(data: Record<string, unknown>): string {
                 <div class="cr-breakdown-fill" style="width: ${pct}%"></div>
               </div>
               <span class="cr-breakdown-score">${info.earned}/${info.possible}</span>
-              <span class="cr-breakdown-detail">${info.detail}</span>
+              <span class="cr-breakdown-detail">${escHtml(info.detail)}</span>
             </div>`;
   }).join('')}
       </div>`;
@@ -212,11 +216,11 @@ function renderGradeReport(data: Record<string, unknown>): string {
       return `<div class="cr-theorem-card">
               <div class="cr-theorem-header">
                 <span class="cr-theorem-icon ${iconClass}">${icon}</span>
-                <span class="cr-theorem-name">${thm.name}</span>
-                <span class="cr-theorem-tag">${thm.tag}</span>
+                <span class="cr-theorem-name">${escHtml(String(thm.name ?? ''))}</span>
+                <span class="cr-theorem-tag">${escHtml(String(thm.tag ?? ''))}</span>
                 <span class="cr-theorem-score">${thm.pointsEarned}/${thm.pointsPossible}</span>
               </div>
-              ${thmFeedback.map((f: string) => `<p class="cr-theorem-feedback">${f}</p>`).join('')}
+              ${(thmFeedback ?? []).map((f: string) => `<p class="cr-theorem-feedback">${escHtml(f)}</p>`).join('')}
             </div>`;
     }).join('')}
       </div>`;

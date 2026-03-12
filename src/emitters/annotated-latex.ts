@@ -58,13 +58,13 @@ export function exportAnnotatedLaTeX(
     const srcLines = originalSource.split('\n');
 
     for (let i = 0; i < srcLines.length; i++) {
-        let line = srcLines[i];
+        let line = srcLines[i]!;
 
         // Check if this line starts a theorem/definition environment
-        const envMatch = line.match(/\\begin\{(theorem|definition|lemma)\}(?:\[([^\]]*)\])?/);
+        const envMatch = line.match(/\\begin\{(theorem|thm|definition|defn|lemma|lem)\}(?:\[([^\]]*)\])?/);
 
         if (envMatch && opts.includeStatus) {
-            const envType = envMatch[1];
+            const envType = envMatch[1]!;
             const envName = envMatch[2] || '';
 
             // Find corresponding declaration
@@ -127,17 +127,33 @@ export function exportAnnotatedLaTeX(
 }
 
 function findDeclaration(ir: IRModule, name: string, kind: string): Declaration | undefined {
-    return ir.declarations.find(d => {
-        const nameMatch = d.name.toLowerCase().includes(name.toLowerCase()) ||
-            name.toLowerCase().includes(d.name.toLowerCase());
-        const kindMatch = d.tag.toLowerCase() === kind.toLowerCase();
-        return (name ? nameMatch : true) && kindMatch;
-    });
+    const kindAliases: Record<string, string> = { thm: 'theorem', defn: 'definition', lem: 'lemma' };
+    const normalizedKind = (kindAliases[kind.toLowerCase()] ?? kind).toLowerCase();
+
+    const kindMatches = ir.declarations.filter(d => d.tag.toLowerCase() === normalizedKind);
+
+    if (!name) return kindMatches[0];
+
+    const exact = kindMatches.find(d => d.name.toLowerCase() === name.toLowerCase());
+    if (exact) return exact;
+
+    return kindMatches.find(d =>
+        d.name.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(d.name.toLowerCase())
+    );
 }
 
 function getStatus(decl: Declaration, tc: TypeCheckResult): 'verified' | 'partial' | 'unverified' {
     const diags = tc.diagnostics.filter(d => d.location === decl.name);
     if (diags.some(d => d.severity === 'error')) return 'unverified';
     if (diags.some(d => d.severity === 'warning')) return 'partial';
+    if ((decl.tag === 'Theorem' || decl.tag === 'Lemma') && decl.proof.some(t => containsTacticTag(t, 'Sorry'))) return 'partial';
     return 'verified';
+}
+
+function containsTacticTag(t: import('../core/ir').Tactic, tag: string): boolean {
+    if (t.tag === tag) return true;
+    if (t.tag === 'Seq') return t.tactics.some(s => containsTacticTag(s, tag));
+    if (t.tag === 'Alt') return t.tactics.every(s => containsTacticTag(s, tag));
+    return false;
 }

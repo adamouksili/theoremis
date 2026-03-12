@@ -33,6 +33,10 @@ export default async function handler(req, res) {
 
     try {
         const body = req.body || {};
+        const bodyStr = JSON.stringify(body);
+        if (bodyStr.length > 200_000) {
+            return sendError(res, 413, 'Request body too large. Maximum 200KB.');
+        }
         const request = normalizeVerificationRequest(body);
         const job = enqueueVerificationJob(request);
 

@@ -84,8 +84,10 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
                 }),
             });
             if (!resp.ok) {
-                const err = await resp.json();
-                throw new Error(err.error?.message || 'Anthropic API error');
+                const text = await resp.text();
+                let message = `Anthropic API error (HTTP ${resp.status})`;
+                try { message = JSON.parse(text).error?.message || message; } catch { /* non-JSON body */ }
+                throw new Error(message);
             }
             const data = await resp.json();
             suggestion = data.content?.[0]?.text?.trim() || '';
@@ -111,8 +113,10 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
                 }),
             });
             if (!resp.ok) {
-                const err = await resp.json();
-                throw new Error(err.error?.message || 'LLM API error');
+                const text = await resp.text();
+                let message = `LLM API error (HTTP ${resp.status})`;
+                try { message = JSON.parse(text).error?.message || message; } catch { /* non-JSON body */ }
+                throw new Error(message);
             }
             const data = await resp.json();
             suggestion = data.choices[0]?.message?.content?.trim() || '';

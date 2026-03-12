@@ -15,12 +15,14 @@ export function initApp() {
 export function loadSharedProof(base64: string): void {
     if (!controller) return;
     try {
-        const decoded = decodeURIComponent(escape(atob(base64)));
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const decoded = new TextDecoder().decode(bytes);
         const ed = $<HTMLTextAreaElement>('editor');
         ed.value = decoded;
         S.source = decoded;
         void controller.run();
     } catch {
-        // Invalid base64 payload.
+        const ed = $<HTMLTextAreaElement>('editor');
+        if (ed) ed.value = '% Failed to load shared proof (invalid link)';
     }
 }

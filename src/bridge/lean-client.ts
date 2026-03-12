@@ -33,6 +33,7 @@ function getBridgeUrl(): string {
 
 /** Set a custom bridge URL (persisted in localStorage) */
 export function setBridgeUrl(url: string): void {
+    if (typeof localStorage === 'undefined') return;
     localStorage.setItem('theoremis-bridge-url', sanitizeBridgeUrl(url));
 }
 
@@ -89,7 +90,18 @@ export async function verifyLeanCode(code: string): Promise<LeanVerifyResult> {
         };
     }
 
-    return await res.json() as LeanVerifyResult;
+    const data: unknown = await res.json();
+    return validateLeanResult(data);
+}
+
+function validateLeanResult(data: unknown): LeanVerifyResult {
+    const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+    return {
+        success: typeof obj.success === 'boolean' ? obj.success : false,
+        errors: Array.isArray(obj.errors) ? obj.errors as LeanDiagnostic[] : [],
+        warnings: Array.isArray(obj.warnings) ? obj.warnings as LeanDiagnostic[] : [],
+        elapsed: typeof obj.elapsed === 'number' ? obj.elapsed : 0,
+    };
 }
 
 export function formatLeanDiagnostics(result: LeanVerifyResult): string {

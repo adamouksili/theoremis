@@ -12,6 +12,9 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
+        "isolatedModules": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUncheckedIndexedAccess": true,
         "skipLibCheck": true,
         "outDir": "./dist",
         "rootDir": "."

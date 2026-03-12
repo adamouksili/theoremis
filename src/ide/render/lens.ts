@@ -81,10 +81,10 @@ function getBackendSnippet(decl: Declaration, backend: string): string {
   let start = -1;
   let end = lines.length;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(name) && (lines[i].match(/\b(theorem|lemma|def|Definition|Theorem|Lemma|definition)\b/) || start === -1)) {
+    if (lines[i]!.includes(name) && (lines[i]!.match(/\b(theorem|lemma|def|Definition|Theorem|Lemma|definition)\b/) || start === -1)) {
       start = i;
     }
-    if (start >= 0 && i > start && (lines[i].match(/^(theorem|lemma|def|Definition|Theorem|Lemma|definition)\b/) || (backend === 'isabelle' && lines[i].trim() === '') && i > start + 2)) {
+    if (start >= 0 && i > start && (lines[i]!.match(/^(theorem|lemma|def|Definition|Theorem|Lemma|definition)\b/) || (backend === 'isabelle' && lines[i]!.trim() === '') && i > start + 2)) {
       end = i;
       break;
     }

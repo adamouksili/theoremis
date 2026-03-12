@@ -36,7 +36,7 @@ export async function resolveMultiFile(
     mainSource: string,
     provider: FileProvider,
     depth = 0,
-    visited = new Set<string>()
+    ancestors = new Set<string>()
 ): Promise<ResolvedDocument> {
     const files = new Map<string, string>();
     const errors: string[] = [];
@@ -49,36 +49,41 @@ export async function resolveMultiFile(
     const matches = [...mainSource.matchAll(INPUT_REGEX)];
 
     for (const match of matches) {
-        let path = match[1].trim();
-        // Add .tex extension if missing
+        let path = match[1]!.trim();
         if (!path.endsWith('.tex')) path += '.tex';
 
-        if (visited.has(path)) {
+        if (ancestors.has(path)) {
             errors.push(`Circular include: ${path}`);
-            resolved = resolved.replace(match[0], `% [ERROR: Circular include: ${path}]`);
+            resolved = replaceFirst(resolved, match[0], `% [ERROR: Circular include: ${path}]`);
             continue;
         }
 
-        visited.add(path);
         const content = await provider.readFile(path);
 
         if (content === null) {
             errors.push(`File not found: ${path}`);
-            resolved = resolved.replace(match[0], `% [ERROR: File not found: ${path}]`);
+            resolved = replaceFirst(resolved, match[0], `% [ERROR: File not found: ${path}]`);
             continue;
         }
 
         files.set(path, content);
 
-        // Recursively resolve nested includes
-        const nested = await resolveMultiFile(content, provider, depth + 1, visited);
+        const branchAncestors = new Set(ancestors);
+        branchAncestors.add(path);
+        const nested = await resolveMultiFile(content, provider, depth + 1, branchAncestors);
         for (const [k, v] of nested.files) files.set(k, v);
         errors.push(...nested.errors);
 
-        resolved = resolved.replace(match[0], nested.source);
+        resolved = replaceFirst(resolved, match[0], nested.source);
     }
 
     return { source: resolved, files, errors };
+}
+
+function replaceFirst(source: string, search: string, replacement: string): string {
+    const idx = source.indexOf(search);
+    if (idx === -1) return source;
+    return source.slice(0, idx) + replacement + source.slice(idx + search.length);
 }
 
 // ── Split document into sections ────────────────────────────
@@ -107,7 +112,7 @@ export function splitIntoSections(source: string): DocumentSection[] {
     let currentStart = 0;
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+        const line = lines[i]!;
         let matched = false;
 
         for (const [cmd, level] of Object.entries(sectionCommands)) {
@@ -124,7 +129,7 @@ export function splitIntoSections(source: string): DocumentSection[] {
 
                 // Extract title
                 const titleMatch = line.match(/\{([^}]*)\}/);
-                currentTitle = titleMatch ? titleMatch[1] : 'Untitled';
+                currentTitle = titleMatch?.[1] ?? 'Untitled';
                 currentLevel = level;
                 currentContent = [];
                 currentStart = i;

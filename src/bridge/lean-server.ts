@@ -87,10 +87,10 @@ function parseLeanOutput(stderr: string): LeanError[] {
     let match;
     while ((match = regex.exec(stderr)) !== null) {
         errors.push({
-            line: parseInt(match[1], 10),
-            column: parseInt(match[2], 10),
-            message: match[4].trim(),
-            severity: match[3] as 'error' | 'warning' | 'information',
+            line: parseInt(match[1]!, 10),
+            column: parseInt(match[2]!, 10),
+            message: match[4]!.trim(),
+            severity: match[3]! as 'error' | 'warning' | 'information',
         });
     }
     return errors;
@@ -188,7 +188,7 @@ function cors(res: ServerResponse, req: IncomingMessage) {
     if (allowed.includes('*') || allowed.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
     } else {
-        res.setHeader('Access-Control-Allow-Origin', allowed[0]);
+        res.setHeader('Access-Control-Allow-Origin', allowed[0]!);
     }
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, ngrok-skip-browser-warning');

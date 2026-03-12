@@ -29,7 +29,7 @@ function tokenize(input: string): Token[] {
     let i = 0;
 
     while (i < input.length) {
-        const ch = input[i];
+        const ch = input[i]!;
 
         // Skip whitespace (but don't skip newlines relevant to alignment)
         if (/\s/.test(ch)) {
@@ -40,11 +40,11 @@ function tokenize(input: string): Token[] {
         // Numbers
         if (/\d/.test(ch)) {
             let num = '';
-            while (i < input.length && /\d/.test(input[i])) { num += input[i]; i++; }
+            while (i < input.length && /\d/.test(input[i]!)) { num += input[i]!; i++; }
             // Check for decimal
-            if (i < input.length && input[i] === '.' && i + 1 < input.length && /\d/.test(input[i + 1])) {
+            if (i < input.length && input[i] === '.' && i + 1 < input.length && /\d/.test(input[i + 1]!)) {
                 num += '.'; i++;
-                while (i < input.length && /\d/.test(input[i])) { num += input[i]; i++; }
+                while (i < input.length && /\d/.test(input[i]!)) { num += input[i]!; i++; }
             }
             tokens.push({ type: 'NUMBER', value: num, pos: i - num.length });
             continue;
@@ -54,11 +54,11 @@ function tokenize(input: string): Token[] {
         if (ch === '\\') {
             let cmd = '\\';
             i++;
-            if (i < input.length && /[a-zA-Z]/.test(input[i])) {
-                while (i < input.length && /[a-zA-Z]/.test(input[i])) { cmd += input[i]; i++; }
+            if (i < input.length && /[a-zA-Z]/.test(input[i]!)) {
+                while (i < input.length && /[a-zA-Z]/.test(input[i]!)) { cmd += input[i]!; i++; }
             } else if (i < input.length) {
                 // Single-char command like \{ \}
-                cmd += input[i]; i++;
+                cmd += input[i]!; i++;
             }
             tokens.push({ type: 'COMMAND', value: cmd, pos: i - cmd.length });
             continue;
@@ -68,7 +68,7 @@ function tokenize(input: string): Token[] {
         // Note: _ is NOT part of identifiers in LaTeX — it's the subscript operator
         if (/[a-zA-Zα-ωΑ-Ωℕℤℝℂ]/.test(ch)) {
             let ident = '';
-            while (i < input.length && /[a-zA-Zα-ωΑ-Ωℕℤℝℂ0-9']/.test(input[i])) { ident += input[i]; i++; }
+            while (i < input.length && /[a-zA-Zα-ωΑ-Ωℕℤℝℂ0-9']/.test(input[i]!)) { ident += input[i]!; i++; }
             tokens.push({ type: 'IDENT', value: ident, pos: i - ident.length });
             continue;
         }
@@ -82,8 +82,9 @@ function tokenize(input: string): Token[] {
             '&': 'AMPERSAND',
         };
 
-        if (singleChars[ch]) {
-            tokens.push({ type: singleChars[ch], value: ch, pos: i });
+        const tokenType = singleChars[ch];
+        if (tokenType) {
+            tokens.push({ type: tokenType, value: ch, pos: i });
             i++;
             continue;
         }
@@ -122,7 +123,7 @@ class ExprParser {
     }
 
     private advance(): Token {
-        const tok = this.tokens[this.pos];
+        const tok = this.tokens[this.pos]!;
         this.pos++;
         return tok;
     }
@@ -374,16 +375,15 @@ class ExprParser {
 
     // Exponentiation (right-associative)
     private parsePower(): Term {
-        let base = this.parseApp();
+        const base = this.parseApp();
 
         if (this.match('CARET')) {
             let exp: Term;
             if (this.match('LBRACE')) {
-                exp = this.parse(); // Full expression inside braces
+                exp = this.parse();
                 this.expect('RBRACE');
             } else {
-                // Single token exponent
-                exp = this.parseAtom();
+                exp = this.parsePower();
             }
             return mk.binOp('^', base, exp);
         }
@@ -806,7 +806,7 @@ export function parseLatex(source: string): MathDocument {
 
     let i = 0;
     while (i < lines.length) {
-        const line = lines[i];
+        const line = lines[i]!;
 
         // Theorem environments
         const thmMatch = line.match(/\\begin\{(theorem|thm)\}(?:\[([^\]]*)\])?/);
@@ -838,12 +838,12 @@ export function parseLatex(source: string): MathDocument {
         // Math display environments (align, equation, gather, cases)
         const mathEnvMatch = line.match(/\\begin\{(align\*?|equation\*?|gather\*?|cases|pmatrix|bmatrix)\}/);
         if (mathEnvMatch) {
-            const envName = mathEnvMatch[1];
+            const envName = mathEnvMatch[1]!;
             const endRegex = new RegExp(`\\\\end\\{${envName.replace('*', '\\*')}\\}`);
             let endLine = i + 1;
             const contentLines: string[] = [];
-            while (endLine < lines.length && !endRegex.test(lines[endLine])) {
-                contentLines.push(lines[endLine]);
+            while (endLine < lines.length && !endRegex.test(lines[endLine]!)) {
+                contentLines.push(lines[endLine]!);
                 endLine++;
             }
             // Math environments are absorbed into surrounding theorem/definition context
@@ -890,7 +890,7 @@ export function parseLatex(source: string): MathDocument {
 // ── Convert MathDocument → IRModule ─────────────────────────
 
 export function documentToIR(doc: MathDocument, axiomBundle?: AxiomBundle): IRModule {
-    const bundle = axiomBundle ?? BUNDLES.ClassicalMath;
+    const bundle = axiomBundle ?? BUNDLES.ClassicalMath!;
     const declarations: Declaration[] = [];
 
     for (const node of doc.nodes) {
@@ -959,8 +959,8 @@ function parseTheoremEnv(
     let endLine = start + 1;
     const contentLines: string[] = [];
 
-    while (endLine < lines.length && !endTag.test(lines[endLine])) {
-        contentLines.push(lines[endLine]);
+    while (endLine < lines.length && !endTag.test(lines[endLine]!)) {
+        contentLines.push(lines[endLine]!);
         endLine++;
     }
 
@@ -989,8 +989,8 @@ function parseDefinitionEnv(
     let endLine = start + 1;
     const contentLines: string[] = [];
 
-    while (endLine < lines.length && !/\\end\{(definition|defn)\}/.test(lines[endLine])) {
-        contentLines.push(lines[endLine]);
+    while (endLine < lines.length && !/\\end\{(definition|defn)\}/.test(lines[endLine]!)) {
+        contentLines.push(lines[endLine]!);
         endLine++;
     }
 
@@ -1016,8 +1016,8 @@ function parseProofEnv(
     let endLine = start + 1;
     const contentLines: string[] = [];
 
-    while (endLine < lines.length && !/\\end\{proof\}/.test(lines[endLine])) {
-        contentLines.push(lines[endLine]);
+    while (endLine < lines.length && !/\\end\{proof\}/.test(lines[endLine]!)) {
+        contentLines.push(lines[endLine]!);
         endLine++;
     }
 
@@ -1046,8 +1046,8 @@ export function parseStatement(raw: string): { hypotheses: HypothesisDecl[]; con
     // Handles multi-variable: "Let $a, b$ be ...", "Let $p$ be a prime"
     const letMatches = raw.matchAll(/(?:Let|Suppose|Assume)\s+\$([^$]+)\$\s+(?:be\s+)?(?:a\s+)?([^.]+)/gi);
     for (const match of letMatches) {
-        const varPart = match[1];
-        const descPart = match[2].trim();
+        const varPart = match[1]!;
+        const descPart = match[2]!.trim();
         // Split on commas to handle "Let $a, b$ be ..."
         const vars = varPart.split(/\s*,\s*/).map(v => v.trim()).filter(Boolean);
         for (const v of vars) {
@@ -1064,8 +1064,8 @@ export function parseStatement(raw: string): { hypotheses: HypothesisDecl[]; con
         || raw.match(/coprime\s+(?:to\s+)?\$?(\w+)\$?/i);
     if (coprimeMatch) {
         // If we matched both variables (first pattern), use them; otherwise infer from Let patterns
-        const var1 = coprimeMatch[2] ? coprimeMatch[1] : findLastLetVar(hypotheses) || 'a';
-        const var2 = coprimeMatch[2] || coprimeMatch[1];
+        const var1 = coprimeMatch[2] ? coprimeMatch[1]! : findLastLetVar(hypotheses) || 'a';
+        const var2 = coprimeMatch[2] || coprimeMatch[1]!;
         hypotheses.push({
             name: 'h_coprime',
             condition: mk.app(mk.app(mk.var('Coprime'), mk.var(var1)), mk.var(var2)),
@@ -1079,15 +1079,15 @@ export function parseStatement(raw: string): { hypotheses: HypothesisDecl[]; con
     if (primeMatch) {
         hypotheses.push({
             name: 'h_prime',
-            condition: mk.app(mk.var('Prime'), mk.var(primeMatch[1])),
-            description: `${primeMatch[1]} is prime`,
+            condition: mk.app(mk.var('Prime'), mk.var(primeMatch[1]!)),
+            description: `${primeMatch[1]!} is prime`,
         });
     }
 
     // Extract the main math content for conclusion
     const mathBlocks = [...raw.matchAll(/\$\$([^$]+)\$\$/g), ...raw.matchAll(/\$([^$]+)\$/g)];
     const lastMath = mathBlocks[mathBlocks.length - 1];
-    const conclusion = lastMath ? parseExpr(lastMath[1]) : parseExpr(raw);
+    const conclusion = lastMath ? parseExpr(lastMath[1]!) : parseExpr(raw);
 
     return { hypotheses, conclusion };
 }
@@ -1173,9 +1173,9 @@ function detectStrategy(proofText: string): string {
 
 function extractTitle(source: string): string {
     const titleMatch = source.match(/\\title\{([^}]+)\}/);
-    if (titleMatch) return titleMatch[1];
+    if (titleMatch) return titleMatch[1]!;
     const sectionMatch = source.match(/\\section\{([^}]+)\}/);
-    if (sectionMatch) return sectionMatch[1];
+    if (sectionMatch) return sectionMatch[1]!;
     return 'Untitled Document';
 }
 
@@ -1188,7 +1188,7 @@ function extractReferences(raw: string): string[] {
     const refs: string[] = [];
     const refMatches = raw.matchAll(/\\ref\{([^}]+)\}/g);
     for (const match of refMatches) {
-        refs.push(match[1]);
+        refs.push(match[1]!);
     }
     return refs;
 }
@@ -1211,7 +1211,7 @@ function hypothesesToParams(hyps: HypothesisDecl[]): Param[] {
 
 function findLastLetVar(hypotheses: HypothesisDecl[]): string | null {
     for (let i = hypotheses.length - 1; i >= 0; i--) {
-        const cond = hypotheses[i].condition;
+        const cond = hypotheses[i]!.condition;
         if (cond.tag === 'Var') return cond.name;
         // Look for the variable name inside parsed expressions
         if (cond.tag === 'App' && cond.arg.tag === 'Var') return cond.arg.name;

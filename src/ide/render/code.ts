@@ -119,7 +119,7 @@ function tokenHighlight(text: string, rules: HighlightRule[]): string {
     let cls = '';
     for (let i = 0; i < rules.length; i++) {
       if (match.groups?.[`g${i}`] !== undefined) {
-        cls = rules[i].cls;
+        cls = rules[i]!.cls;
         break;
       }
     }

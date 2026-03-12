@@ -96,8 +96,8 @@ export interface StrictDiagnosticsMeta extends StrictDiagnostics {
 // ── Resolve axiom bundle from string ────────────────────────
 
 function resolveBundle(name?: string): AxiomBundle {
-    if (!name) return BUNDLES.ClassicalMath;
-    return BUNDLES[name] ?? BUNDLES.ClassicalMath;
+    if (!name) return BUNDLES.ClassicalMath!;
+    return BUNDLES[name] ?? BUNDLES.ClassicalMath!;
 }
 
 // ── Shared pipeline context ─────────────────────────────────
@@ -229,7 +229,7 @@ function analyzeFromContext(
                 implicit: p.implicit,
             })),
             quickCheck: qcResult,
-            proofStrategy: decl.proof.length > 0 ? decl.proof[0].tag : null,
+            proofStrategy: decl.proof.length > 0 ? decl.proof[0]!.tag : null,
             axioms: decl.tag === 'Theorem' ? Array.from(decl.axiomBundle.axioms) : [],
         });
     }

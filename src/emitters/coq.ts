@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Term, Tactic, Declaration, IRModule, Param } from '../core/ir';
+import { assertNever } from '../core/assert';
 import type { EmitterResult } from './lean4';
 
 // ── Main emitter entry ──────────────────────────────────────
@@ -75,6 +76,7 @@ function emitDeclaration(decl: Declaration): string {
             const closing = hasAdmit ? 'Admitted.' : 'Qed.';
             return `Lemma ${decl.name} : ${params.length > 0 ? `forall ${params},\n    ` : ''}${stmt}.\nProof.\n${proof}\n${closing}`;
         }
+        default: return assertNever(decl);
     }
 }
 
@@ -112,7 +114,8 @@ function emitTerm(term: Term): string {
             return `let ${term.name} : ${emitTerm(term.type)} := ${emitTerm(term.value)} in\n  ${emitTerm(term.body)}`;
 
         case 'Sort':
-            return term.universe.tag === 'Prop' ? 'Prop' : `Type`;
+            if (term.universe.tag === 'Prop') return 'Prop';
+            return term.universe.level === 0 ? 'Type' : `Type (* universe ${term.universe.level} *)`;
 
         case 'Ind': {
             const ctors = term.constructors.map(c => `  | ${c.name} : ${emitTerm(c.type)}`).join('\n');
@@ -151,6 +154,7 @@ function emitTerm(term: Term): string {
 
         case 'Exists':
             return `exists (${term.param} : ${emitTerm(term.domain)}), ${emitTerm(term.body)}`;
+        default: return assertNever(term);
     }
 }
 
@@ -173,11 +177,14 @@ function emitTactic(tactic: Tactic, indent: number): string {
         case 'Exact': return `${pad}exact ${emitTerm(tactic.term)}.`;
         case 'Ring': return `${pad}ring.`;
         case 'LLMSuggest': return `${pad}(* AI suggestion: ${tactic.context} *)\n${pad}admit.`;
+        default: return assertNever(tactic);
     }
 }
 
 function emitParam(param: Param): string {
-    return `(${param.name} : ${emitTerm(param.type)})`;
+    const open = param.implicit ? '{' : '(';
+    const close = param.implicit ? '}' : ')';
+    return `${open}${param.name} : ${emitTerm(param.type)}${close}`;
 }
 
 // ── Coq mappings ────────────────────────────────────────────
@@ -225,10 +232,14 @@ const GARBAGE_WORDS = new Set([
     'thus', 'hence', 'therefore', 'prove', 'show', 'assume', 'suppose',
 ]);
 
+const COQ_KEYWORDS = new Set(['match', 'fun', 'let', 'if', 'fix', 'cofix', 'forall', 'exists', 'return', 'in']);
+
 function isCoqGarbageBody(body: string): boolean {
     const trimmed = body.trim();
     if (!trimmed || trimmed === 'admit') return true;
     if (/^[A-Z]$/.test(trimmed)) return true;
+    const firstWord = trimmed.split(/\s/)[0]!.toLowerCase();
+    if (COQ_KEYWORDS.has(firstWord)) return false;
     if (GARBAGE_WORDS.has(trimmed.toLowerCase())) return true;
     if (/^[A-Za-z]+\s+[A-Za-z]+/.test(trimmed) && !trimmed.includes(':') && !trimmed.includes('=>')) return true;
     return false;

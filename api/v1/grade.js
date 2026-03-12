@@ -57,7 +57,7 @@ export default async function handler(req, res) {
             ...result,
         });
     } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return sendError(res, 500, message);
+        console.error('[grade] Internal error:', err);
+        return sendError(res, 500, 'Internal server error.');
     }
 }

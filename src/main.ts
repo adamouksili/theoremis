@@ -56,6 +56,7 @@ async function navigateToIDE(): Promise<void> {
     if (currentView === 'ide') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
@@ -63,9 +64,13 @@ async function navigateToIDE(): Promise<void> {
     if (!isSubdomain()) window.location.hash = 'ide';
     document.body.classList.add('dark');
 
-    const ide = await import('./ide/app');
-    if (token !== routeToken) return;
-    ide.initApp();
+    try {
+        const ide = await import('./ide/app');
+        if (token !== routeToken) return;
+        ide.initApp();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 /** Show API documentation */
@@ -73,23 +78,28 @@ async function showApiDocs(): Promise<void> {
     if (currentView === 'api') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
     currentView = 'api';
     if (!isSubdomain()) window.location.hash = 'api';
 
-    await import('./styles/api-docs.css');
-    if (token !== routeToken) return;
+    try {
+        await import('./styles/api-docs.css');
+        if (token !== routeToken) return;
 
-    const apiDocs = await import('./ide/api-docs');
-    if (token !== routeToken) return;
+        const apiDocs = await import('./ide/api-docs');
+        if (token !== routeToken) return;
 
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = apiDocs.apiDocsShell();
-    bindHamburger();
+        document.body.classList.add('dark');
+        const app = document.getElementById('app');
+        if (!app) return;
+        app.innerHTML = apiDocs.apiDocsShell();
+        bindHamburger();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 /** Show Classroom / Grader */
@@ -97,24 +107,29 @@ async function showClassroom(): Promise<void> {
     if (currentView === 'classroom') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
     currentView = 'classroom';
     if (!isSubdomain()) window.location.hash = 'classroom';
 
-    await import('./styles/classroom.css');
-    if (token !== routeToken) return;
+    try {
+        await import('./styles/classroom.css');
+        if (token !== routeToken) return;
 
-    const classroom = await import('./ide/classroom');
-    if (token !== routeToken) return;
+        const classroom = await import('./ide/classroom');
+        if (token !== routeToken) return;
 
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = classroom.classroomShell();
-    classroom.bindClassroom();
-    bindHamburger();
+        document.body.classList.add('dark');
+        const app = document.getElementById('app');
+        if (!app) return;
+        app.innerHTML = classroom.classroomShell();
+        classroom.bindClassroom();
+        bindHamburger();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 /** Show Playground (minimal hypothesis linter) */
@@ -122,24 +137,29 @@ async function showPlayground(): Promise<void> {
     if (currentView === 'playground') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
     currentView = 'playground';
     if (!isSubdomain()) window.location.hash = 'playground';
 
-    await import('./styles/playground.css');
-    if (token !== routeToken) return;
+    try {
+        await import('./styles/playground.css');
+        if (token !== routeToken) return;
 
-    const playground = await import('./ide/playground');
-    if (token !== routeToken) return;
+        const playground = await import('./ide/playground');
+        if (token !== routeToken) return;
 
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = playground.playgroundShell();
-    playground.bindPlayground();
-    bindHamburger();
+        document.body.classList.add('dark');
+        const app = document.getElementById('app');
+        if (!app) return;
+        app.innerHTML = playground.playgroundShell();
+        playground.bindPlayground();
+        bindHamburger();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 
@@ -149,23 +169,28 @@ async function showChangelog(): Promise<void> {
     if (currentView === 'changelog') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
     currentView = 'changelog';
     if (!isSubdomain()) window.location.hash = 'changelog';
 
-    await import('./styles/changelog.css');
-    if (token !== routeToken) return;
+    try {
+        await import('./styles/changelog.css');
+        if (token !== routeToken) return;
 
-    const changelog = await import('./ide/changelog');
-    if (token !== routeToken) return;
+        const changelog = await import('./ide/changelog');
+        if (token !== routeToken) return;
 
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = changelog.changelogShell();
-    bindHamburger();
+        document.body.classList.add('dark');
+        const app = document.getElementById('app');
+        if (!app) return;
+        app.innerHTML = changelog.changelogShell();
+        bindHamburger();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 /** Show NN Verify page */
@@ -173,24 +198,29 @@ async function showNNVerify(): Promise<void> {
     if (currentView === 'nn-verify') return;
 
     const token = ++routeToken;
+    const previousView = currentView;
     await stopLandingTyping();
     if (token !== routeToken) return;
 
     currentView = 'nn-verify';
     if (!isSubdomain()) window.location.hash = 'nn-verify';
 
-    await import('./styles/nn-verify.css');
-    if (token !== routeToken) return;
+    try {
+        await import('./styles/nn-verify.css');
+        if (token !== routeToken) return;
 
-    const nnVerify = await import('./ide/nn-verify');
-    if (token !== routeToken) return;
+        const nnVerify = await import('./ide/nn-verify');
+        if (token !== routeToken) return;
 
-    document.body.classList.add('dark');
-    const app = document.getElementById('app');
-    if (!app) return;
-    app.innerHTML = nnVerify.nnVerifyShell();
-    nnVerify.bindNNVerify();
-    bindHamburger();
+        document.body.classList.add('dark');
+        const app = document.getElementById('app');
+        if (!app) return;
+        app.innerHTML = nnVerify.nnVerifyShell();
+        nnVerify.bindNNVerify();
+        bindHamburger();
+    } catch {
+        currentView = previousView;
+    }
 }
 
 /** Navigate to IDE with shared proof content */

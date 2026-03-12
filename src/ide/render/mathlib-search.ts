@@ -49,9 +49,9 @@ export function renderMathlibSearch(): void {
     const searchBtn = document.getElementById('mathlib-search-btn');
 
     if (searchBtn && queryInput) {
-        searchBtn.addEventListener('click', () => doSearch(queryInput.value));
+        searchBtn.addEventListener('click', () => void doSearch(queryInput.value));
         queryInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') doSearch(queryInput.value);
+            if (e.key === 'Enter') void doSearch(queryInput.value);
         });
     }
 

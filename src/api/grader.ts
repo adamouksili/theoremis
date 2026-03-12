@@ -98,7 +98,7 @@ export function gradeSubmission(
     const pts = { ...DEFAULT_POINTS, ...rubric.points };
     const maxPoints = rubric.maxPoints ?? Object.values(pts).reduce((a, b) => a + b, 0);
     const bundleName = rubric.axiomBundle ?? 'ClassicalMath';
-    const bundle: AxiomBundle = BUNDLES[bundleName] ?? BUNDLES.ClassicalMath;
+    const bundle: AxiomBundle = BUNDLES[bundleName] ?? BUNDLES.ClassicalMath!;
     const numTests = rubric.numTests ?? 500;
     const typeCheckMode: TypeCheckMode = rubric.typeCheckMode ?? 'permissive';
 
