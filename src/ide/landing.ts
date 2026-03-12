@@ -53,6 +53,8 @@ const CODE_PHASES: CodePhase[] = [
 export function landingShell(): string {
     return `
 <div class="landing">
+  <div class="scroll-progress" id="scroll-progress"></div>
+  <canvas class="particle-canvas" id="particle-canvas"></canvas>
 
   <nav class="landing-nav">
     <div class="landing-nav-brand">
@@ -71,8 +73,12 @@ export function landingShell(): string {
   </nav>
 
   <section class="landing-hero">
-    <div class="landing-hero-content">
-      <h1 class="landing-hero-title">
+    <div class="hero-aurora hero-aurora-1"></div>
+    <div class="hero-aurora hero-aurora-2"></div>
+    <div class="hero-aurora hero-aurora-3"></div>
+
+    <div class="landing-hero-content" data-parallax="0.15">
+      <h1 class="landing-hero-title" id="hero-title">
         Write math.<br/>Get proofs working in <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
@@ -81,51 +87,53 @@ export function landingShell(): string {
         live Lean bridge — all from your browser.
       </p>
       <div class="landing-hero-actions">
-        <a class="landing-btn-primary" href="#ide">
-          Start Free →
+        <a class="landing-btn-primary" href="#ide" data-magnetic>
+          Open IDE →
         </a>
-
       </div>
     </div>
 
-    <div class="landing-code-showcase">
-      <div class="landing-code-card">
-        <div class="landing-code-header">
-          <div class="landing-code-dots">
-            <div class="landing-code-dot"></div>
-            <div class="landing-code-dot"></div>
-            <div class="landing-code-dot"></div>
+    <div class="landing-code-showcase" data-parallax="-0.1">
+      <div class="landing-code-border">
+        <div class="landing-code-card" id="code-card" data-tilt>
+          <div class="landing-code-header">
+            <div class="landing-code-dots">
+              <div class="landing-code-dot"></div>
+              <div class="landing-code-dot"></div>
+              <div class="landing-code-dot"></div>
+            </div>
+            <span class="landing-code-filename" id="code-filename">fermat.tex</span>
           </div>
-          <span class="landing-code-filename" id="code-filename">fermat.tex</span>
-        </div>
-        <div class="landing-code-body" id="code-body-landing"></div>
-        <div class="landing-code-phase">
-          <span class="phase-dot"></span>
-          <span id="code-phase-label">LaTeX Input</span>
+          <div class="landing-code-body" id="code-body-landing"></div>
+          <div class="landing-code-phase">
+            <span class="phase-dot"></span>
+            <span id="code-phase-label">LaTeX Input</span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <section class="landing-pipeline" data-reveal>
+    <div class="section-divider"></div>
     <div class="landing-pipeline-title">How It Works</div>
     <div class="landing-pipeline-steps">
       <div class="landing-pipeline-step" data-reveal data-reveal-delay="0">
         <div class="landing-pipeline-step-label">Write</div>
         <div class="landing-pipeline-step-desc">LaTeX or Lean 4</div>
       </div>
-      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="75">→</div>
-      <div class="landing-pipeline-step" data-reveal data-reveal-delay="150">
+      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="150">→</div>
+      <div class="landing-pipeline-step" data-reveal data-reveal-delay="200">
         <div class="landing-pipeline-step-label">Analyze</div>
         <div class="landing-pipeline-step-desc">λΠω type theory IR</div>
       </div>
-      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="225">→</div>
-      <div class="landing-pipeline-step" data-reveal data-reveal-delay="300">
+      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="350">→</div>
+      <div class="landing-pipeline-step" data-reveal data-reveal-delay="400">
         <div class="landing-pipeline-step-label">Suggest</div>
         <div class="landing-pipeline-step-desc">AI tactic hints</div>
       </div>
-      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="375">→</div>
-      <div class="landing-pipeline-step" data-reveal data-reveal-delay="450">
+      <div class="landing-pipeline-arrow" data-reveal data-reveal-delay="550">→</div>
+      <div class="landing-pipeline-step" data-reveal data-reveal-delay="600">
         <div class="landing-pipeline-step-label">Verify</div>
         <div class="landing-pipeline-step-desc">Lean 4 bridge</div>
       </div>
@@ -133,6 +141,7 @@ export function landingShell(): string {
   </section>
 
   <section class="landing-features" id="features">
+    <div class="section-divider"></div>
     <div class="landing-features-title" data-reveal>Why Theoremis</div>
 
     <div class="landing-feature" data-reveal data-reveal-delay="0">
@@ -145,7 +154,7 @@ export function landingShell(): string {
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="120">
+    <div class="landing-feature" data-reveal data-reveal-delay="150">
       <div class="landing-feature-title">AI-Assisted Proof Writing</div>
       <div class="landing-feature-desc">
         LLM-powered tactic suggestions that understand your proof state.
@@ -155,7 +164,7 @@ export function landingShell(): string {
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="240">
+    <div class="landing-feature" data-reveal data-reveal-delay="300">
       <div class="landing-feature-title">Axiom Budget Tracking</div>
       <div class="landing-feature-desc">
         Toggle LEM, Choice, Funext, and more. Every emitted declaration
@@ -164,7 +173,7 @@ export function landingShell(): string {
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="360">
+    <div class="landing-feature" data-reveal data-reveal-delay="450">
       <div class="landing-feature-title">Hypothesis Testing</div>
       <div class="landing-feature-desc">
         QuickCheck-style random testing checks whether your hypotheses
@@ -176,29 +185,30 @@ export function landingShell(): string {
   </section>
 
   <section class="landing-tech" id="tech">
+    <div class="section-divider"></div>
     <div class="landing-tech-title" data-reveal>Under the Hood</div>
     <div class="landing-tech-grid">
       <div class="landing-tech-item" data-reveal data-reveal-delay="0">
         <div class="landing-tech-label">IR</div>
         <div class="landing-tech-value">λΠω with 18 term variants, dependent types, universe polymorphism</div>
       </div>
-      <div class="landing-tech-item" data-reveal data-reveal-delay="80">
+      <div class="landing-tech-item" data-reveal data-reveal-delay="100">
         <div class="landing-tech-label">Type-Checker</div>
         <div class="landing-tech-value">Bidirectional inference with alpha-equivalence and axiom tracking</div>
       </div>
-      <div class="landing-tech-item" data-reveal data-reveal-delay="160">
+      <div class="landing-tech-item" data-reveal data-reveal-delay="200">
         <div class="landing-tech-label">Mutation</div>
         <div class="landing-tech-value">7 operators — drop, weaken, swap quantifier, perturb, change domain, negate, strengthen</div>
       </div>
-      <div class="landing-tech-item" data-reveal data-reveal-delay="240">
+      <div class="landing-tech-item" data-reveal data-reveal-delay="300">
         <div class="landing-tech-label">Evaluator</div>
         <div class="landing-tech-value">BigInt modular arithmetic with domain-aware random input generation</div>
       </div>
-      <div class="landing-tech-item" data-reveal data-reveal-delay="320">
+      <div class="landing-tech-item" data-reveal data-reveal-delay="400">
         <div class="landing-tech-label">Emitters</div>
         <div class="landing-tech-value">Lean 4 (Mathlib-aware), Coq, Isabelle/HOL — with sorry/admit placeholders</div>
       </div>
-      <div class="landing-tech-item" data-reveal data-reveal-delay="400">
+      <div class="landing-tech-item" data-reveal data-reveal-delay="500">
         <div class="landing-tech-label">Benchmark</div>
         <div class="landing-tech-value">100% F1 on hypothesis detection, 95.2% F1 on mutation detection (20 theorems)</div>
       </div>
@@ -207,17 +217,16 @@ export function landingShell(): string {
 
   <section class="landing-trust" data-reveal>
     <div class="landing-trust-badges">
-      <span class="landing-trust-badge" data-reveal data-reveal-delay="0">15,000+ Lines of TypeScript</span>
-      <span class="landing-trust-badge" data-reveal data-reveal-delay="80">467 Tests Passing</span>
-      <span class="landing-trust-badge" data-reveal data-reveal-delay="160">100% Hypothesis F1</span>
-      <span class="landing-trust-badge" data-reveal data-reveal-delay="240">3 Proof Assistants</span>
-      <span class="landing-trust-badge" data-reveal data-reveal-delay="320">Open Source · MIT</span>
+      <span class="landing-trust-badge" data-reveal data-reveal-delay="0" data-count="15000" data-suffix="+ Lines of TypeScript">15,000+ Lines of TypeScript</span>
+      <span class="landing-trust-badge" data-reveal data-reveal-delay="100" data-count="593" data-suffix=" Tests Passing">593 Tests Passing</span>
+      <span class="landing-trust-badge" data-reveal data-reveal-delay="200" data-count="100" data-suffix="% Hypothesis F1">100% Hypothesis F1</span>
+      <span class="landing-trust-badge" data-reveal data-reveal-delay="300" data-count="3" data-suffix=" Proof Assistants">3 Proof Assistants</span>
+      <span class="landing-trust-badge" data-reveal data-reveal-delay="400">Open Source · MIT</span>
     </div>
   </section>
 
-
-
   <section class="landing-founder" data-reveal>
+    <div class="section-divider"></div>
     <div class="landing-founder-rule"></div>
     <p class="landing-founder-text">
       I'm <strong>Adam Ouksili</strong>, a Computer Science and Mathematics
@@ -237,7 +246,7 @@ export function landingShell(): string {
         <a href="#api" class="landing-footer-link">API Docs</a>
       </div>
       <div class="landing-footer-col">
-        <div class="landing-footer-heading">Company</div>
+        <div class="landing-footer-heading">Open Source</div>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">
@@ -362,6 +371,8 @@ export function stopTypingAnimation(): void {
         clearTimeout(animationFrameId);
         animationFrameId = null;
     }
+    cleanupFns.forEach((fn) => fn());
+    cleanupFns = [];
 }
 
 /**
@@ -397,7 +408,12 @@ function revealHtml(html: string, count: number): string {
 
 // ── Bind landing page events ────────────────────────────────
 
+let cleanupFns: (() => void)[] = [];
+
 export function bindLanding(onLaunchIDE: NavigateCallback): void {
+    cleanupFns.forEach((fn) => fn());
+    cleanupFns = [];
+
     const navLaunch = document.getElementById('nav-launch-ide');
     const hamburger = document.getElementById('nav-hamburger');
     const navLinks = document.querySelector('.landing-nav-links') as HTMLElement | null;
@@ -405,7 +421,6 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
 
     if (navLaunch) navLaunch.addEventListener('click', onLaunchIDE);
 
-    // Mobile hamburger toggle
     if (hamburger && navLinks) {
         hamburger.addEventListener('click', () => {
             navLinks.classList.toggle('open');
@@ -413,7 +428,6 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
         });
     }
 
-    // Smooth scroll to features
     scrollBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = document.getElementById(btn.dataset.scroll ?? '');
@@ -424,7 +438,16 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
     startTypingAnimation();
     initScrollReveal();
     initNavScroll();
+    initScrollProgress();
+    initParticleCanvas();
+    initHeroCharReveal();
+    initTiltEffect();
+    initMagneticButtons();
+    initParallax();
+    initCounters();
 }
+
+// ── Scroll-reveal with IntersectionObserver ─────────────────
 
 function initScrollReveal(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -445,11 +468,13 @@ function initScrollReveal(): void {
                 }
             }
         },
-        { threshold: 0.15 },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
     );
 
     elements.forEach((el) => observer.observe(el));
 }
+
+// ── Glassmorphism nav scroll state ──────────────────────────
 
 function initNavScroll(): void {
     const nav = document.querySelector('.landing-nav');
@@ -464,5 +489,283 @@ function initNavScroll(): void {
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
     onScroll();
+}
+
+// ── Scroll progress bar ─────────────────────────────────────
+
+function initScrollProgress(): void {
+    const bar = document.getElementById('scroll-progress');
+    if (!bar) return;
+
+    const onScroll = () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+        bar.style.transform = `scaleX(${progress})`;
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+}
+
+// ── Floating math-symbol particle canvas ────────────────────
+
+function initParticleCanvas(): void {
+    const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const SYMBOLS = ['∀', '∃', 'λ', 'Π', '⊢', '∈', '≡', '→', '∧', '∨', '¬', '⊥', 'α', 'β', 'Σ', '∞'];
+    const COUNT = 35;
+    let w = 0;
+    let h = 0;
+    let rafId = 0;
+    let mouseX = -1000;
+    let mouseY = -1000;
+
+    interface Particle {
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        symbol: string;
+        size: number;
+        opacity: number;
+        baseOpacity: number;
+        rotation: number;
+        rotationSpeed: number;
+    }
+
+    const particles: Particle[] = [];
+
+    function resize(): void {
+        w = canvas!.width = window.innerWidth;
+        h = canvas!.height = window.innerHeight;
+    }
+
+    function spawnParticles(): void {
+        particles.length = 0;
+        for (let i = 0; i < COUNT; i++) {
+            particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: (Math.random() - 0.5) * 0.3,
+                symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!,
+                size: 12 + Math.random() * 16,
+                opacity: 0,
+                baseOpacity: 0.04 + Math.random() * 0.06,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.005,
+            });
+        }
+    }
+
+    function draw(): void {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, w, h);
+
+        for (const p of particles) {
+            // Fade in over time
+            if (p.opacity < p.baseOpacity) p.opacity += 0.0005;
+
+            // Mouse repulsion
+            const dx = p.x - mouseX;
+            const dy = p.y - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 200) {
+                const force = (200 - dist) / 200;
+                p.vx += (dx / dist) * force * 0.15;
+                p.vy += (dy / dist) * force * 0.15;
+            }
+
+            // Damping
+            p.vx *= 0.995;
+            p.vy *= 0.995;
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rotation += p.rotationSpeed;
+
+            // Wrap around
+            if (p.x < -50) p.x = w + 50;
+            if (p.x > w + 50) p.x = -50;
+            if (p.y < -50) p.y = h + 50;
+            if (p.y > h + 50) p.y = -50;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.font = `${p.size}px "IBM Plex Mono", monospace`;
+            ctx.fillStyle = `rgba(201, 168, 108, ${p.opacity})`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.symbol, 0, 0);
+            ctx.restore();
+        }
+
+        rafId = requestAnimationFrame(draw);
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    };
+
+    resize();
+    spawnParticles();
+    rafId = requestAnimationFrame(draw);
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    cleanupFns.push(() => {
+        cancelAnimationFrame(rafId);
+        window.removeEventListener('resize', resize);
+        window.removeEventListener('mousemove', onMouseMove);
+    });
+}
+
+// ── Character-level hero title reveal ───────────────────────
+
+function initHeroCharReveal(): void {
+    const title = document.getElementById('hero-title');
+    if (!title) return;
+
+    const html = title.innerHTML;
+    let charIndex = 0;
+    const wrapped = html.replace(/(<[^>]+>)|([^<])/g, (_match, tag: string | undefined, char: string | undefined) => {
+        if (tag) return tag;
+        if (char === undefined) return '';
+        if (char === ' ') return ' ';
+        const delay = charIndex * 25;
+        charIndex++;
+        return `<span class="hero-char" style="animation-delay:${delay}ms">${char}</span>`;
+    });
+    title.innerHTML = wrapped;
+}
+
+// ── 3D tilt on code card ────────────────────────────────────
+
+function initTiltEffect(): void {
+    const card = document.getElementById('code-card');
+    if (!card) return;
+    const showcase = card.closest('.landing-code-showcase') as HTMLElement | null;
+    if (!showcase) return;
+
+    const onMove = (e: MouseEvent) => {
+        const rect = showcase.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        const tiltX = (y - 0.5) * -12;
+        const tiltY = (x - 0.5) * 12;
+        card.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    };
+
+    const onLeave = () => {
+        card.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.transform = 'rotateX(0) rotateY(0)';
+        setTimeout(() => {
+            card.style.transition = '';
+        }, 600);
+    };
+
+    showcase.addEventListener('mousemove', onMove);
+    showcase.addEventListener('mouseleave', onLeave);
+    cleanupFns.push(() => {
+        showcase.removeEventListener('mousemove', onMove);
+        showcase.removeEventListener('mouseleave', onLeave);
+    });
+}
+
+// ── Magnetic CTA buttons ────────────────────────────────────
+
+function initMagneticButtons(): void {
+    const btns = document.querySelectorAll<HTMLElement>('[data-magnetic]');
+
+    btns.forEach((btn) => {
+        const onMove = (e: MouseEvent) => {
+            const rect = btn.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const dx = (e.clientX - cx) * 0.2;
+            const dy = (e.clientY - cy) * 0.2;
+            btn.style.transform = `translate(${dx}px, ${dy}px) scale(1.02)`;
+        };
+
+        const onLeave = () => {
+            btn.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            btn.style.transform = '';
+            setTimeout(() => {
+                btn.style.transition = '';
+            }, 400);
+        };
+
+        btn.addEventListener('mousemove', onMove);
+        btn.addEventListener('mouseleave', onLeave);
+        cleanupFns.push(() => {
+            btn.removeEventListener('mousemove', onMove);
+            btn.removeEventListener('mouseleave', onLeave);
+        });
+    });
+}
+
+// ── Parallax depth on scroll ────────────────────────────────
+
+function initParallax(): void {
+    const elements = document.querySelectorAll<HTMLElement>('[data-parallax]');
+    if (!elements.length) return;
+
+    const onScroll = () => {
+        const scrollY = window.scrollY;
+        elements.forEach((el) => {
+            const speed = parseFloat(el.dataset.parallax ?? '0');
+            el.style.transform = `translateY(${scrollY * speed}px)`;
+        });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+}
+
+// ── Counting number animation on trust badges ───────────────
+
+function initCounters(): void {
+    const badges = document.querySelectorAll<HTMLElement>('[data-count]');
+    if (!badges.length) return;
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    const el = entry.target as HTMLElement;
+                    const target = parseInt(el.dataset.count ?? '0', 10);
+                    const suffix = el.dataset.suffix ?? '';
+                    animateCount(el, target, suffix);
+                    observer.unobserve(el);
+                }
+            }
+        },
+        { threshold: 0.5 },
+    );
+
+    badges.forEach((b) => observer.observe(b));
+}
+
+function animateCount(el: HTMLElement, target: number, suffix: string): void {
+    const duration = 1500;
+    const start = performance.now();
+
+    function step(now: number): void {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(eased * target);
+        el.textContent = current.toLocaleString() + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
 }
