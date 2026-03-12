@@ -249,7 +249,7 @@ describe('parseLatex', () => {
 For all $n$, $n \\geq 0$.
 \\end{theorem}`);
         expect(doc.nodes.length).toBe(1);
-        expect(doc.nodes[0].tag).toBe('ThmNode');
+        expect(doc.nodes[0]!.tag).toBe('ThmNode');
     });
 
     it('parses definition environments', () => {
@@ -258,7 +258,7 @@ For all $n$, $n \\geq 0$.
 A natural number $p > 1$ is prime.
 \\end{definition}`);
         expect(doc.nodes.length).toBe(1);
-        expect(doc.nodes[0].tag).toBe('DefNode');
+        expect(doc.nodes[0]!.tag).toBe('DefNode');
     });
 
     it('parses lemma environments', () => {
@@ -267,7 +267,7 @@ A natural number $p > 1$ is prime.
 $x^2 \\geq 0$
 \\end{lemma}`);
         expect(doc.nodes.length).toBe(1);
-        expect(doc.nodes[0].tag).toBe('LemmaNode');
+        expect(doc.nodes[0]!.tag).toBe('LemmaNode');
     });
 
     it('attaches proofs to theorems', () => {
@@ -318,8 +318,8 @@ $\\forall x \\in \\mathbb{N}, x \\geq 0$
 \\end{theorem}`);
         const ir = documentToIR(doc);
         expect(ir.declarations.length).toBe(2);
-        expect(ir.declarations[0].tag).toBe('Definition');
-        expect(ir.declarations[1].tag).toBe('Theorem');
+        expect(ir.declarations[0]!.tag).toBe('Definition');
+        expect(ir.declarations[1]!.tag).toBe('Theorem');
     });
 
     it('assigns axiom bundle to theorems', () => {
@@ -328,7 +328,7 @@ $\\forall x \\in \\mathbb{N}, x \\geq 0$
 $1 = 1$
 \\end{theorem}`);
         const ir = documentToIR(doc);
-        const thm = ir.declarations[0];
+        const thm = ir.declarations[0]!;
         if (thm.tag === 'Theorem') {
             expect(thm.axiomBundle.name).toBe('ClassicalMath');
         }

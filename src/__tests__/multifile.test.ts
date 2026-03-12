@@ -130,7 +130,7 @@ Sub content`;
         const source = 'Just plain text';
         const sections = splitIntoSections(source);
         expect(sections).toHaveLength(1);
-        expect(sections[0].title).toBe('Preamble');
+        expect(sections[0]!.title).toBe('Preamble');
     });
 
     it('preserves section content', () => {

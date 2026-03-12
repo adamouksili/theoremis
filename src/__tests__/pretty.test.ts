@@ -125,10 +125,10 @@ describe('prettyModule', () => {
                 params: [],
                 statement: mk.binOp('=', mk.nat(1), mk.nat(1)),
                 proof: [{ tag: 'Sorry' }],
-                axiomBundle: BUNDLES.ClassicalMath,
+                axiomBundle: BUNDLES.ClassicalMath!,
                 metadata: { confidence: 1.0, dependencies: [] },
             }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             imports: [],
         };
         const output = prettyModule(mod);

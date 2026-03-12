@@ -31,8 +31,8 @@ describe('Neural Network Verifier Engine', () => {
         expect(result.status).toBe('safe');
         expect(result.certificate).toBeDefined();
         // The bounds of ReLU([-1, 1]) should be [0, 1]
-        expect(result.certificate?.layerBounds[0][0].lo).toBe(0);
-        expect(result.certificate?.layerBounds[0][0].hi).toBe(1);
+        expect(result.certificate?.layerBounds[0]![0]!.lo).toBe(0);
+        expect(result.certificate?.layerBounds[0]![0]!.hi).toBe(1);
     });
 
     it('should identify counterexamples when constraints are violated', () => {

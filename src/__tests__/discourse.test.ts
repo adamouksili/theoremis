@@ -13,8 +13,8 @@ For right triangles, $a^2 + b^2 = c^2$.
 \\end{theorem}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(1);
-        expect(blocks[0].role).toBe('theorem');
-        expect(blocks[0].name).toBe('Pythagorean');
+        expect(blocks[0]!.role).toBe('theorem');
+        expect(blocks[0]!.name).toBe('Pythagorean');
     });
 
     it('extracts definition blocks', () => {
@@ -23,8 +23,8 @@ A number $p > 1$ is prime.
 \\end{definition}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(1);
-        expect(blocks[0].role).toBe('definition');
-        expect(blocks[0].name).toBe('Prime');
+        expect(blocks[0]!.role).toBe('definition');
+        expect(blocks[0]!.name).toBe('Prime');
     });
 
     it('extracts lemma blocks', () => {
@@ -33,7 +33,7 @@ $x^2 \\geq 0$ for all $x$.
 \\end{lemma}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(1);
-        expect(blocks[0].role).toBe('lemma');
+        expect(blocks[0]!.role).toBe('lemma');
     });
 
     it('extracts proof blocks', () => {
@@ -42,7 +42,7 @@ By induction on $n$.
 \\end{proof}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(1);
-        expect(blocks[0].role).toBe('proof');
+        expect(blocks[0]!.role).toBe('proof');
     });
 
     it('extracts multiple blocks from a document', () => {
@@ -67,8 +67,8 @@ Trivial.
 By \\ref{lem:helper} and \\cite{knuth}.
 \\end{theorem}`;
         const blocks = analyzeDiscourse(source);
-        expect(blocks[0].references).toContain('lem:helper');
-        expect(blocks[0].references).toContain('knuth');
+        expect(blocks[0]!.references).toContain('lem:helper');
+        expect(blocks[0]!.references).toContain('knuth');
     });
 
     it('falls back to line-based name when no bracket title', () => {
@@ -77,7 +77,7 @@ Some theorem.
 \\end{theorem}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(1);
-        expect(blocks[0].name).toMatch(/theorem_\d+/);
+        expect(blocks[0]!.name).toMatch(/theorem_\d+/);
     });
 
     it('handles empty source', () => {
@@ -95,8 +95,8 @@ Statement.
 \\end{proposition}`;
         const blocks = analyzeDiscourse(source);
         expect(blocks).toHaveLength(2);
-        expect(blocks[0].role).toBe('corollary');
-        expect(blocks[1].role).toBe('proposition');
+        expect(blocks[0]!.role).toBe('corollary');
+        expect(blocks[1]!.role).toBe('proposition');
     });
 
     it('handles abbreviated environments (thm, lem, defn)', () => {

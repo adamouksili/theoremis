@@ -9,7 +9,7 @@ function makeTheorem(statement: Term, params: Theorem['params'] = []): Theorem {
         params,
         statement,
         proof: [{ tag: 'Sorry' }],
-        axiomBundle: BUNDLES.ClassicalMath,
+        axiomBundle: BUNDLES.ClassicalMath!,
         metadata: { confidence: 1, dependencies: [] },
     };
 }
@@ -36,7 +36,7 @@ describe('generateMutations', () => {
             ],
             statement: mk.var('R'),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1, dependencies: [] },
         };
 

@@ -183,7 +183,7 @@ describe('generateMutations', () => {
         ],
         statement: mk.equiv(mk.binOp('^', mk.var('a'), mk.binOp('-', mk.var('p'), mk.nat(1))), mk.nat(1), mk.var('p')),
         proof: [{ tag: 'Sorry' }],
-        axiomBundle: BUNDLES.ClassicalMath,
+        axiomBundle: BUNDLES.ClassicalMath!,
         metadata: { confidence: 0.8, dependencies: [] },
     };
 

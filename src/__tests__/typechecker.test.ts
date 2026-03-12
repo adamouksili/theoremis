@@ -10,7 +10,7 @@ function makeModule(declarations: IRModule['declarations']): IRModule {
     return {
         name: 'test',
         declarations,
-        axiomBundle: BUNDLES.ClassicalMath,
+        axiomBundle: BUNDLES.ClassicalMath!,
         imports: [],
     };
 }
@@ -203,7 +203,7 @@ describe('typeCheck', () => {
             params: [],
             statement: mk.binOp('=', mk.nat(1), mk.nat(1)),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1.0, dependencies: [] },
         }]);
         const result = typeCheck(mod);
@@ -233,7 +233,7 @@ describe('typeCheck', () => {
             params: [],
             statement: mk.binOp('=', mk.axiomRef('LEM'), mk.axiomRef('LEM')),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1.0, dependencies: [] },
         }]);
         const result = typeCheck(mod);
@@ -250,7 +250,7 @@ describe('typeCheck', () => {
         }]);
         const result = typeCheck(mod);
         expect(result.holes.length).toBe(1);
-        expect(result.holes[0].id).toBe('test_hole');
+        expect(result.holes[0]!.id).toBe('test_hole');
     });
 
     it('infers type of BinOp equality as Prop', () => {
@@ -260,7 +260,7 @@ describe('typeCheck', () => {
             params: [],
             statement: mk.binOp('=', mk.nat(1), mk.nat(1)),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1.0, dependencies: [] },
         }]);
         const result = typeCheck(mod);
@@ -277,7 +277,7 @@ describe('typeCheck', () => {
             params: [],
             statement: mk.forAll('x', Types.Nat, mk.binOp('≥', mk.var('x'), mk.nat(0))),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1.0, dependencies: [] },
         }]);
         const result = typeCheck(mod);
@@ -308,5 +308,191 @@ describe('typeCheck', () => {
         expect(result.valid).toBe(false);
         expect(result.mode).toBe('strict');
         expect((result.strictDiagnostics?.fallbackErrors ?? 0) > 0).toBe(true);
+    });
+});
+
+describe('Sigma types', () => {
+    it('type-checks a Sigma type as definition body', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'sigma_def',
+            params: [],
+            returnType: Types.Type0,
+            body: mk.sigma('x', Types.Nat, Types.Nat),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'info' && d.message.includes('type-checks successfully')
+        )).toBe(true);
+    });
+
+    it('type-checks a Pair with Sigma type', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'pair_sigma',
+            params: [],
+            returnType: mk.sigma('_', Types.Nat, Types.Nat),
+            body: mk.pair(mk.nat(1), mk.nat(2)),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+    });
+});
+
+describe('LetIn', () => {
+    it('type-checks a let binding', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'let_def',
+            params: [],
+            returnType: Types.Nat,
+            body: mk.letIn('x', Types.Nat, mk.nat(42), mk.var('x')),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'info' && d.message.includes('type-checks successfully')
+        )).toBe(true);
+    });
+
+    it('reports unbound variable in let body', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'let_bad',
+            params: [],
+            returnType: Types.Nat,
+            body: mk.letIn('x', Types.Nat, mk.nat(42), mk.var('y')),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'error' && d.message.includes('Unbound variable')
+        )).toBe(true);
+    });
+});
+
+describe('Match expressions', () => {
+    it('type-checks a basic match', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'match_def',
+            params: [],
+            returnType: Types.Nat,
+            body: mk.match(mk.nat(0), [{ pattern: 'Zero', bindings: [], body: mk.nat(1) }]),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+    });
+
+    it('detects sorry in theorem proof with Exact match', () => {
+        const mod = makeModule([{
+            tag: 'Theorem',
+            name: 'match_sorry_thm',
+            params: [],
+            statement: mk.binOp('=', mk.nat(0), mk.nat(1)),
+            proof: [
+                { tag: 'Exact' as const, term: mk.match(mk.nat(0), [{ pattern: 'Zero', bindings: [], body: mk.nat(1) }]) },
+                { tag: 'Sorry' as const },
+            ],
+            axiomBundle: BUNDLES.ClassicalMath!,
+            metadata: { confidence: 1.0, dependencies: [] },
+        }]);
+        const result = typeCheck(mod);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'warning' && d.message.includes('sorry')
+        )).toBe(true);
+    });
+});
+
+describe('Ind', () => {
+    it('type-checks an inductive type definition', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'mybool_ind',
+            params: [],
+            returnType: Types.Type0,
+            body: mk.ind('MyBool', Types.Type0, [
+                { name: 'True', type: Types.Type0 },
+                { name: 'False', type: Types.Type0 },
+            ]),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+    });
+
+    it('type-checks a definition with Ind body', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'unit_ind',
+            params: [],
+            returnType: Types.Type0,
+            body: mk.ind('Unit', Types.Type0, [{ name: 'tt', type: Types.Type0 }]),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+        expect(result.inferredTypes.has('unit_ind')).toBe(true);
+    });
+});
+
+describe('Proj', () => {
+    it('type-checks projection from a pair', () => {
+        const mod = makeModule([{
+            tag: 'Definition',
+            name: 'proj_def',
+            params: [],
+            returnType: Types.Nat,
+            body: mk.proj(mk.pair(mk.nat(1), mk.nat(2)), 1),
+        }]);
+        const result = typeCheck(mod);
+        expect(result.valid).toBe(true);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'info' && d.message.includes('type-checks successfully')
+        )).toBe(true);
+    });
+});
+
+describe('Inter-declaration context', () => {
+    it('resolves references to earlier definitions without unbound error', () => {
+        const mod = makeModule([
+            {
+                tag: 'Definition',
+                name: 'mydef',
+                params: [],
+                returnType: Types.Nat,
+                body: mk.nat(42),
+            },
+            {
+                tag: 'Theorem',
+                name: 'ref_thm',
+                params: [],
+                statement: mk.binOp('=', mk.var('mydef'), mk.nat(42)),
+                proof: [{ tag: 'Sorry' }],
+                axiomBundle: BUNDLES.ClassicalMath!,
+                metadata: { confidence: 1.0, dependencies: [] },
+            },
+        ]);
+        const result = typeCheck(mod);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'error' && d.message.includes('Unbound variable')
+        )).toBe(false);
+    });
+});
+
+describe('Lemma with sorry', () => {
+    it('reports sorry warning for Lemma like Theorem', () => {
+        const mod = makeModule([{
+            tag: 'Lemma',
+            name: 'test_lemma',
+            params: [],
+            statement: mk.binOp('=', mk.nat(1), mk.nat(1)),
+            proof: [{ tag: 'Sorry' }],
+        }]);
+        const result = typeCheck(mod);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'warning' && d.message.includes('sorry')
+        )).toBe(true);
+        expect(result.diagnostics.some(d =>
+            d.severity === 'warning' && d.message.includes('Lemma')
+        )).toBe(true);
     });
 });

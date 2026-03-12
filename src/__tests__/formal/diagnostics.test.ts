@@ -12,10 +12,10 @@ describe('formal diagnostics normalization', () => {
 
         const diagnostics = normalizeLeanDiagnostics(input);
         expect(diagnostics).toHaveLength(3);
-        expect(diagnostics[0].file).toBe('A.lean');
-        expect(diagnostics[0].severity).toBe('error');
-        expect(diagnostics[2].file).toBe('B.lean');
-        expect(diagnostics[2].severity).toBe('warning');
+        expect(diagnostics[0]!.file).toBe('A.lean');
+        expect(diagnostics[0]!.severity).toBe('error');
+        expect(diagnostics[2]!.file).toBe('B.lean');
+        expect(diagnostics[2]!.severity).toBe('warning');
     });
 
     it('ignores non-diagnostic lines', () => {

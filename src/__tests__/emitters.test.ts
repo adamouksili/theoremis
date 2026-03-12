@@ -9,7 +9,7 @@ import { emitIsabelle } from '../emitters/isabelle';
 import { mk, Types, BUNDLES, type IRModule, type Theorem, type Definition } from '../core/ir';
 
 function makeModule(declarations: IRModule['declarations']): IRModule {
-    return { name: 'test', declarations, axiomBundle: BUNDLES.ClassicalMath, imports: [] };
+    return { name: 'test', declarations, axiomBundle: BUNDLES.ClassicalMath!, imports: [] };
 }
 
 const simpleThm: Theorem = {
@@ -18,7 +18,7 @@ const simpleThm: Theorem = {
     params: [{ name: 'n', type: Types.Nat, implicit: false }],
     statement: mk.binOp('≥', mk.var('n'), mk.nat(0)),
     proof: [{ tag: 'Omega' }],
-    axiomBundle: BUNDLES.ClassicalMath,
+    axiomBundle: BUNDLES.ClassicalMath!,
     metadata: { confidence: 1.0, dependencies: [] },
 };
 
@@ -182,7 +182,7 @@ describe('Emitter round-trip consistency', () => {
             ],
             statement: mk.binOp('=', mk.binOp('+', mk.var('n'), mk.var('m')), mk.binOp('+', mk.var('m'), mk.var('n'))),
             proof: [{ tag: 'Ring' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 1.0, dependencies: [] },
         };
         const mod = makeModule([complexThm]);
@@ -218,7 +218,7 @@ describe('Lean 4 emitter: extended validation', () => {
             ],
             statement: mk.forAll('a', Types.Int, mk.binOp('≥', mk.var('a'), mk.nat(0))),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.5, dependencies: [] },
         };
         const result = emitLean4(makeModule([thm]));
@@ -259,7 +259,7 @@ describe('Lean 4 emitter: extended validation', () => {
                 mk.var('p')
             ),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.8, dependencies: [] },
         };
         const result = emitLean4(makeModule([thm]));
@@ -291,12 +291,12 @@ describe('Lean 4 emitter: extended validation', () => {
             name: 'with_axioms',
         };
         const modClassical = makeModule([thm]);
-        modClassical.axiomBundle = BUNDLES.ClassicalMath;
+        modClassical.axiomBundle = BUNDLES.ClassicalMath!;
         const resultClassical = emitLean4(modClassical);
         expect(resultClassical.code).toContain('import Mathlib.Tactic.NormNum');
 
         const modMinimal = makeModule([thm]);
-        modMinimal.axiomBundle = BUNDLES.MinimalCore;
+        modMinimal.axiomBundle = BUNDLES.MinimalCore!;
         const resultMinimal = emitLean4(modMinimal);
         expect(resultMinimal.code).not.toContain('import Mathlib.Tactic.NormNum');
     });
@@ -384,7 +384,7 @@ describe('Coq emitter: extended validation', () => {
             ],
             statement: mk.forAll('x', Types.Int, mk.binOp('≥', mk.var('x'), mk.nat(0))),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.5, dependencies: [] },
         };
         const result = emitCoq(makeModule([thm]));
@@ -442,7 +442,7 @@ describe('Coq emitter: extended validation', () => {
             params: [],
             statement: mk.equiv(mk.var('a'), mk.var('b'), mk.var('p')),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.5, dependencies: [] },
         };
         const result = emitCoq(makeModule([thm]));
@@ -466,7 +466,7 @@ describe('Isabelle emitter: extended validation', () => {
             params: [{ name: 'n', type: Types.Nat, implicit: false }],
             statement: mk.binOp('≥', mk.var('n'), mk.nat(0)),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.5, dependencies: [] },
         };
         const result = emitIsabelle(makeModule([thm]));
@@ -494,7 +494,7 @@ describe('Isabelle emitter: extended validation', () => {
             params: [],
             statement: mk.equiv(mk.var('a'), mk.var('b'), mk.var('p')),
             proof: [{ tag: 'Sorry' }],
-            axiomBundle: BUNDLES.ClassicalMath,
+            axiomBundle: BUNDLES.ClassicalMath!,
             metadata: { confidence: 0.5, dependencies: [] },
         };
         const result = emitIsabelle(makeModule([thm]));

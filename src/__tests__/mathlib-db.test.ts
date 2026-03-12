@@ -8,7 +8,7 @@ import { lookupLemma, getRequiredImports, suggestMathlibLemma, MATHLIB_DB } from
 describe('MATHLIB_DB', () => {
     it('contains number theory entries', () => {
         expect(MATHLIB_DB['fermat_little']).toBeDefined();
-        expect(MATHLIB_DB['fermat_little'].lean4Name).toBe('ZMod.pow_card_sub_one_eq_one');
+        expect(MATHLIB_DB['fermat_little']!.lean4Name).toBe('ZMod.pow_card_sub_one_eq_one');
     });
 
     it('contains algebra entries', () => {
@@ -77,7 +77,7 @@ describe('getRequiredImports', () => {
     it('returns sorted imports', () => {
         const imports = getRequiredImports('ℝ and ZMod and Nat.Prime');
         for (let i = 1; i < imports.length; i++) {
-            expect(imports[i] >= imports[i - 1]).toBe(true);
+            expect(imports[i]! >= imports[i - 1]!).toBe(true);
         }
     });
 });

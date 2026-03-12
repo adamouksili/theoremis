@@ -354,12 +354,12 @@ By cases on the parity of $a$ and $b$.
         const { lean4 } = fullPipeline(fullDoc);
         const lines = lean4.code.split('\n');
         for (let i = 0; i < lines.length; i++) {
-            if (lines[i].trim().endsWith(':= by')) {
+            if (lines[i]!.trim().endsWith(':= by')) {
                 // Next non-empty line should exist and be a tactic
                 let j = i + 1;
-                while (j < lines.length && lines[j].trim() === '') j++;
+                while (j < lines.length && lines[j]!.trim() === '') j++;
                 expect(j).toBeLessThan(lines.length);
-                expect(lines[j].trim().length).toBeGreaterThan(0);
+                expect(lines[j]!.trim().length).toBeGreaterThan(0);
             }
         }
     });

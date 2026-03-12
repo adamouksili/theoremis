@@ -575,7 +575,7 @@ CROSS-CHECK: 1 condition. ✓
         expect(result).toBeTruthy();
         const parsed = JSON.parse(result!);
         expect(parsed.hypotheses).toHaveLength(1);
-        expect(parsed.hypotheses[0].name).toBe('h_0');
+        expect(parsed.hypotheses[0]!.name).toBe('h_0');
     });
 
     it('handles plain JSON (no thought_process block)', () => {
@@ -737,8 +737,8 @@ describe('parseStatementLLM', () => {
         expect(result).toBeTruthy();
         expect(result?.source).toBe('llm');
         expect(result?.hypotheses).toHaveLength(1);
-        expect(result?.hypotheses[0].name).toBe('h_0');
-        expect(result?.hypotheses[0].condition).toEqual(mk.app(mk.var('Prime'), mk.var('p')));
+        expect(result?.hypotheses[0]!.name).toBe('h_0');
+        expect(result?.hypotheses[0]!.condition).toEqual(mk.app(mk.var('Prime'), mk.var('p')));
         expect(result?.conclusion).toEqual(mk.binOp('>', mk.var('p'), mk.nat(0)));
 
         globalThis.fetch = originalFetch;
@@ -782,11 +782,11 @@ ${JSON.stringify({
         expect(result).toBeTruthy();
         expect(result?.source).toBe('llm');
         expect(result?.hypotheses).toHaveLength(4);
-        expect(result?.hypotheses[0].name).toBe('h_0');
-        expect(result?.hypotheses[0].condition).toEqual(mk.app(mk.var('Prime'), mk.var('n')));
-        expect(result?.hypotheses[1].condition).toEqual(mk.binOp('∈', mk.var('k'), mk.var('ℤ')));
-        expect(result?.hypotheses[2].condition).toEqual(mk.binOp('>', mk.var('k'), mk.nat(0)));
-        expect(result?.hypotheses[3].condition).toEqual(mk.unaryOp('¬', mk.binOp('=', mk.var('k'), mk.var('n'))));
+        expect(result?.hypotheses[0]!.name).toBe('h_0');
+        expect(result?.hypotheses[0]!.condition).toEqual(mk.app(mk.var('Prime'), mk.var('n')));
+        expect(result?.hypotheses[1]!.condition).toEqual(mk.binOp('∈', mk.var('k'), mk.var('ℤ')));
+        expect(result?.hypotheses[2]!.condition).toEqual(mk.binOp('>', mk.var('k'), mk.nat(0)));
+        expect(result?.hypotheses[3]!.condition).toEqual(mk.unaryOp('¬', mk.binOp('=', mk.var('k'), mk.var('n'))));
         expect(result?.conclusion).toEqual(mk.app(mk.app(mk.var('Divides'), mk.var('n')), mk.var('k')));
 
         globalThis.fetch = originalFetch;
@@ -931,8 +931,8 @@ ${JSON.stringify({
 
         const result = await parseStatementLLM('P Q R.', 'fake-key');
         expect(result?.hypotheses).toHaveLength(2);
-        expect(result?.hypotheses[0].name).toBe('h_0');
-        expect(result?.hypotheses[1].name).toBe('h_2');
+        expect(result?.hypotheses[0]!.name).toBe('h_0');
+        expect(result?.hypotheses[1]!.name).toBe('h_2');
 
         globalThis.fetch = originalFetch;
     });
@@ -1162,7 +1162,7 @@ describe('refineDocWithLLM', () => {
         expect(result.total).toBe(1);
         const thm = thmNode(doc);
         expect(thm.hypotheses).toHaveLength(1);
-        expect(thm.hypotheses[0].name).toBe('h_0');
+        expect(thm.hypotheses[0]!.name).toBe('h_0');
         expect(thm.conclusion.tag).toBe('BinOp');
 
         globalThis.fetch = originalFetch;

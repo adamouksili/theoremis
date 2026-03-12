@@ -84,7 +84,7 @@ describe('apiAnalyze', () => {
 
     test('theorem entry has expected shape', () => {
         const result = apiAnalyze(SIMPLE_THEOREM);
-        const thm = result.theorems[0];
+        const thm = result.theorems[0]!;
         expect(thm).toBeDefined();
         expect(thm.name).toBeDefined();
         expect(thm.tag).toBeDefined();
