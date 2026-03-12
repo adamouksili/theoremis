@@ -347,7 +347,7 @@
     text-align: center;
 }
 
-.api-auth-tier.pro {
+.api-auth-tier.authenticated {
     border-color: rgba(201, 168, 108, 0.3);
 }
 

@@ -155,12 +155,12 @@ export function apiDocsShell(): string {
     <h2 class="api-section-title">Authentication</h2>
     <div class="api-auth-tiers">
       <div class="api-auth-tier">
-        <div class="api-auth-tier-name">Free</div>
+        <div class="api-auth-tier-name">Anonymous</div>
         <div class="api-auth-tier-desc">No API key required</div>
         <div class="api-auth-tier-limit">100 requests / day</div>
       </div>
-      <div class="api-auth-tier pro">
-        <div class="api-auth-tier-name">Pro</div>
+      <div class="api-auth-tier authenticated">
+        <div class="api-auth-tier-name">Authenticated</div>
         <div class="api-auth-tier-desc">Include <code>Authorization: Bearer thm_...</code></div>
         <div class="api-auth-tier-limit">10,000 requests / day</div>
       </div>

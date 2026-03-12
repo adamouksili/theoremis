@@ -65,7 +65,7 @@ describe('api shared helpers', () => {
         const req = makeReq('POST', { authorization: 'Bearer thm_dev_token' });
         const auth = authenticate(req);
         expect(auth.valid).toBe(true);
-        expect(auth.tier).toBe('pro');
+        expect(auth.authLevel).toBe('authenticated');
     });
 
     it('requires configured keys in production', () => {
@@ -76,7 +76,7 @@ describe('api shared helpers', () => {
         const invalidReq = makeReq('POST', { authorization: 'Bearer thm_fake' });
 
         expect(authenticate(validReq).valid).toBe(true);
-        expect(authenticate(validReq).tier).toBe('pro');
+        expect(authenticate(validReq).authLevel).toBe('authenticated');
         expect(authenticate(invalidReq).valid).toBe(false);
     });
 
@@ -131,7 +131,7 @@ describe('api shared helpers', () => {
     it('uses in-memory rate limiting in development', async () => {
         const req = makeReq('POST');
         const res = makeRes();
-        const auth = authenticate(req, { free: 1, pro: 1 });
+        const auth = authenticate(req, { anonymous: 1, authenticated: 1 });
 
         const first = await applyRateLimit(req, res, auth);
         const second = await applyRateLimit(req, res, auth);

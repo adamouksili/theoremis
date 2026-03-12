@@ -148,78 +148,6 @@
     color: var(--l-text-faint);
 }
 
-/* ── Subscribe ────────────────────────────────────────────── */
-
-.cl-subscribe {
-    position: relative;
-    z-index: 5;
-    text-align: center;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 48px 48px 72px;
-}
-
-.cl-subscribe-title {
-    font-family: var(--l-font-serif);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--l-text-strong);
-    margin-bottom: 8px;
-}
-
-.cl-subscribe-desc {
-    font-family: var(--l-font-sans);
-    font-size: 14px;
-    color: var(--l-text-muted);
-    margin-bottom: 20px;
-}
-
-.cl-subscribe-form {
-    display: flex;
-    gap: 10px;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.cl-subscribe-input {
-    flex: 1;
-    padding: 10px 14px;
-    font-family: var(--l-font-sans);
-    font-size: 13px;
-    border: 1px solid var(--l-border-strong);
-    border-radius: 6px;
-    background: var(--l-bg-surface);
-    color: var(--l-text);
-    outline: none;
-    transition: border-color 200ms;
-}
-
-.cl-subscribe-input::placeholder {
-    color: var(--l-text-faint);
-}
-
-.cl-subscribe-input:focus {
-    border-color: var(--l-accent);
-}
-
-.cl-subscribe-btn {
-    padding: 10px 20px;
-    font-family: var(--l-font-sans);
-    font-size: 13px;
-    font-weight: 500;
-    border: none;
-    border-radius: 6px;
-    background: var(--l-text-strong);
-    color: var(--l-bg);
-    cursor: pointer;
-    transition: opacity 200ms;
-    white-space: nowrap;
-}
-
-.cl-subscribe-btn:hover {
-    opacity: 0.85;
-}
-
 /* ── Responsive ───────────────────────────────────────────── */
 
 @media (max-width: 600px) {
@@ -242,11 +170,4 @@
         gap: 12px;
     }
 
-    .cl-subscribe {
-        padding: 32px 24px 48px;
-    }
-
-    .cl-subscribe-form {
-        flex-direction: column;
-    }
 }

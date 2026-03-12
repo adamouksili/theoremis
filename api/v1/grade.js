@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     if (handlePreflight(req, res)) return;
     if (!requireMethod(req, res, 'POST')) return;
 
-    const auth = authenticate(req, { free: 20, pro: 5000 });
+    const auth = authenticate(req, { anonymous: 20, authenticated: 5000 });
     if (!auth.valid) {
         return sendError(res, auth.status || 401, auth.error || 'Invalid API key.');
     }
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             ok: true,
-            tier: auth.tier,
+            authLevel: auth.authLevel,
             ...result,
         });
     } catch (err) {

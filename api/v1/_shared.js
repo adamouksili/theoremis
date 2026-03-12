@@ -1,5 +1,5 @@
 const DEFAULT_PROD_ORIGINS = ['https://theoremis.com', 'https://www.theoremis.com'];
-const DEFAULT_RATES = { free: 100, pro: 10000 };
+const DEFAULT_RATES = { anonymous: 100, authenticated: 10000 };
 const DEFAULT_RATE_WINDOW_SEC = 60;
 
 const MAX_NUM_TESTS = 10_000;
@@ -39,15 +39,7 @@ function parseConfiguredKeys() {
 
     for (const rawKey of rawKeys) {
         if (!rawKey) continue;
-
-        // Optional format: "free:key_value" or "pro:key_value".
-        const parts = rawKey.split(':');
-        if (parts.length === 2 && (parts[0] === 'free' || parts[0] === 'pro')) {
-            keys.set(parts[1], parts[0]);
-            continue;
-        }
-
-        keys.set(rawKey, 'pro');
+        keys.set(rawKey, 'authenticated');
     }
 
     return keys;
@@ -59,9 +51,9 @@ function extractBearerKey(req) {
 }
 
 function resolveRates(overrides) {
-    const free = parsePositiveInt(process.env.THEOREMIS_RATE_LIMIT_FREE, overrides?.free ?? DEFAULT_RATES.free);
-    const pro = parsePositiveInt(process.env.THEOREMIS_RATE_LIMIT_PRO, overrides?.pro ?? DEFAULT_RATES.pro);
-    return { free, pro };
+    const anonymous = parsePositiveInt(process.env.THEOREMIS_RATE_LIMIT_ANONYMOUS, overrides?.anonymous ?? DEFAULT_RATES.anonymous);
+    const authenticated = parsePositiveInt(process.env.THEOREMIS_RATE_LIMIT_AUTHENTICATED, overrides?.authenticated ?? DEFAULT_RATES.authenticated);
+    return { anonymous, authenticated };
 }
 
 function getRateWindowSec() {
@@ -172,9 +164,9 @@ export function authenticate(req, rates = DEFAULT_RATES) {
         if (configuredKeys.size === 0) {
             return {
                 valid: false,
-                tier: 'free',
+                authLevel: 'anonymous',
                 keyId: null,
-                rateLimit: resolvedRates.free,
+                rateLimit: resolvedRates.anonymous,
                 error: 'Production API key validation is not configured (THEOREMIS_API_KEYS required).',
                 status: 503,
             };
@@ -183,21 +175,21 @@ export function authenticate(req, rates = DEFAULT_RATES) {
         if (!key) {
             return {
                 valid: false,
-                tier: 'free',
+                authLevel: 'anonymous',
                 keyId: null,
-                rateLimit: resolvedRates.free,
+                rateLimit: resolvedRates.anonymous,
                 error: 'Missing API key.',
                 status: 401,
             };
         }
 
-        const tier = configuredKeys.get(key);
-        if (!tier) {
+        const authLevel = configuredKeys.get(key);
+        if (!authLevel) {
             return {
                 valid: false,
-                tier: 'free',
+                authLevel: 'anonymous',
                 keyId: key,
-                rateLimit: resolvedRates.free,
+                rateLimit: resolvedRates.anonymous,
                 error: 'Invalid API key.',
                 status: 401,
             };
@@ -205,9 +197,9 @@ export function authenticate(req, rates = DEFAULT_RATES) {
 
         return {
             valid: true,
-            tier,
+            authLevel,
             keyId: key,
-            rateLimit: tier === 'pro' ? resolvedRates.pro : resolvedRates.free,
+            rateLimit: authLevel === 'authenticated' ? resolvedRates.authenticated : resolvedRates.anonymous,
             rates: resolvedRates,
         };
     }
@@ -216,20 +208,20 @@ export function authenticate(req, rates = DEFAULT_RATES) {
         if (!key) {
             return {
                 valid: true,
-                tier: 'free',
+                authLevel: 'anonymous',
                 keyId: null,
-                rateLimit: resolvedRates.free,
+                rateLimit: resolvedRates.anonymous,
                 rates: resolvedRates,
             };
         }
 
-        const tier = configuredKeys.get(key);
-        if (!tier) {
+        const authLevel = configuredKeys.get(key);
+        if (!authLevel) {
             return {
                 valid: false,
-                tier: 'free',
+                authLevel: 'anonymous',
                 keyId: key,
-                rateLimit: resolvedRates.free,
+                rateLimit: resolvedRates.anonymous,
                 error: 'Invalid API key.',
                 status: 401,
             };
@@ -237,9 +229,9 @@ export function authenticate(req, rates = DEFAULT_RATES) {
 
         return {
             valid: true,
-            tier,
+            authLevel,
             keyId: key,
-            rateLimit: tier === 'pro' ? resolvedRates.pro : resolvedRates.free,
+            rateLimit: authLevel === 'authenticated' ? resolvedRates.authenticated : resolvedRates.anonymous,
             rates: resolvedRates,
         };
     }
@@ -247,9 +239,9 @@ export function authenticate(req, rates = DEFAULT_RATES) {
     if (!key) {
         return {
             valid: true,
-            tier: 'free',
+            authLevel: 'anonymous',
             keyId: null,
-            rateLimit: resolvedRates.free,
+            rateLimit: resolvedRates.anonymous,
             rates: resolvedRates,
         };
     }
@@ -257,18 +249,18 @@ export function authenticate(req, rates = DEFAULT_RATES) {
     if (key.startsWith('thm_')) {
         return {
             valid: true,
-            tier: 'pro',
+            authLevel: 'authenticated',
             keyId: key,
-            rateLimit: resolvedRates.pro,
+            rateLimit: resolvedRates.authenticated,
             rates: resolvedRates,
         };
     }
 
     return {
         valid: true,
-        tier: 'free',
+        authLevel: 'anonymous',
         keyId: null,
-        rateLimit: resolvedRates.free,
+        rateLimit: resolvedRates.anonymous,
         rates: resolvedRates,
     };
 }
@@ -291,7 +283,7 @@ export async function applyRateLimit(req, res, auth) {
     }
 
     const identity = auth.keyId ? auth.keyId : getClientIp(req);
-    const bucket = `theoremis:rl:v1:${auth.tier}:${encodeURIComponent(identity)}`;
+    const bucket = `theoremis:rl:v1:${auth.authLevel}:${encodeURIComponent(identity)}`;
 
     try {
         const result = redis.configured

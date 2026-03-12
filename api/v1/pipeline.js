@@ -62,7 +62,7 @@ export default async function handler(req, res) {
             if (workerResponse?.timeout) {
                 return res.status(200).json({
                     ok: true,
-                    tier: auth.tier,
+                    authLevel: auth.authLevel,
                     parse: { document: {}, ir: {}, typeCheck: {}, elapsed: 0 },
                     emit: {
                         lean4: { code: '', warnings: ['worker timeout'] },
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
         return res.status(200).json({
             ok: true,
             mode: 'legacy-analysis',
-            tier: auth.tier,
+            authLevel: auth.authLevel,
             ...result,
         });
     } catch (err) {

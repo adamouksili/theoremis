@@ -5,7 +5,7 @@
 
 /**
  * Render the unified navigation bar.
- * @param activePage - The current page ID to highlight (e.g. 'playground', 'pricing')
+ * @param activePage - The current page ID to highlight (e.g. 'playground', 'changelog')
  */
 export function sharedNav(activePage?: string): string {
   const link = (href: string, label: string, id: string) => {

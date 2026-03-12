@@ -74,7 +74,6 @@ Required env:
 
 Format:
 - Comma-separated tokens, e.g. `key_a,key_b`
-- Optional tier prefixes supported: `free:key_a,pro:key_b`
 
 If missing in production:
 - Non-health endpoints fail closed with `503`.
@@ -89,11 +88,11 @@ Required env in production:
 
 Optional tuning:
 - `THEOREMIS_RATE_LIMIT_WINDOW_SEC` (default: `60`)
-- `THEOREMIS_RATE_LIMIT_FREE` (default: `100`)
-- `THEOREMIS_RATE_LIMIT_PRO` (default: `10000`)
+- `THEOREMIS_RATE_LIMIT_ANONYMOUS` (default: `100`)
+- `THEOREMIS_RATE_LIMIT_AUTHENTICATED` (default: `10000`)
 
 Behavior:
-- Keyed by `tier + key` in production.
+- Keyed by `authLevel + key` in production.
 - Development may fall back to in-memory buckets.
 - Health endpoint is excluded.
 - Standard headers are emitted:

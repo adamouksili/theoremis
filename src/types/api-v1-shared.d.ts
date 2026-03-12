@@ -1,7 +1,7 @@
 declare module '*api/v1/_shared.js' {
-    export function authenticate(req: { headers?: Record<string, string> }, rates?: { free: number; pro: number }): {
+    export function authenticate(req: { headers?: Record<string, string> }, rates?: { anonymous: number; authenticated: number }): {
         valid: boolean;
-        tier: 'free' | 'pro';
+        authLevel: 'anonymous' | 'authenticated';
         keyId?: string | null;
         rateLimit: number;
         error?: string;
@@ -13,7 +13,7 @@ declare module '*api/v1/_shared.js' {
         res: { setHeader: (key: string, value: string) => void },
         auth: {
             valid: boolean;
-            tier: 'free' | 'pro';
+            authLevel: 'anonymous' | 'authenticated';
             keyId?: string | null;
             rateLimit: number;
         },

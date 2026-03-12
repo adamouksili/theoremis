@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // Theoremis · Landing Page
-// Premium deep-tech hero with typing animation & routing
+// Deep-tech hero with typing animation & routing
 // ─────────────────────────────────────────────────────────────
 
 /** Navigate from landing to IDE view */
