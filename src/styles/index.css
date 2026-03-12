@@ -590,6 +590,7 @@ body {
   flex-direction: column;
   overflow-y: auto;
   min-width: 200px;
+  animation: viewFadeIn 0.35s var(--ease) both;
 }
 
 /* ── Summary ───────────────────────────────────────────────── */
@@ -1111,27 +1112,39 @@ body {
   height: 6px;
   border-radius: 50%;
   background: #d6d3d1;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .status-dot.active {
   background: var(--success);
-  box-shadow: 0 0 5px rgba(22, 163, 74, 0.4);
+  box-shadow: 0 0 6px rgba(22, 163, 74, 0.5);
+  animation: statusGlow 2s ease-in-out infinite;
 }
 
 .status-dot.processing {
   background: var(--accent);
-  animation: blink 1s ease-in-out infinite;
+  animation: statusPulse 1.2s ease-in-out infinite;
 }
 
-@keyframes blink {
-
-  0%,
-  100% {
+@keyframes statusPulse {
+  0%, 100% {
     opacity: 1;
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
   }
 
   50% {
-    opacity: 0.3;
+    opacity: 0.4;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes statusGlow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(22, 163, 74, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(22, 163, 74, 0.3);
   }
 }
 
@@ -1178,6 +1191,42 @@ body {
   }
 }
 
+/* ── View transitions ─────────────────────────────────────── */
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-enter {
+  animation: viewFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Panel content transition ─────────────────────────────── */
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bottom-body {
+  animation: panelSlideIn 0.3s var(--ease) both;
+}
+
 /* ── Bridge Status Indicator ────────────────────────────────── */
 
 .bridge-status {
@@ -1202,6 +1251,7 @@ body {
 .bridge-dot.online {
   background: var(--success);
   box-shadow: 0 0 4px var(--success);
+  animation: statusGlow 2s ease-in-out infinite;
 }
 
 .bridge-dot.offline {

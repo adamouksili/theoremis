@@ -12,9 +12,7 @@ let routeToken = 0;
 /** Check if we're on a subdomain (not the main site) */
 function isSubdomain(): boolean {
     const host = window.location.hostname;
-    return host === 'playground.theoremis.com'
-        || host === 'api.theoremis.com'
-        || host === 'ide.theoremis.com';
+    return host === 'playground.theoremis.com' || host === 'api.theoremis.com' || host === 'ide.theoremis.com';
 }
 
 /** Bind mobile hamburger menu on any page that has it */
@@ -47,7 +45,11 @@ async function showLanding(): Promise<void> {
     const app = document.getElementById('app');
     if (!app) return;
     app.innerHTML = landing.landingShell();
-    landing.bindLanding(() => { void navigateToIDE(); });
+    app.classList.add('view-enter');
+    app.addEventListener('animationend', () => app.classList.remove('view-enter'), { once: true });
+    landing.bindLanding(() => {
+        void navigateToIDE();
+    });
 }
 
 /** Navigate to IDE */
@@ -95,6 +97,8 @@ async function showApiDocs(): Promise<void> {
         const app = document.getElementById('app');
         if (!app) return;
         app.innerHTML = apiDocs.apiDocsShell();
+        app.classList.add('view-enter');
+        app.addEventListener('animationend', () => app.classList.remove('view-enter'), { once: true });
         bindHamburger();
     } catch {
         currentView = previousView;
@@ -124,6 +128,8 @@ async function showPlayground(): Promise<void> {
         const app = document.getElementById('app');
         if (!app) return;
         app.innerHTML = playground.playgroundShell();
+        app.classList.add('view-enter');
+        app.addEventListener('animationend', () => app.classList.remove('view-enter'), { once: true });
         playground.bindPlayground();
         bindHamburger();
     } catch {
@@ -153,9 +159,18 @@ async function route(): Promise<void> {
     const host = window.location.hostname;
 
     // Subdomain routing takes priority over hash routing.
-    if (host === 'playground.theoremis.com') { await showPlayground(); return; }
-    if (host === 'api.theoremis.com') { await showApiDocs(); return; }
-    if (host === 'ide.theoremis.com') { await navigateToIDE(); return; }
+    if (host === 'playground.theoremis.com') {
+        await showPlayground();
+        return;
+    }
+    if (host === 'api.theoremis.com') {
+        await showApiDocs();
+        return;
+    }
+    if (host === 'ide.theoremis.com') {
+        await navigateToIDE();
+        return;
+    }
 
     if (hash.startsWith('p/')) {
         const base64 = hash.slice(2);
@@ -168,9 +183,18 @@ async function route(): Promise<void> {
         return;
     }
 
-    if (hash === 'ide') { await navigateToIDE(); return; }
-    if (hash === 'api') { await showApiDocs(); return; }
-    if (hash === 'playground') { await showPlayground(); return; }
+    if (hash === 'ide') {
+        await navigateToIDE();
+        return;
+    }
+    if (hash === 'api') {
+        await showApiDocs();
+        return;
+    }
+    if (hash === 'playground') {
+        await showPlayground();
+        return;
+    }
 
     await showLanding();
 }
