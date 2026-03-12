@@ -22,11 +22,7 @@ export function sharedNav(activePage?: string): string {
     </div>
     <div class="landing-nav-links">
       ${link('#playground', 'Playground', 'playground')}
-      ${link('#nn-verify', 'NN Verify', 'nn-verify')}
       ${link('#api', 'API', 'api')}
-      ${link('#classroom', 'Classroom', 'classroom')}
-
-      ${link('#changelog', 'Changelog', 'changelog')}
       <a href="#ide" class="landing-nav-cta">Open IDE</a>
     </div>
     <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
@@ -44,14 +40,10 @@ export function sharedFooter(): string {
         <div class="landing-footer-heading">Product</div>
         <a href="#ide" class="landing-footer-link">IDE</a>
         <a href="#playground" class="landing-footer-link">Playground</a>
-        <a href="#nn-verify" class="landing-footer-link">NN Verify</a>
-        <a href="#classroom" class="landing-footer-link">Classroom</a>
         <a href="#api" class="landing-footer-link">API Docs</a>
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-
-        <a href="#changelog" class="landing-footer-link">Changelog</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">

@@ -64,11 +64,7 @@ export function landingShell(): string {
     </div>
     <div class="landing-nav-links">
       <a class="landing-nav-link" href="#playground">Playground</a>
-      <a class="landing-nav-link" href="#nn-verify">NN Verify</a>
       <a class="landing-nav-link" href="#api">API</a>
-      <a class="landing-nav-link" href="#classroom">Classroom</a>
-
-      <a class="landing-nav-link" href="#changelog">Changelog</a>
       <button class="landing-nav-cta" id="nav-launch-ide">Open IDE</button>
     </div>
     <button class="landing-nav-hamburger" id="nav-hamburger" aria-label="Menu">☰</button>
@@ -177,15 +173,6 @@ export function landingShell(): string {
       </div>
     </div>
 
-    <div class="landing-feature">
-      <div class="landing-feature-title">Neural Network Safety</div>
-      <div class="landing-feature-desc">
-        Prove that ReLU networks stay within safe output bounds for
-        <strong>every possible input</strong>. Formal verification via
-        interval bound propagation and constraint satisfaction —
-        not just empirical testing.
-      </div>
-    </div>
   </section>
 
   <section class="landing-tech" id="tech">
@@ -247,14 +234,10 @@ export function landingShell(): string {
         <div class="landing-footer-heading">Product</div>
         <a href="#ide" class="landing-footer-link">IDE</a>
         <a href="#playground" class="landing-footer-link">Playground</a>
-        <a href="#nn-verify" class="landing-footer-link">NN Verify</a>
-        <a href="#classroom" class="landing-footer-link">Classroom</a>
         <a href="#api" class="landing-footer-link">API Docs</a>
       </div>
       <div class="landing-footer-col">
         <div class="landing-footer-heading">Company</div>
-
-        <a href="#changelog" class="landing-footer-link">Changelog</a>
         <a href="https://github.com/adamouksili/theoremis" target="_blank" rel="noopener" class="landing-footer-link">GitHub</a>
       </div>
       <div class="landing-footer-col">

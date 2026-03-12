@@ -5,7 +5,7 @@
 import './styles/index.css';
 import './styles/landing.css';
 
-type View = 'landing' | 'ide' | 'api' | 'classroom' | 'playground' | 'changelog' | 'nn-verify';
+type View = 'landing' | 'ide' | 'api' | 'playground';
 let currentView: View = 'landing';
 let routeToken = 0;
 
@@ -14,7 +14,6 @@ function isSubdomain(): boolean {
     const host = window.location.hostname;
     return host === 'playground.theoremis.com'
         || host === 'api.theoremis.com'
-        || host === 'classroom.theoremis.com'
         || host === 'ide.theoremis.com';
 }
 
@@ -102,36 +101,6 @@ async function showApiDocs(): Promise<void> {
     }
 }
 
-/** Show Classroom / Grader */
-async function showClassroom(): Promise<void> {
-    if (currentView === 'classroom') return;
-
-    const token = ++routeToken;
-    const previousView = currentView;
-    await stopLandingTyping();
-    if (token !== routeToken) return;
-
-    currentView = 'classroom';
-    if (!isSubdomain()) window.location.hash = 'classroom';
-
-    try {
-        await import('./styles/classroom.css');
-        if (token !== routeToken) return;
-
-        const classroom = await import('./ide/classroom');
-        if (token !== routeToken) return;
-
-        document.body.classList.add('dark');
-        const app = document.getElementById('app');
-        if (!app) return;
-        app.innerHTML = classroom.classroomShell();
-        classroom.bindClassroom();
-        bindHamburger();
-    } catch {
-        currentView = previousView;
-    }
-}
-
 /** Show Playground (minimal hypothesis linter) */
 async function showPlayground(): Promise<void> {
     if (currentView === 'playground') return;
@@ -162,67 +131,6 @@ async function showPlayground(): Promise<void> {
     }
 }
 
-
-
-/** Show Changelog page */
-async function showChangelog(): Promise<void> {
-    if (currentView === 'changelog') return;
-
-    const token = ++routeToken;
-    const previousView = currentView;
-    await stopLandingTyping();
-    if (token !== routeToken) return;
-
-    currentView = 'changelog';
-    if (!isSubdomain()) window.location.hash = 'changelog';
-
-    try {
-        await import('./styles/changelog.css');
-        if (token !== routeToken) return;
-
-        const changelog = await import('./ide/changelog');
-        if (token !== routeToken) return;
-
-        document.body.classList.add('dark');
-        const app = document.getElementById('app');
-        if (!app) return;
-        app.innerHTML = changelog.changelogShell();
-        bindHamburger();
-    } catch {
-        currentView = previousView;
-    }
-}
-
-/** Show NN Verify page */
-async function showNNVerify(): Promise<void> {
-    if (currentView === 'nn-verify') return;
-
-    const token = ++routeToken;
-    const previousView = currentView;
-    await stopLandingTyping();
-    if (token !== routeToken) return;
-
-    currentView = 'nn-verify';
-    if (!isSubdomain()) window.location.hash = 'nn-verify';
-
-    try {
-        await import('./styles/nn-verify.css');
-        if (token !== routeToken) return;
-
-        const nnVerify = await import('./ide/nn-verify');
-        if (token !== routeToken) return;
-
-        document.body.classList.add('dark');
-        const app = document.getElementById('app');
-        if (!app) return;
-        app.innerHTML = nnVerify.nnVerifyShell();
-        nnVerify.bindNNVerify();
-        bindHamburger();
-    } catch {
-        currentView = previousView;
-    }
-}
-
 /** Navigate to IDE with shared proof content */
 async function navigateToSharedProof(base64: string): Promise<void> {
     const token = ++routeToken;
@@ -247,7 +155,6 @@ async function route(): Promise<void> {
     // Subdomain routing takes priority over hash routing.
     if (host === 'playground.theoremis.com') { await showPlayground(); return; }
     if (host === 'api.theoremis.com') { await showApiDocs(); return; }
-    if (host === 'classroom.theoremis.com') { await showClassroom(); return; }
     if (host === 'ide.theoremis.com') { await navigateToIDE(); return; }
 
     if (hash.startsWith('p/')) {
@@ -263,11 +170,7 @@ async function route(): Promise<void> {
 
     if (hash === 'ide') { await navigateToIDE(); return; }
     if (hash === 'api') { await showApiDocs(); return; }
-    if (hash === 'classroom') { await showClassroom(); return; }
     if (hash === 'playground') { await showPlayground(); return; }
-
-    if (hash === 'changelog') { await showChangelog(); return; }
-    if (hash === 'nn-verify') { await showNNVerify(); return; }
 
     await showLanding();
 }
