@@ -24,7 +24,8 @@ export default defineConfig({
     },
     plugins: [stripRedundantFonts()],
     build: {
-        // Inline tiny assets (<4 KB) to reduce HTTP requests
+        target: 'es2022',
+        sourcemap: 'hidden',
         assetsInlineLimit: 4096,
         rollupOptions: {
             output: {

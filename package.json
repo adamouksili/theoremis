@@ -1,7 +1,23 @@
 {
   "name": "theoremis",
+  "private": true,
   "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Adam Ouksili",
+  "homepage": "https://theoremis.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adamouksili/theoremis"
+  },
+  "keywords": [
+    "formal-verification",
+    "type-checker",
+    "lean4",
+    "latex",
+    "proof-assistant",
+    "theorem-prover"
+  ],
   "description": "The AI-powered formal verification platform. Write proofs in LaTeX, verify with Lean 4, and ship machine-checked mathematics.",
   "engines": {
     "node": ">=20"
@@ -12,18 +28,39 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "bridge": "npx tsx src/bridge/lean-server.ts",
     "typecheck": "tsc --noEmit",
+    "check": "npx tsx cli/check.ts",
     "lint:tex": "npx tsx cli/lint.ts",
     "bench": "npx tsx bench/run.ts",
     "perf": "npx tsx bench/perf.ts",
     "perf:ci": "npx tsx bench/perf.ts --ci",
     "size:check": "npx tsx bench/size-check.ts",
     "lint": "eslint src/",
-    "format": "prettier --write 'src/**/*.ts'"
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^10.0.3",
+    "fast-check": "^4.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.0",
     "vite": "^6.1.0",
     "vitest": "^4.0.18"

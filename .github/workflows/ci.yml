@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,8 +31,20 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
+      - name: Run tests with coverage
+        if: matrix.node-version == 20
+        run: npm run test:coverage
+
       - name: Run tests
+        if: matrix.node-version != 20
         run: npm test
+
+      - name: Upload coverage
+        if: matrix.node-version == 20
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
 
       - name: Build
         run: npm run build
@@ -65,10 +80,20 @@ jobs:
 
       - run: npm ci
 
-      - name: Check types
+      - name: Type-check
         run: npx tsc --noEmit
 
-      - name: Verify build output
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Build & verify output
         run: |
           npm run build
           npm run size:check

@@ -3,7 +3,7 @@
    Academic-grade typography, no SaaS chrome
    ───────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+/* Fonts loaded via <link> in index.html for faster parallel fetch */
 
 /* ── Landing root ──────────────────────────────────────────── */
 
@@ -14,11 +14,15 @@
   --l-text: #d4d4d4;
   --l-text-strong: #e8e8e8;
   --l-text-muted: #777777;
-  --l-text-faint: #555555;
+  --l-text-faint: #6b6b6b;
   --l-accent: #c9a86c;
   --l-accent-dim: rgba(201, 168, 108, 0.15);
   --l-border: rgba(255, 255, 255, 0.06);
   --l-border-strong: rgba(255, 255, 255, 0.1);
+  --l-heading: #e8e8e8;
+  --l-muted: #777777;
+  --l-card-bg: #191919;
+  --l-text-body: #d4d4d4;
   --l-font-serif: 'Libre Baskerville', 'Georgia', 'Times New Roman', serif;
   --l-font-sans: 'Inter', -apple-system, system-ui, sans-serif;
   --l-font-mono: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;

@@ -1,0 +1,6 @@
+dist/
+node_modules/
+coverage/
+bench/artifacts/
+vscode-extension/out/
+*.min.js

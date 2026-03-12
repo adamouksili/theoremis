@@ -16,3 +16,9 @@ vscode-extension/out/
 vscode-extension/node_modules/
 .vercel/
 *.pdf
+tsconfig.tsbuildinfo
+.eslintcache
+.cache/
+*.swp
+*.swo
+.idea/

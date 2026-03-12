@@ -116,16 +116,25 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=www-data
 WorkingDirectory=/opt/theoremis
 Environment=SIGMA_CORS_ORIGIN=https://www.theoremis.com
+Environment=HOME=/opt/theoremis
 ExecStart=/usr/bin/npx tsx src/bridge/lean-server.ts
 Restart=always
 RestartSec=5
+ProtectSystem=full
+NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
+```
+
+Set ownership so the service user can access the project:
+
+```bash
+chown -R www-data:www-data /opt/theoremis
 ```
 
 Enable and start:

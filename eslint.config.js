@@ -11,13 +11,16 @@ export default [
             parserOptions: {
                 ecmaVersion: 'latest',
                 sourceType: 'module',
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
             },
         },
         plugins: {
             '@typescript-eslint': tsPlugin,
         },
         rules: {
-            // TypeScript-aware overrides
+            'no-undef': 'off',
+
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': ['warn', {
                 argsIgnorePattern: '^_',
@@ -26,7 +29,13 @@ export default [
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/consistent-type-imports': 'warn',
 
-            // General quality
+            '@typescript-eslint/no-floating-promises': 'error',
+            '@typescript-eslint/await-thenable': 'error',
+            '@typescript-eslint/no-misused-promises': ['error', {
+                checksVoidReturn: { arguments: false },
+            }],
+
+            'no-useless-assignment': 'warn',
             'no-console': ['warn', { allow: ['warn', 'error'] }],
             'eqeqeq': ['error', 'always', { null: 'ignore' }],
             'no-throw-literal': 'error',

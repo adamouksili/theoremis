@@ -3,7 +3,7 @@
    Clean surface, deep machinery underneath
    ───────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+/* Fonts loaded via <link> in index.html for faster parallel fetch */
 
 :root {
   --bg: #fafaf9;
@@ -16,7 +16,7 @@
 
   --text: #1c1917;
   --text-secondary: #78716c;
-  --text-muted: #a8a29e;
+  --text-muted: #8a8580;
   --text-code: #cdd6f4;
 
   --accent: #2563eb;
@@ -119,6 +119,28 @@ body.dark .katex-preview {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  left: 0;
 }
 
 html,
@@ -357,8 +379,12 @@ body {
   -webkit-appearance: none;
   appearance: none;
   padding: 0;
-  outline: none;
+  outline: none;      
   margin: 0;
+}
+
+.axiom-toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .axiom-toggle.on {
@@ -1223,30 +1249,6 @@ body {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* ── Trust badges (landing) ────────────────────────────────── */
-
-.landing-trust {
-  text-align: center;
-  padding: 32px 0 0;
-}
-
-.landing-trust-badges {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.landing-trust-badge {
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
-  background: var(--bg-input);
-  padding: 4px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
 }
 
 /* ── Responsive ────────────────────────────────────────────── */
