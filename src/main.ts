@@ -3,7 +3,6 @@
 // ─────────────────────────────────────────────────────────────
 
 import './styles/index.css';
-import './styles/landing.css';
 
 type View = 'landing' | 'ide' | 'api' | 'playground';
 let currentView: View = 'landing';
@@ -27,9 +26,13 @@ function bindHamburger(): void {
     }
 }
 
+let unmountReactLanding: (() => void) | null = null;
+
 async function stopLandingTyping(): Promise<void> {
-    const landing = await import('./ide/landing');
-    landing.stopTypingAnimation();
+    if (unmountReactLanding) {
+        unmountReactLanding();
+        unmountReactLanding = null;
+    }
 }
 
 /** Render landing page */
@@ -39,17 +42,18 @@ async function showLanding(): Promise<void> {
     if (!isSubdomain()) window.location.hash = '';
     document.body.classList.add('dark'); // Landing is always dark
 
-    const landing = await import('./ide/landing');
-    if (token !== routeToken) return;
-
     const app = document.getElementById('app');
     if (!app) return;
-    app.innerHTML = landing.landingShell();
-    app.classList.add('view-enter');
-    app.addEventListener('animationend', () => app.classList.remove('view-enter'), { once: true });
-    landing.bindLanding(() => {
-        void navigateToIDE();
-    });
+    app.innerHTML = '';
+
+    const { createElement } = await import('react');
+    const { createRoot } = await import('react-dom/client');
+    const { default: LandingPage } = await import('./ide/landing-page/LandingPage');
+    if (token !== routeToken) return;
+
+    const root = createRoot(app);
+    root.render(createElement(LandingPage));
+    unmountReactLanding = () => root.unmount();
 }
 
 /** Navigate to IDE */
