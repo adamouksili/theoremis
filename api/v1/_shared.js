@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 const DEFAULT_PROD_ORIGINS = ['https://theoremis.com', 'https://www.theoremis.com'];
 const DEFAULT_RATES = { anonymous: 100, authenticated: 10000 };
 const DEFAULT_RATE_WINDOW_SEC = 60;
@@ -282,8 +284,9 @@ export async function applyRateLimit(req, res, auth) {
         };
     }
 
-    const identity = auth.keyId ? auth.keyId : getClientIp(req);
-    const bucket = `theoremis:rl:v1:${auth.authLevel}:${encodeURIComponent(identity)}`;
+    const rawIdentity = auth.keyId ? auth.keyId : getClientIp(req);
+    const hashedIdentity = createHash('sha256').update(rawIdentity).digest('hex').slice(0, 16);
+    const bucket = `theoremis:rl:v1:${auth.authLevel}:${hashedIdentity}`;
 
     try {
         const result = redis.configured

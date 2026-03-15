@@ -1,27 +1,41 @@
 // Vercel Serverless Function — Mathlib Search Proxy
 // Bypasses CORS by proxying Moogle/LeanSearch requests server-side
 
-export default async function handler(req, res) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+import { applyCors, handlePreflight, authenticate, applyRateLimit, sendError, isDev } from './v1/_shared.js';
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).end();
-    }
+const MAX_NUM_RESULTS = 50;
+
+export default async function handler(req, res) {
+    applyCors(req, res, ['POST', 'OPTIONS']);
+
+    if (handlePreflight(req, res)) return;
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed. Use POST with {query: "..."} body.' });
+        return sendError(res, 405, 'Method not allowed. Use POST with {query: "..."} body.');
+    }
+
+    // Authenticate (anonymous allowed in dev, required in prod)
+    const auth = authenticate(req);
+    if (!auth.valid) {
+        return sendError(res, auth.status || 401, auth.error);
+    }
+
+    // Rate limit
+    const rl = await applyRateLimit(req, res, auth);
+    if (!rl.ok) {
+        return sendError(res, rl.status, rl.error);
     }
 
     const body = req.body || {};
     const query = body.query;
-    const num_results = body.num_results || 8;
+    let num_results = body.num_results || 8;
 
     if (!query || typeof query !== 'string') {
-        return res.status(400).json({ error: 'Missing query string in POST body' });
+        return sendError(res, 400, 'Missing query string in POST body');
     }
+
+    // Validate and cap num_results
+    num_results = Math.max(1, Math.min(Math.trunc(Number(num_results)) || 8, MAX_NUM_RESULTS));
 
     const MOOGLE_API = 'https://www.moogle.ai/api/search';
     const LEANSEARCH_API = 'https://leansearch.net/api/search';

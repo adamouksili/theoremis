@@ -8,23 +8,39 @@ const ENV_BRIDGE_URL = (import.meta.env?.VITE_THEOREMIS_BRIDGE_URL || '').trim()
 const DEFAULT_PRODUCTION_BRIDGE_URL = 'https://lean.theoremis.com';
 
 function sanitizeBridgeUrl(url: string): string {
-    return url.replace(/\/$/, '');
+    try {
+        const parsed = new URL(url);
+        const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+        if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && isLocalhost)) {
+            return '';
+        }
+        return parsed.origin + parsed.pathname.replace(/\/$/, '');
+    } catch {
+        return '';
+    }
 }
 
 /** Get the bridge URL from localStorage, or fall back to sensible default */
 function getBridgeUrl(): string {
     if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('theoremis-bridge-url');
-        if (saved) return sanitizeBridgeUrl(saved);
+        if (saved) {
+            const sanitized = sanitizeBridgeUrl(saved);
+            if (sanitized) return sanitized;
+            localStorage.removeItem('theoremis-bridge-url');
+        }
     }
 
     if (ENV_BRIDGE_URL) {
-        return sanitizeBridgeUrl(ENV_BRIDGE_URL);
+        const sanitized = sanitizeBridgeUrl(ENV_BRIDGE_URL);
+        if (sanitized) return sanitized;
     }
 
     // In production use a stable bridge host; locally use localhost by default.
-    if (typeof window !== 'undefined' &&
-        (window.location.hostname === 'theoremis.com' || window.location.hostname === 'www.theoremis.com')) {
+    if (
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'theoremis.com' || window.location.hostname === 'www.theoremis.com')
+    ) {
         return DEFAULT_PRODUCTION_BRIDGE_URL;
     }
 
@@ -98,8 +114,8 @@ function validateLeanResult(data: unknown): LeanVerifyResult {
     const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
     return {
         success: typeof obj.success === 'boolean' ? obj.success : false,
-        errors: Array.isArray(obj.errors) ? obj.errors as LeanDiagnostic[] : [],
-        warnings: Array.isArray(obj.warnings) ? obj.warnings as LeanDiagnostic[] : [],
+        errors: Array.isArray(obj.errors) ? (obj.errors as LeanDiagnostic[]) : [],
+        warnings: Array.isArray(obj.warnings) ? (obj.warnings as LeanDiagnostic[]) : [],
         elapsed: typeof obj.elapsed === 'number' ? obj.elapsed : 0,
     };
 }

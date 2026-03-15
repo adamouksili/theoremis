@@ -22,8 +22,12 @@ const MODEL_COSTS: Record<string, { input: number; output: number }> = {
 
 let cumulativeUsage: LLMUsage = { promptTokens: 0, completionTokens: 0, estimatedCostUsd: 0 };
 
-export function getCumulativeUsage(): LLMUsage { return { ...cumulativeUsage }; }
-export function resetUsage(): void { cumulativeUsage = { promptTokens: 0, completionTokens: 0, estimatedCostUsd: 0 }; }
+export function getCumulativeUsage(): LLMUsage {
+    return { ...cumulativeUsage };
+}
+export function resetUsage(): void {
+    cumulativeUsage = { promptTokens: 0, completionTokens: 0, estimatedCostUsd: 0 };
+}
 
 export function detectProvider(apiKey: string): LLMProvider {
     if (apiKey.startsWith('ghp_') || apiKey.startsWith('github_pat_')) return 'github';
@@ -33,9 +37,12 @@ export function detectProvider(apiKey: string): LLMProvider {
 
 export function defaultModelForProvider(provider: LLMProvider): string {
     switch (provider) {
-        case 'github': return 'gpt-4o';
-        case 'anthropic': return 'claude-sonnet-4-20250514';
-        case 'openai': return 'gpt-4o-mini';
+        case 'github':
+            return 'gpt-4o';
+        case 'anthropic':
+            return 'claude-sonnet-4-20250514';
+        case 'openai':
+            return 'gpt-4o-mini';
     }
 }
 
@@ -86,7 +93,11 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
             if (!resp.ok) {
                 const text = await resp.text();
                 let message = `Anthropic API error (HTTP ${resp.status})`;
-                try { message = JSON.parse(text).error?.message || message; } catch { /* non-JSON body */ }
+                try {
+                    message = JSON.parse(text).error?.message || message;
+                } catch {
+                    /* non-JSON body */
+                }
                 throw new Error(message);
             }
             const data = await resp.json();
@@ -95,9 +106,10 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
                 usage = { prompt: data.usage.input_tokens || 0, completion: data.usage.output_tokens || 0 };
             }
         } else {
-            const endpoint = provider === 'github'
-                ? 'https://models.inference.ai.azure.com/chat/completions'
-                : 'https://api.openai.com/v1/chat/completions';
+            const endpoint =
+                provider === 'github'
+                    ? 'https://models.inference.ai.azure.com/chat/completions'
+                    : 'https://api.openai.com/v1/chat/completions';
 
             const resp = await fetch(endpoint, {
                 method: 'POST',
@@ -115,7 +127,11 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
             if (!resp.ok) {
                 const text = await resp.text();
                 let message = `LLM API error (HTTP ${resp.status})`;
-                try { message = JSON.parse(text).error?.message || message; } catch { /* non-JSON body */ }
+                try {
+                    message = JSON.parse(text).error?.message || message;
+                } catch {
+                    /* non-JSON body */
+                }
                 throw new Error(message);
             }
             const data = await resp.json();
@@ -135,10 +151,13 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
         }
 
         // Clean up potential markdown code blocks
-        return suggestion.replace(/^```(\w+)?/g, '').replace(/```$/g, '').trim();
+        return suggestion
+            .replace(/^```(\w+)?/g, '')
+            .replace(/```$/g, '')
+            .trim();
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('LLM API Error:', error);
+        console.error('LLM API Error:', msg);
         return `Error: ${msg}`;
     }
 }
@@ -146,17 +165,17 @@ Respond ONLY with the tactic. Do not include markdown formatting or explanations
 // ── Goal-Aware Tactic Engine (Phase 2) ──────────────────────
 
 export interface ProofGoalState {
-    goal: string;                  // Current proof goal, e.g. "n + 0 = n"
-    hypotheses: string[];          // Available hypotheses, e.g. ["n : ℕ", "h : n > 0"]
-    theoremName: string;           // Name of the theorem being proved
-    statement: string;             // Full theorem statement
-    previousTactics: string[];     // Tactics already applied
-    mathlibHints?: string[];       // Relevant Mathlib lemma names
+    goal: string; // Current proof goal, e.g. "n + 0 = n"
+    hypotheses: string[]; // Available hypotheses, e.g. ["n : ℕ", "h : n > 0"]
+    theoremName: string; // Name of the theorem being proved
+    statement: string; // Full theorem statement
+    previousTactics: string[]; // Tactics already applied
+    mathlibHints?: string[]; // Relevant Mathlib lemma names
 }
 
 export interface TacticSuggestion {
-    tactic: string;      // e.g. "simp [Nat.add_zero]"
-    confidence: number;  // 0.0 - 1.0
+    tactic: string; // e.g. "simp [Nat.add_zero]"
+    confidence: number; // 0.0 - 1.0
     explanation: string; // Why this tactic might work
 }
 
@@ -171,16 +190,14 @@ export async function queryGoalAwareTactics(
     const model = config?.model ?? defaultModelForProvider(provider);
 
     const hypothesesBlock = goalState.hypotheses.length
-        ? goalState.hypotheses.map(h => `  ${h}`).join('\n')
+        ? goalState.hypotheses.map((h) => `  ${h}`).join('\n')
         : '  (none)';
 
     const mathlibBlock = goalState.mathlibHints?.length
-        ? `\nRelevant Mathlib lemmas that might help:\n${goalState.mathlibHints.map(h => `  - ${h}`).join('\n')}`
+        ? `\nRelevant Mathlib lemmas that might help:\n${goalState.mathlibHints.map((h) => `  - ${h}`).join('\n')}`
         : '';
 
-    const previousBlock = goalState.previousTactics.length
-        ? goalState.previousTactics.join('\n  ')
-        : '(none yet)';
+    const previousBlock = goalState.previousTactics.length ? goalState.previousTactics.join('\n  ') : '(none yet)';
 
     const prompt = `You are an expert Lean 4 proof engineer. Given the current proof state, suggest exactly 3 tactics ranked by likelihood of success.
 
@@ -231,9 +248,10 @@ No markdown, no extra text. Just 3 lines of JSON.`;
                 usage = { prompt: data.usage.input_tokens || 0, completion: data.usage.output_tokens || 0 };
             }
         } else {
-            const endpoint = provider === 'github'
-                ? 'https://models.inference.ai.azure.com/chat/completions'
-                : 'https://api.openai.com/v1/chat/completions';
+            const endpoint =
+                provider === 'github'
+                    ? 'https://models.inference.ai.azure.com/chat/completions'
+                    : 'https://api.openai.com/v1/chat/completions';
 
             const resp = await fetch(endpoint, {
                 method: 'POST',
@@ -270,28 +288,40 @@ No markdown, no extra text. Just 3 lines of JSON.`;
 
         // Parse multiple JSON lines
         const suggestions: TacticSuggestion[] = [];
-        const lines = raw.split('\n').filter(l => l.trim().startsWith('{'));
+        const lines = raw.split('\n').filter((l) => l.trim().startsWith('{'));
         for (const line of lines) {
             try {
                 const parsed = JSON.parse(line.trim());
                 if (parsed.tactic) {
                     suggestions.push({
-                        tactic: String(parsed.tactic).replace(/^```\w*\n?/, '').replace(/```$/, '').trim(),
+                        tactic: String(parsed.tactic)
+                            .replace(/^```\w*\n?/, '')
+                            .replace(/```$/, '')
+                            .trim(),
                         confidence: Math.min(1, Math.max(0, Number(parsed.confidence) || 0.5)),
                         explanation: String(parsed.explanation || ''),
                     });
                 }
-            } catch { /* skip malformed lines */ }
+            } catch {
+                /* skip malformed lines */
+            }
         }
 
-        return suggestions.length > 0 ? suggestions : [{
-            tactic: raw.replace(/^```\w*/g, '').replace(/```$/g, '').trim(),
-            confidence: 0.5,
-            explanation: 'Single suggestion (could not parse structured response)',
-        }];
+        return suggestions.length > 0
+            ? suggestions
+            : [
+                  {
+                      tactic: raw
+                          .replace(/^```\w*/g, '')
+                          .replace(/```$/g, '')
+                          .trim(),
+                      confidence: 0.5,
+                      explanation: 'Single suggestion (could not parse structured response)',
+                  },
+              ];
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('LLM API Error:', error);
+        console.error('LLM API Error:', msg);
         return [{ tactic: `Error: ${msg}`, confidence: 0, explanation: '' }];
     }
 }

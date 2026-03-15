@@ -20,12 +20,12 @@ import { promisify } from 'util';
 const exec = promisify(execFile);
 const PORT = 9473;
 const LEAN_TIMEOUT = 120_000; // Mathlib imports can be slow on first run
+const MAX_BODY_SIZE = 1_048_576; // 1 MB
 
 // Path to the Lake project with Mathlib dependency.
 // The bridge writes temp .lean files here so `lake env lean` resolves Mathlib imports.
 // Default: ../theoremis-lean-env (sibling to the Theoremis repo)
-const LEAN_PROJECT_DIR = process.env.THEOREMIS_LEAN_PROJECT
-    || join(process.cwd(), '..', 'theoremis-lean-env');
+const LEAN_PROJECT_DIR = process.env.THEOREMIS_LEAN_PROJECT || join(process.cwd(), '..', 'theoremis-lean-env');
 
 /** Shape returned by promisified `execFile` on failure. */
 interface ExecError extends Error {
@@ -74,7 +74,7 @@ async function findLean(): Promise<string> {
     }
 
     throw new Error(
-        'Lean 4 not found. Install via: curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh'
+        'Lean 4 not found. Install via: curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh',
     );
 }
 
@@ -117,17 +117,16 @@ async function verifyLean(code: string): Promise<VerifyResult> {
         const parsed = parseLeanOutput(stderr + stdout);
 
         return {
-            success: parsed.filter(e => e.severity === 'error').length === 0,
-            errors: parsed.filter(e => e.severity === 'error'),
-            warnings: parsed.filter(e => e.severity === 'warning' || e.severity === 'information'),
+            success: parsed.filter((e) => e.severity === 'error').length === 0,
+            errors: parsed.filter((e) => e.severity === 'error'),
+            warnings: parsed.filter((e) => e.severity === 'warning' || e.severity === 'information'),
             elapsed,
         };
     } catch (err: unknown) {
         const elapsed = performance.now() - start;
 
         // Narrow to ExecError (which extends Error with optional killed/stderr)
-        const isExecErr = (v: unknown): v is ExecError =>
-            v instanceof Error;
+        const isExecErr = (v: unknown): v is ExecError => v instanceof Error;
 
         if (!isExecErr(err)) {
             return {
@@ -152,9 +151,9 @@ async function verifyLean(code: string): Promise<VerifyResult> {
 
         if (parsed.length > 0) {
             return {
-                success: parsed.filter(e => e.severity === 'error').length === 0,
-                errors: parsed.filter(e => e.severity === 'error'),
-                warnings: parsed.filter(e => e.severity === 'warning'),
+                success: parsed.filter((e) => e.severity === 'error').length === 0,
+                errors: parsed.filter((e) => e.severity === 'error'),
+                warnings: parsed.filter((e) => e.severity === 'warning'),
                 elapsed,
             };
         }
@@ -166,7 +165,7 @@ async function verifyLean(code: string): Promise<VerifyResult> {
             elapsed,
         };
     } finally {
-        unlink(tmpFile).catch(() => { });
+        unlink(tmpFile).catch(() => {});
     }
 }
 
@@ -175,7 +174,16 @@ async function verifyLean(code: string): Promise<VerifyResult> {
 function readBody(req: IncomingMessage): Promise<string> {
     return new Promise((resolve, reject) => {
         let body = '';
-        req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+        let bytes = 0;
+        req.on('data', (chunk: Buffer) => {
+            bytes += chunk.length;
+            if (bytes > MAX_BODY_SIZE) {
+                req.destroy();
+                reject(new Error('Request body too large'));
+                return;
+            }
+            body += chunk.toString();
+        });
         req.on('end', () => resolve(body));
         req.on('error', reject);
     });
@@ -183,7 +191,9 @@ function readBody(req: IncomingMessage): Promise<string> {
 
 function cors(res: ServerResponse, req: IncomingMessage) {
     // Allow the configured origin, or default to local dev
-    const allowed = (process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173,https://www.theoremis.com,https://theoremis.com').split(',');
+    const allowed = (
+        process.env.SIGMA_CORS_ORIGIN || 'http://localhost:5173,https://www.theoremis.com,https://theoremis.com'
+    ).split(',');
     const origin = req.headers.origin || '';
     if (allowed.includes('*') || allowed.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
@@ -218,7 +228,8 @@ const server = createServer(async (req, res) => {
             res.end(JSON.stringify(result));
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
+            const status = msg === 'Request body too large' ? 413 : 500;
+            res.writeHead(status, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: msg }));
         }
         return;
