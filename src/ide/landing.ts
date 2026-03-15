@@ -445,6 +445,10 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
     initMagneticButtons();
     initParallax();
     initCounters();
+    initCursorSpotlight();
+    initNavLinkUnderlines();
+    initCardTiltAll();
+    initSectionGlowPulse();
 }
 
 // ── Scroll-reveal with IntersectionObserver ─────────────────
@@ -564,9 +568,47 @@ function initParticleCanvas(): void {
         }
     }
 
+    const LINE_DIST = 160;
+
     function draw(): void {
         if (!ctx) return;
         ctx.clearRect(0, 0, w, h);
+
+        // Draw constellation lines between nearby particles
+        for (let i = 0; i < particles.length; i++) {
+            const a = particles[i]!;
+            for (let j = i + 1; j < particles.length; j++) {
+                const b = particles[j]!;
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < LINE_DIST) {
+                    const alpha = (1 - dist / LINE_DIST) * 0.04 * Math.min(a.opacity / a.baseOpacity, 1);
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.strokeStyle = `rgba(201, 168, 108, ${alpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Draw lines from particles to mouse when close
+        for (const p of particles) {
+            const dx = p.x - mouseX;
+            const dy = p.y - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 200) {
+                const alpha = (1 - dist / 200) * 0.08;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(mouseX, mouseY);
+                ctx.strokeStyle = `rgba(201, 168, 108, ${alpha})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+        }
 
         for (const p of particles) {
             // Fade in over time
@@ -778,4 +820,91 @@ function animateCount(el: HTMLElement, target: number, suffix: string): void {
     }
 
     requestAnimationFrame(step);
+}
+
+// ── Cursor spotlight on cards ────────────────────────────────
+
+function initCursorSpotlight(): void {
+    const cards = document.querySelectorAll<HTMLElement>(
+        '.landing-feature, .landing-tech-item, .landing-pipeline-step',
+    );
+    if (!cards.length) return;
+
+    const onMove = (e: MouseEvent) => {
+        for (const card of cards) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--spot-x', `${x}px`);
+            card.style.setProperty('--spot-y', `${y}px`);
+        }
+    };
+
+    window.addEventListener('mousemove', onMove, { passive: true });
+    cleanupFns.push(() => window.removeEventListener('mousemove', onMove));
+}
+
+// ── Nav link hover underline sweep ───────────────────────────
+
+function initNavLinkUnderlines(): void {
+    const links = document.querySelectorAll<HTMLElement>('.landing-nav-link');
+    links.forEach((link) => {
+        link.addEventListener('mouseenter', () => link.classList.add('nav-hover'));
+        link.addEventListener('mouseleave', () => link.classList.remove('nav-hover'));
+    });
+}
+
+// ── Subtle 3D tilt on all cards ──────────────────────────────
+
+function initCardTiltAll(): void {
+    const cards = document.querySelectorAll<HTMLElement>('.landing-feature, .landing-tech-item');
+
+    cards.forEach((card) => {
+        const onMove = (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            const tiltX = (y - 0.5) * -4;
+            const tiltY = (x - 0.5) * 4;
+            card.style.transform = `perspective(600px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px)`;
+        };
+
+        const onLeave = () => {
+            card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+            card.style.transform = '';
+            setTimeout(() => {
+                card.style.transition = '';
+            }, 500);
+        };
+
+        card.addEventListener('mousemove', onMove);
+        card.addEventListener('mouseleave', onLeave);
+        cleanupFns.push(() => {
+            card.removeEventListener('mousemove', onMove);
+            card.removeEventListener('mouseleave', onLeave);
+        });
+    });
+}
+
+// ── Breathing glow pulse on section dividers & accent elements ──
+
+function initSectionGlowPulse(): void {
+    const dividers = document.querySelectorAll<HTMLElement>('.section-divider');
+    dividers.forEach((d) => d.classList.add('glow-pulse'));
+
+    // Add a subtle ambient mouse-follow glow to the page
+    const glow = document.createElement('div');
+    glow.className = 'cursor-glow';
+    document.querySelector('.landing')?.appendChild(glow);
+
+    const onMove = (e: MouseEvent) => {
+        glow.style.left = `${e.clientX}px`;
+        glow.style.top = `${e.clientY + window.scrollY}px`;
+    };
+
+    window.addEventListener('mousemove', onMove, { passive: true });
+    cleanupFns.push(() => {
+        window.removeEventListener('mousemove', onMove);
+        glow.remove();
+    });
 }
