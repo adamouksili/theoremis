@@ -273,7 +273,7 @@ html {
 }
 
 .landing-hero-content {
-  max-width: 520px;
+  max-width: 560px;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -303,6 +303,11 @@ html {
   color: var(--l-text-strong);
   margin-bottom: 28px;
   perspective: 600px;
+  word-break: keep-all;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 .landing-hero-title em {
@@ -1254,6 +1259,86 @@ a.landing-footer-link:hover::after {
   width: 100%;
 }
 
+/* ── Staggered Feature Card Reveals ───────────────────────── */
+
+[data-reveal-dir="left"] {
+  transform: translateX(-60px) rotate(-2deg) translateY(50px);
+}
+
+[data-reveal-dir="right"] {
+  transform: translateX(60px) rotate(2deg) translateY(50px);
+}
+
+[data-reveal-dir="left"].revealed,
+[data-reveal-dir="right"].revealed {
+  transform: translateX(0) rotate(0deg) translateY(0);
+}
+
+/* ── Phase Glitch (code card transition) ─────────────────── */
+
+.phase-glitch {
+  animation: phaseGlitch 400ms ease-out;
+}
+
+@keyframes phaseGlitch {
+  0% { filter: brightness(1) hue-rotate(0deg); transform: translateX(0); }
+  15% { filter: brightness(1.3) hue-rotate(10deg); transform: translateX(-2px); }
+  30% { filter: brightness(1) hue-rotate(-5deg); transform: translateX(3px); }
+  50% { filter: brightness(1.2) hue-rotate(8deg); transform: translateX(-1px); }
+  70% { filter: brightness(1.1) hue-rotate(0deg); transform: translateX(1px); }
+  100% { filter: brightness(1) hue-rotate(0deg); transform: translateX(0); }
+}
+
+/* ── Highlight Word Underline ────────────────────────────── */
+
+.highlight-word {
+  background: none;
+  color: inherit;
+  position: relative;
+  display: inline;
+}
+
+.highlight-word::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--l-accent), var(--l-accent-bright));
+  border-radius: 1px;
+  transition: width 0.6s var(--l-smooth);
+}
+
+.highlight-word.highlight-revealed::after {
+  width: 100%;
+}
+
+/* ── Trust Badge Spring Pop ──────────────────────────────── */
+
+.landing-trust-badge[data-reveal] {
+  transform: scale(0) translateY(50px);
+}
+
+.landing-trust-badge[data-reveal].revealed {
+  animation: trustBadgePop 0.7s var(--l-spring) forwards;
+}
+
+@keyframes trustBadgePop {
+  from { transform: scale(0) translateY(30px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* ── Section Background Color Shift ──────────────────────── */
+
+.landing {
+  --l-section-tint: rgba(201, 168, 108, 0.02);
+  background: linear-gradient(180deg, var(--l-bg), var(--l-bg)),
+              linear-gradient(180deg, var(--l-section-tint), var(--l-section-tint));
+  background-blend-mode: normal;
+  transition: --l-section-tint 1.2s ease;
+}
+
 /* ── Noise Grain Overlay ──────────────────────────────────── */
 
 .landing::after {
@@ -1374,5 +1459,79 @@ a.landing-footer-link:hover::after {
 
   .landing-footer {
     padding: 20px 24px;
+  }
+}
+
+/* ── Prefers Reduced Motion ──────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-char {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-aurora {
+    animation: none;
+    opacity: 1;
+  }
+
+  .particle-canvas {
+    display: none;
+  }
+
+  .cursor-glow {
+    display: none;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  [data-reveal-dir="left"],
+  [data-reveal-dir="right"] {
+    transform: none;
+  }
+
+  .landing-trust-badge[data-reveal] {
+    transform: none;
+  }
+
+  .landing-trust-badge[data-reveal].revealed {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .phase-glitch {
+    animation: none;
+  }
+
+  .landing-code-border,
+  .landing-code-border::before {
+    animation: none;
+  }
+
+  .landing-btn-primary::before {
+    animation: none;
+  }
+
+  .section-divider.glow-pulse {
+    animation: none;
+  }
+
+  .landing-code-phase .phase-dot {
+    animation: none;
+  }
+
+  .landing-hero-sub,
+  .landing-hero-actions,
+  .landing-code-showcase {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }

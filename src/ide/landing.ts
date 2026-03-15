@@ -79,7 +79,7 @@ export function landingShell(): string {
 
     <div class="landing-hero-content" data-parallax="0.15">
       <h1 class="landing-hero-title" id="hero-title">
-        Write math.<br/>Get proofs working in <em>Lean&nbsp;4</em>.
+        Write math.<br/>Get proofs <span class="nowrap">working&nbsp;in</span> <em>Lean&nbsp;4</em>.
       </h1>
       <p class="landing-hero-sub">
         Parse LaTeX theorems, detect unnecessary hypotheses via mutation testing,
@@ -144,27 +144,27 @@ export function landingShell(): string {
     <div class="section-divider"></div>
     <div class="landing-features-title" data-reveal>Why Theoremis</div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="0">
+    <div class="landing-feature" data-reveal data-reveal-delay="0" data-reveal-dir="left">
       <div class="landing-feature-title">Lean 4 First</div>
       <div class="landing-feature-desc">
-        Deep integration with <strong>Lean 4</strong> and <strong>Mathlib</strong>.
+        Deep integration with <mark class="highlight-word">Lean 4</mark> and <mark class="highlight-word">Mathlib</mark>.
         Auto-generated imports, Mathlib-aware type signatures, and
         real verification feedback through the Lean bridge — not just
         syntax highlighting.
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="150">
+    <div class="landing-feature" data-reveal data-reveal-delay="150" data-reveal-dir="right">
       <div class="landing-feature-title">AI-Assisted Proof Writing</div>
       <div class="landing-feature-desc">
-        LLM-powered tactic suggestions that understand your proof state.
+        <mark class="highlight-word">LLM-powered</mark> tactic suggestions that understand your proof state.
         Multi-provider support (OpenAI, Anthropic, Gemini) with explicit
         confidence scores — so you always know what was AI-suggested
         vs. machine-verified.
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="300">
+    <div class="landing-feature" data-reveal data-reveal-delay="300" data-reveal-dir="left">
       <div class="landing-feature-title">Axiom Budget Tracking</div>
       <div class="landing-feature-desc">
         Toggle LEM, Choice, Funext, and more. Every emitted declaration
@@ -173,7 +173,7 @@ export function landingShell(): string {
       </div>
     </div>
 
-    <div class="landing-feature" data-reveal data-reveal-delay="450">
+    <div class="landing-feature" data-reveal data-reveal-delay="450" data-reveal-dir="right">
       <div class="landing-feature-title">Hypothesis Testing</div>
       <div class="landing-feature-desc">
         QuickCheck-style random testing checks whether your hypotheses
@@ -319,7 +319,7 @@ export function startTypingAnimation(): void {
                 render();
                 animationFrameId = setTimeout(tick, DELETE_SPEED);
             } else {
-                // Move to next phase
+                // Move to next phase — trigger glitch
                 isDeleting = false;
                 phaseIdx = (phaseIdx + 1) % CODE_PHASES.length;
                 lineIdx = 0;
@@ -327,6 +327,11 @@ export function startTypingAnimation(): void {
                 const nextPhase = CODE_PHASES[phaseIdx]!;
                 if (filenameEl) filenameEl.textContent = nextPhase.filename;
                 if (phaseLabel) phaseLabel.textContent = nextPhase.label;
+                const codeCard = document.getElementById('code-card');
+                if (codeCard) {
+                    codeCard.classList.add('phase-glitch');
+                    setTimeout(() => codeCard.classList.remove('phase-glitch'), 400);
+                }
                 animationFrameId = setTimeout(tick, 300);
             }
             return;
@@ -435,20 +440,28 @@ export function bindLanding(onLaunchIDE: NavigateCallback): void {
         });
     });
 
-    startTypingAnimation();
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     initScrollReveal();
     initNavScroll();
     initScrollProgress();
-    initParticleCanvas();
-    initHeroCharReveal();
-    initTiltEffect();
-    initMagneticButtons();
-    initParallax();
     initCounters();
-    initCursorSpotlight();
     initNavLinkUnderlines();
-    initCardTiltAll();
-    initSectionGlowPulse();
+    initHighlightWords();
+    initSectionColorShift();
+
+    if (!prefersReducedMotion) {
+        startTypingAnimation();
+        initParticleCanvas();
+        initHeroCharReveal();
+        initTiltEffect();
+        initMagneticButtons();
+        initParallax();
+        initHeroScrollFade();
+        initCursorSpotlight();
+        initCardTiltAll();
+        initSectionGlowPulse();
+    }
 }
 
 // ── Scroll-reveal with IntersectionObserver ─────────────────
@@ -523,7 +536,7 @@ function initParticleCanvas(): void {
     if (!ctx) return;
 
     const SYMBOLS = ['∀', '∃', 'λ', 'Π', '⊢', '∈', '≡', '→', '∧', '∨', '¬', '⊥', 'α', 'β', 'Σ', '∞'];
-    const COUNT = 35;
+    const COUNT = 50;
     let w = 0;
     let h = 0;
     let rafId = 0;
@@ -561,7 +574,7 @@ function initParticleCanvas(): void {
                 symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]!,
                 size: 12 + Math.random() * 16,
                 opacity: 0,
-                baseOpacity: 0.04 + Math.random() * 0.06,
+                baseOpacity: 0.12 + Math.random() * 0.15,
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.005,
             });
@@ -583,12 +596,12 @@ function initParticleCanvas(): void {
                 const dy = a.y - b.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < LINE_DIST) {
-                    const alpha = (1 - dist / LINE_DIST) * 0.04 * Math.min(a.opacity / a.baseOpacity, 1);
+                    const alpha = (1 - dist / LINE_DIST) * 0.15 * Math.min(a.opacity / a.baseOpacity, 1);
                     ctx.beginPath();
                     ctx.moveTo(a.x, a.y);
                     ctx.lineTo(b.x, b.y);
                     ctx.strokeStyle = `rgba(201, 168, 108, ${alpha})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.lineWidth = 0.8;
                     ctx.stroke();
                 }
             }
@@ -600,7 +613,7 @@ function initParticleCanvas(): void {
             const dy = p.y - mouseY;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 200) {
-                const alpha = (1 - dist / 200) * 0.08;
+                const alpha = (1 - dist / 200) * 0.25;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
                 ctx.lineTo(mouseX, mouseY);
@@ -612,7 +625,7 @@ function initParticleCanvas(): void {
 
         for (const p of particles) {
             // Fade in over time
-            if (p.opacity < p.baseOpacity) p.opacity += 0.0005;
+            if (p.opacity < p.baseOpacity) p.opacity += 0.002;
 
             // Mouse repulsion
             const dx = p.x - mouseX;
@@ -645,6 +658,10 @@ function initParticleCanvas(): void {
             ctx.fillStyle = `rgba(201, 168, 108, ${p.opacity})`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            if (p.size > 20) {
+                ctx.shadowColor = `rgba(201, 168, 108, ${p.opacity * 0.6})`;
+                ctx.shadowBlur = 12;
+            }
             ctx.fillText(p.symbol, 0, 0);
             ctx.restore();
         }
@@ -764,22 +781,125 @@ function initMagneticButtons(): void {
     });
 }
 
-// ── Parallax depth on scroll ────────────────────────────────
+// ── Hero scroll fade (Linear-style falling away) ────────────
+
+function initHeroScrollFade(): void {
+    const hero = document.querySelector<HTMLElement>('.landing-hero');
+    if (!hero) return;
+
+    const onScroll = () => {
+        const rect = hero.getBoundingClientRect();
+        const heroH = hero.offsetHeight;
+        const scrolled = -rect.top;
+        if (scrolled < 0) {
+            hero.style.opacity = '1';
+            hero.style.transform = 'scale(1)';
+            return;
+        }
+        const progress = Math.min(scrolled / heroH, 1);
+        const opacity = 1 - progress * 0.7;
+        const scale = 1 - progress * 0.05;
+        hero.style.opacity = String(opacity);
+        hero.style.transform = `scale(${scale})`;
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    cleanupFns.push(() => {
+        window.removeEventListener('scroll', onScroll);
+        if (hero) {
+            hero.style.opacity = '';
+            hero.style.transform = '';
+        }
+    });
+    onScroll();
+}
+
+// ── Scroll-velocity parallax (momentum overshoot) ───────────
 
 function initParallax(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-parallax]');
     if (!elements.length) return;
 
-    const onScroll = () => {
-        const scrollY = window.scrollY;
+    let currentScroll = window.scrollY;
+    let velocity = 0;
+    let rafId = 0;
+
+    function loop() {
+        const newScroll = window.scrollY;
+        const delta = newScroll - currentScroll;
+        velocity += (delta - velocity) * 0.1;
+        currentScroll = newScroll;
+
         elements.forEach((el) => {
             const speed = parseFloat(el.dataset.parallax ?? '0');
-            el.style.transform = `translateY(${scrollY * speed}px)`;
+            const base = currentScroll * speed;
+            const overshoot = velocity * speed * 3;
+            el.style.transform = `translateY(${base + overshoot}px)`;
         });
-    };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+        rafId = requestAnimationFrame(loop);
+    }
+
+    rafId = requestAnimationFrame(loop);
+    cleanupFns.push(() => cancelAnimationFrame(rafId));
+}
+
+// ── Section background color shift ──────────────────────────
+
+function initSectionColorShift(): void {
+    const landing = document.querySelector<HTMLElement>('.landing');
+    if (!landing) return;
+
+    const sections: { selector: string; color: string }[] = [
+        { selector: '.landing-hero', color: 'rgba(201, 168, 108, 0.02)' },
+        { selector: '.landing-pipeline', color: 'rgba(126, 184, 201, 0.02)' },
+        { selector: '.landing-features', color: 'rgba(201, 168, 108, 0.015)' },
+        { selector: '.landing-tech', color: 'rgba(180, 140, 200, 0.015)' },
+    ];
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    const el = entry.target as HTMLElement;
+                    const match = sections.find((s) => el.matches(s.selector));
+                    if (match) {
+                        landing.style.setProperty('--l-section-tint', match.color);
+                    }
+                }
+            }
+        },
+        { threshold: 0.3 },
+    );
+
+    sections.forEach((s) => {
+        const el = document.querySelector<HTMLElement>(s.selector);
+        if (el) observer.observe(el);
+    });
+
+    cleanupFns.push(() => observer.disconnect());
+}
+
+// ── Highlight word reveal animation ─────────────────────────
+
+function initHighlightWords(): void {
+    const marks = document.querySelectorAll<HTMLElement>('.highlight-word');
+    if (!marks.length) return;
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    (entry.target as HTMLElement).classList.add('highlight-revealed');
+                    observer.unobserve(entry.target);
+                }
+            }
+        },
+        { threshold: 0.5 },
+    );
+
+    marks.forEach((m) => observer.observe(m));
+    cleanupFns.push(() => observer.disconnect());
 }
 
 // ── Counting number animation on trust badges ───────────────
